@@ -63,7 +63,6 @@ function Tile({
   )
 }
 
-/** Conteo por estado; cada tarjeta filtra el grid al pulsarla. */
 export function StatusSummary({ data, isLoading, activeStatus, onFilter }: Props) {
   if (isLoading) {
     return (

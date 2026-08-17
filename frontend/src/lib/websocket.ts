@@ -1,11 +1,3 @@
-/**
- * Cliente WebSocket con reconexion.
- *
- * Reconecta con espera exponencial y manda un ping periódico para que los
- * proxies no corten la conexión. El token JWT viaja en el query string porque
- * el handshake de WebSocket no admite cabeceras.
- */
-
 import { syncServerTime } from '@/lib/serverTime'
 import { authSnapshot } from '@/store/auth'
 import type { ConnectionState, RealtimeMessage } from '@/types/realtime'
@@ -65,7 +57,6 @@ export class RealtimeChannel {
         if (message.timestamp) syncServerTime(message.timestamp)
         this.messageHandlers.forEach((handler) => handler(message))
       } catch {
-        // Un mensaje ilegible no debe tumbar la conexión.
       }
     }
 
@@ -77,8 +68,6 @@ export class RealtimeChannel {
       this.stopPing()
       this.setState('closed')
 
-      // 4401 = token inválido: reconectar no arregla nada, hay que renovar
-      // la sesión primero.
       if (this.manuallyClosed || event.code === 4401) return
       this.scheduleReconnect()
     }
@@ -96,7 +85,6 @@ export class RealtimeChannel {
     this.setState('idle')
   }
 
-  /** Reconecta de inmediato, p. ej. tras renovar el token. */
   refresh(): void {
     this.disconnect()
     this.connect()
@@ -125,7 +113,6 @@ export class RealtimeChannel {
   private scheduleReconnect(): void {
     this.reconnectAttempts += 1
     const delay = Math.min(1000 * 2 ** (this.reconnectAttempts - 1), MAX_BACKOFF_MS)
-    // Ruido aleatorio: si se cae el backend, no vuelven todas las cajas a la vez.
     const jitter = Math.random() * 500
 
     this.reconnectTimer = window.setTimeout(() => this.connect(), delay + jitter)
@@ -135,8 +122,6 @@ export class RealtimeChannel {
     this.stopPing()
     this.pingTimer = window.setInterval(() => {
       if (this.socket?.readyState === WebSocket.OPEN) {
-        // La sección viaja en el ping para que el panel de equipo pueda
-        // mostrar en qué está trabajando cada quien.
         const section = window.location.pathname.split('/').filter(Boolean)[0] ?? ''
         this.socket.send(JSON.stringify({ action: 'ping', section }))
       }
@@ -151,7 +136,6 @@ export class RealtimeChannel {
   }
 }
 
-/** Canales únicos de la aplicación. */
 export const frontdeskChannel = new RealtimeChannel('/ws/frontdesk/')
 export const notificationChannel = new RealtimeChannel('/ws/notifications/')
 

@@ -11,7 +11,6 @@ import type {
 import { apiErrorMessage } from '@/lib/axios'
 import { queryKeys } from '@/lib/queryClient'
 
-/** Turno abierto del cajero. Un 404 significa "sin turno", no un error. */
 export function useCurrentShift() {
   return useQuery({
     queryKey: queryKeys.finances.currentShift,

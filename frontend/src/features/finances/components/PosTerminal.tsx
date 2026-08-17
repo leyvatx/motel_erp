@@ -38,18 +38,8 @@ const METHODS: { value: PaymentMethod; label: string }[] = [
   { value: 'TRANSFER', label: 'Transferencia' },
 ]
 
-/** Denominaciones con las que suele pagar la gente. */
 const QUICK_CASH = [50, 100, 200, 500, 1000]
 
-/**
- * Punto de venta de mostrador.
- *
- * Está pensado para trabajar con una mano en el teclado: el campo de búsqueda
- * queda enfocado, Enter agrega la coincidencia y el cobro es un solo botón.
- * El cobro encadena abrir cuenta, registrar consumo (que descuenta
- * inventario), pagar, cerrar e imprimir; si un paso falla la cuenta queda
- * abierta para retomarla, nunca a medias.
- */
 export function PosTerminal() {
   const queryClient = useQueryClient()
   const searchRef = useRef<HTMLInputElement>(null)
@@ -57,7 +47,6 @@ export function PosTerminal() {
   const [cart, setCart] = useState<CartLine[]>([])
   const [method, setMethod] = useState<PaymentMethod>('CASH')
   const [tendered, setTendered] = useState('')
-  /** `counter` = venta de mostrador; cualquier otro valor es el id del cuarto. */
   const [destination, setDestination] = useState<string>('counter')
 
   const { data: products, isLoading } = useSellableProducts()
@@ -71,7 +60,6 @@ export function PosTerminal() {
     [warehouses],
   )
 
-  /** Cuartos ocupados: son los únicos que pueden recibir un consumo. */
   const occupied = useMemo(
     () => (grid.data?.results ?? []).filter((room) => room.current_stay !== null),
     [grid.data],
@@ -114,7 +102,6 @@ export function PosTerminal() {
     })
   }
 
-  /** Enter agrega la coincidencia: así funciona un lector de código de barras. */
   const handleSearchKey = (event: React.KeyboardEvent<HTMLInputElement>): void => {
     if (event.key !== 'Enter') return
     event.preventDefault()
@@ -148,13 +135,6 @@ export function PosTerminal() {
     searchRef.current?.focus()
   }
 
-  /**
-   * Consumo cargado a la cuenta del cuarto.
-   *
-   * No se cobra aquí: se suma al folio de la renta y se liquida al hacer el
-   * check-out, que es como funciona el room service. El movimiento queda
-   * ligado a la habitación, a la renta y a quien lo tomó.
-   */
   const chargeToRoom = useMutation({
     mutationFn: async () => {
       if (!salesWarehouse) throw new Error('No hay almacén de venta configurado.')
@@ -222,7 +202,6 @@ export function PosTerminal() {
     <div className="grid gap-4 xl:grid-cols-[1fr_23rem]">
       <Card>
         <CardContent className="space-y-3 p-4">
-          {/* Primero el destino: un consumo sin cuarto no es rastreable. */}
           <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
             <Label htmlFor="pos-destination" className="text-xs">
               ¿A dónde va este consumo?
@@ -433,7 +412,6 @@ export function PosTerminal() {
                 className="h-10 text-right text-lg tabular"
               />
 
-              {/* Atajos de billete: evitan teclear el monto exacto. */}
               <div className="flex flex-wrap gap-1.5">
                 <Button
                   variant="secondary"

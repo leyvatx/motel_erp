@@ -34,13 +34,11 @@ class UnitOfMeasure(models.TextChoices):
 
 
 class MovementType(models.TextChoices):
-    # Entradas
     PURCHASE = "PURCHASE", "Compra"
     RETURN_IN = "RETURN_IN", "Devolución de cliente"
     TRANSFER_IN = "TRANSFER_IN", "Traspaso recibido"
     ADJUSTMENT_IN = "ADJUSTMENT_IN", "Ajuste positivo"
     INITIAL = "INITIAL", "Inventario inicial"
-    # Salidas
     SALE = "SALE", "Venta"
     CONSUMPTION = "CONSUMPTION", "Consumo interno"
     WASTE = "WASTE", "Merma"
@@ -50,7 +48,6 @@ class MovementType(models.TextChoices):
     RETURN_OUT = "RETURN_OUT", "Devolución a proveedor"
 
 
-#: Signo que cada tipo de movimiento aplica sobre las existencias.
 MOVEMENT_SIGN: dict[str, int] = {
     MovementType.PURCHASE: 1,
     MovementType.RETURN_IN: 1,

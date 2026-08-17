@@ -21,12 +21,6 @@ interface Props {
 
 const SIZES = [25, 50, 100]
 
-/**
- * Paginación del lado del servidor.
- *
- * Vive pegada al pie de su tabla, no al final de la página: el usuario cambia
- * de página sin perder de vista el encabezado ni tener que bajar hasta abajo.
- */
 export function Pagination({
   page,
   pageSize,

@@ -16,18 +16,15 @@ app.config_from_object("django.conf:settings", namespace="CELERY")
 app.autodiscover_tasks()
 
 app.conf.beat_schedule = {
-    # Fase 3: barrido de cronómetros vencidos / por vencer.
     "sweep-expiring-stays": {
         "task": "apps.rooms.tasks.sweep_stay_timers",
         "schedule": 30.0,
         "options": {"expires": 25},
     },
-    # Reservaciones que nadie ocupo: liberan la habitación.
     "expire-stale-reservations": {
         "task": "apps.rooms.tasks.expire_stale_reservations",
         "schedule": crontab(minute="*/10"),
     },
-    # Fase 4: alertas de stock mínimo y caducidades próximas.
     "check-low-stock": {
         "task": "apps.inventory.tasks.check_low_stock",
         "schedule": crontab(minute="*/15"),
@@ -40,5 +37,5 @@ app.conf.beat_schedule = {
 
 
 @app.task(bind=True, ignore_result=True)
-def debug_task(self) -> None:  # pragma: no cover - utilidad de diagnostico
+def debug_task(self) -> None:
     print(f"Request: {self.request!r}")

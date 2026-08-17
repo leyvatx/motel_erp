@@ -178,8 +178,6 @@ class PermissionMatrixTests(AuditTestCase):
 @override_settings(
     CHANNEL_LAYERS=IN_MEMORY_LAYER,
     PRINTER_BACKEND="dummy",
-    # En produccion todo va por HTTPS; el cliente de pruebas habla HTTP y
-    # recibiria un 301 antes de llegar a la vista.
     SECURE_SSL_REDIRECT=False,
 )
 class EndpointPermissionTests(AuditTestCase):

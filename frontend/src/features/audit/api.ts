@@ -32,7 +32,6 @@ export interface AuditParams {
   search?: string
   from?: string
   to?: string
-  /** Modelo a rastrear, p. ej. `rooms.stay`. */
   target?: string
   object_id?: number
 }

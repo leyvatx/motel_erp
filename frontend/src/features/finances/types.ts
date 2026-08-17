@@ -73,7 +73,6 @@ export interface CashMovement {
   created_at: IsoDateTime
 }
 
-/** Desglose de billetes: denominación a cantidad. */
 export type CashBreakdown = Record<string, number>
 
 export interface OpenShiftPayload {

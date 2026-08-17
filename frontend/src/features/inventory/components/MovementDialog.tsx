@@ -41,7 +41,6 @@ interface Props {
   onOpenChange: (open: boolean) => void
 }
 
-/** Formulario único para las cuatro operaciones que alimentan el Kardex. */
 export function MovementDialog({ mode, onOpenChange }: Props) {
   const { data: warehouses } = useWarehouses()
   const { data: products } = useProducts({ page_size: 200 })

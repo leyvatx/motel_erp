@@ -1,4 +1,3 @@
-/** @type {import('tailwindcss').Config} */
 export default {
   darkMode: ['class'],
   content: ['./index.html', './src/**/*.{ts,tsx}'],
@@ -10,18 +9,14 @@ export default {
     },
     extend: {
       colors: {
-        /* Identidad de marca. El acento es variable para que se pueda
-           cambiar desde Configuración sin recompilar. */
         'brand-dark': '#0f172a',
         'brand-accent': 'hsl(var(--brand-accent))',
 
-        /* Estados de habitación */
         'status-available': '#10b981',
         'status-occupied': '#ef4444',
         'status-cleaning': '#f59e0b',
         'status-maintenance': '#6b7280',
 
-        /* Tokens de Shadcn UI */
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
@@ -93,7 +88,6 @@ export default {
           from: { height: 'var(--radix-accordion-content-height)' },
           to: { height: '0' },
         },
-        /* Latido del acento cuando un cronómetro ya venció. */
         'pulse-alert': {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.4' },

@@ -78,7 +78,6 @@ def touch(user: User, section: str = "") -> None:
     UserPresence.objects.filter(user=user).update(**updates)
 
 
-#: Segundos mínimos entre dos actualizaciones de "visto por última vez".
 TOUCH_THROTTLE_SECONDS = 60
 
 

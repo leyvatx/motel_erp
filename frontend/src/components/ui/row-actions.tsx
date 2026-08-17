@@ -1,12 +1,3 @@
-/**
- * Acciones por renglón.
- *
- * En lugar de sembrar botones en cada fila, cada registro expone un solo menú
- * con sus acciones, accesible de dos formas: el botón de tres puntos y el clic
- * derecho sobre la fila. La lista de acciones se define una vez y alimenta a
- * ambos, así no se desincronizan.
- */
-
 import { useEffect, type ReactNode } from 'react'
 import { MoreVertical } from 'lucide-react'
 import { create } from 'zustand'
@@ -29,7 +20,6 @@ export interface RowAction {
   onSelect: () => void
   danger?: boolean
   disabled?: boolean
-  /** Traza una línea divisoria antes de esta acción. */
   separated?: boolean
 }
 
@@ -53,13 +43,6 @@ const useContextMenuStore = create<ContextMenuState>((set) => ({
   hide: () => set({ open: false }),
 }))
 
-/**
- * Devuelve el manejador de clic derecho para una fila.
- *
- * ```tsx
- * <TableRow onContextMenu={openMenu('Habitación 101', acciones)}>
- * ```
- */
 export function useRowContextMenu() {
   const show = useContextMenuStore((state) => state.show)
 
@@ -97,7 +80,6 @@ function ActionItems({ items, onDone }: { items: RowAction[]; onDone?: () => voi
   )
 }
 
-/** Botón de tres puntos con el menú de acciones del renglón. */
 export function RowActions({ items, label }: { items: RowAction[]; label: string }) {
   if (items.length === 0) return null
 
@@ -121,16 +103,9 @@ export function RowActions({ items, label }: { items: RowAction[]; label: string
   )
 }
 
-/**
- * Menú flotante anclado al cursor. Se monta una sola vez en la aplicación.
- *
- * Radix necesita un disparador con posición: se usa un punto invisible
- * colocado en las coordenadas del clic.
- */
 export function ContextMenuHost() {
   const { open, x, y, title, items, hide } = useContextMenuStore()
 
-  // Un cambio de scroll deja el menú flotando lejos de su fila.
   useEffect(() => {
     if (!open) return
     const close = (): void => hide()

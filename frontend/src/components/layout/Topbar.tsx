@@ -60,7 +60,6 @@ export function Topbar({ connection }: Props) {
       <GlobalSearch onSelectStay={setStayId} />
 
       <div className="ml-auto flex items-center gap-0.5">
-        {/* Estado de la conexión en tiempo real */}
         <span
           className="mr-1.5 hidden items-center gap-1.5 rounded-full border px-2 py-1 text-2xs font-medium text-muted-foreground sm:flex"
           title={online ? 'Conectado en tiempo real' : 'Reconectando al servidor'}

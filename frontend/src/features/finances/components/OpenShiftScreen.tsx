@@ -12,13 +12,6 @@ import type { CashBreakdown } from '@/features/finances/types'
 import { formatMoney } from '@/lib/format'
 import { useAuthStore } from '@/store/auth'
 
-/**
- * Pantalla de arranque del turno.
- *
- * Mientras no haya turno abierto no se muestra nada más: el punto de venta no
- * puede cobrar y los gastos no pueden registrarse, así que ofrecerlos solo
- * llevaría al empleado a un error al final. Aquí hay una sola cosa que hacer.
- */
 export function OpenShiftScreen() {
   const cashier = useAuthStore((state) => state.user)
   const openShift = useOpenShift()

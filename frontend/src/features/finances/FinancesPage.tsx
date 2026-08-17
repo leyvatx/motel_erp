@@ -26,7 +26,6 @@ export default function FinancesPage() {
   const [tab, setTab] = useState('pos')
   const [expenseIntent, setExpenseIntent] = useState(0)
 
-  // Al pedir "registrar gasto" desde la barra, se salta a su pestaña.
   useEffect(() => {
     if (expenseIntent > 0) setTab('expenses')
   }, [expenseIntent])
@@ -39,7 +38,6 @@ export default function FinancesPage() {
     )
   }
 
-  /* Sin turno abierto no hay nada que hacer aquí más que abrirlo. */
   if (!shift) {
     return (
       <PageShell

@@ -4,7 +4,6 @@ import { Slot } from '@radix-ui/react-slot'
 import { cn } from '@/lib/utils'
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** Permite renderizar la tarjeta como otro elemento (p. ej. un botón). */
   asChild?: boolean
 }
 

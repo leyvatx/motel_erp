@@ -80,7 +80,6 @@ function Shell({
   )
 }
 
-// --- Habitación -----------------------------------------------------------
 export function RoomFormDialog({
   open,
   room,
@@ -191,7 +190,6 @@ export function RoomFormDialog({
   )
 }
 
-// --- Tipo de habitación ---------------------------------------------------
 export function RoomTypeFormDialog({
   open,
   item,
@@ -284,7 +282,6 @@ export function RoomTypeFormDialog({
   )
 }
 
-// --- Bloque tarifario -----------------------------------------------------
 export function TariffFormDialog({
   open,
   item,

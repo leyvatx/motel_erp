@@ -4,12 +4,10 @@ from django.db import models
 
 
 class AuditAction(models.TextChoices):
-    # Genericas (signals de modelo)
     CREATE = "CREATE", "Alta"
     UPDATE = "UPDATE", "Modificación"
     SOFT_DELETE = "SOFT_DELETE", "Baja lógica"
     RESTORE = "RESTORE", "Reactivación"
-    # De negocio (signals de dominio)
     ROOM_RENTED = "ROOM_RENTED", "Renta de habitación"
     ROOM_EXTENDED = "ROOM_EXTENDED", "Extensión de renta"
     ROOM_CHECKOUT = "ROOM_CHECKOUT", "Cierre de renta"
@@ -36,12 +34,10 @@ class AuditModule(models.TextChoices):
     CONFIG = "CONFIG", "Configuración"
 
 
-#: Campos que jamás se copian a la bitácora.
 SENSITIVE_FIELDS = frozenset(
     {"password", "last_login", "created_at", "updated_at", "user_permissions", "groups"}
 )
 
-#: Mapa app_label -> modulo de negocio para clasificar la bitácora.
 APP_MODULE_MAP = {
     "rooms": AuditModule.ROOMS,
     "sales": AuditModule.SALES,

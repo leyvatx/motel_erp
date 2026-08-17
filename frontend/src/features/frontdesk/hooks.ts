@@ -15,8 +15,6 @@ export function useRoomGrid(params?: GridParams) {
   return useQuery({
     queryKey: [...queryKeys.frontdesk.grid, params ?? {}],
     queryFn: () => frontdeskApi.grid(params),
-    // El WebSocket avisa de cada cambio; este intervalo es solo la red de
-    // seguridad por si la conexión se cae sin que el navegador lo note.
     refetchInterval: 90_000,
   })
 }
@@ -60,7 +58,6 @@ export function useExpiringStays() {
   })
 }
 
-/** Invalida todo lo que una operación de recepción deja obsoleto. */
 function useFrontdeskInvalidation() {
   const queryClient = useQueryClient()
 

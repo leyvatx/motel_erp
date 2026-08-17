@@ -110,7 +110,6 @@ export interface StockMovement {
   created_at: IsoDateTime
 }
 
-// --- Cuerpos de petición -------------------------------------------------
 export interface StockEntryPayload {
   product_id: number
   warehouse_id: number

@@ -8,5 +8,4 @@ class SalesConfig(AppConfig):
     verbose_name = "Ventas y folios"
 
     def ready(self) -> None:
-        # Emisión automática del ticket al cerrar la cuenta.
-        from apps.sales import receivers  # noqa: F401
+        from apps.sales import receivers

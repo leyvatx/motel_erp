@@ -42,12 +42,6 @@ interface Props {
   onOpenChange: (open: boolean) => void
 }
 
-/**
- * Alta de renta.
- *
- * El precio y la hora de vencimiento los fija el servidor: aquí solo se
- * muestra la tarifa vigente como referencia para el huesped.
- */
 export function RentRoomDialog({ room, open, onOpenChange }: Props) {
   const { data: blocks, isLoading } = useTariffBlocks(room?.room_type)
   const rent = useRentRoom()

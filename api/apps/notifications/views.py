@@ -25,14 +25,14 @@ class NotificationViewSet(
     mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
 ):
     serializer_class = NotificationSerializer
-    queryset = Notification.objects.none()  # el filtrado real vive en get_queryset
+    queryset = Notification.objects.none()
     filterset_fields = ["category", "level"]
     ordering_fields = ["created_at", "level"]
 
     def get_queryset(self):
         """Solo lo dirigido al rol del usuario, a el, o a todos."""
         user = self.request.user
-        if not user.is_authenticated:  # generación del esquema OpenAPI
+        if not user.is_authenticated:
             return Notification.objects.none()
         queryset = Notification.objects.filter(is_active=True).filter(
             Q(target_role="") | Q(target_role=user.role) | Q(target_user=user)

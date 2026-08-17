@@ -137,7 +137,6 @@ class MaintenanceReportListSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-# --- Entradas -------------------------------------------------------------
 class CleaningTaskInputSerializer(serializers.Serializer):
     room_id = serializers.IntegerField()
     task_type = serializers.ChoiceField(

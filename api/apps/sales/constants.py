@@ -60,10 +60,8 @@ class ReceiptKind(models.TextChoices):
     SHIFT_REPORT = "SHIFT_REPORT", "Corte de turno"
 
 
-#: Cargos que restan al total en lugar de sumar.
 NEGATIVE_CHARGE_TYPES = frozenset({ChargeType.DISCOUNT})
 
-#: Estados de orden en los que el inventario ya fue descargado.
 STOCK_COMMITTED_ORDER_STATUSES = frozenset(
     {OrderStatus.PLACED, OrderStatus.PREPARING, OrderStatus.DELIVERED}
 )

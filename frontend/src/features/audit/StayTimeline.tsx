@@ -15,7 +15,6 @@ import { useAuditLogs, type AuditLog } from '@/features/audit/api'
 import { formatDateTime, formatMoney } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
-/** Icono y color por tipo de suceso, para leer la línea de un vistazo. */
 const MARKS: Record<string, { icon: LucideIcon; tone: string }> = {
   ROOM_RENTED: { icon: BedDouble, tone: 'text-status-available' },
   ROOM_EXTENDED: { icon: Clock, tone: 'text-status-cleaning' },
@@ -64,13 +63,6 @@ interface Props {
   folioId: number | null
 }
 
-/**
- * Rastro completo de una renta.
- *
- * Se arma con la bitácora de auditoría, no con una tabla aparte: lo que se
- * muestra aquí es exactamente lo que quedó registrado, con el usuario, la
- * hora y la IP de cada movimiento. Si algo no aparece, es que no ocurrió.
- */
 export function StayTimeline({ stayId, folioId }: Props) {
   const stayLogs = useAuditLogs({ target: 'rooms.stay', object_id: stayId, page_size: 50 })
   const folioLogs = useAuditLogs(
@@ -104,7 +96,6 @@ export function StayTimeline({ stayId, folioId }: Props) {
 
   return (
     <ol className="relative space-y-4 pl-6">
-      {/* Riel de la línea de tiempo */}
       <span className="absolute bottom-2 left-[7px] top-2 w-px bg-border" aria-hidden />
 
       {entries.map((log) => {

@@ -13,7 +13,6 @@ import { formatRelative } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/auth'
 
-/** Traducción de la ruta que reporta el cliente en su ping. */
 const SECTION_LABELS: Record<string, string> = {
   frontdesk: 'Recepción',
   housekeeping: 'Ama de llaves',
@@ -48,13 +47,6 @@ function Avatar({ member, size = 'sm' }: { member: TeamMember; size?: 'sm' | 'md
   )
 }
 
-/**
- * Quién está en línea.
- *
- * La presencia la reporta el WebSocket, así que refleja pestañas realmente
- * abiertas. Sirve para lo cotidiano del turno: saber si ya llegó el relevo o
- * si ama de llaves puede recibir una tarea ahora mismo.
- */
 export function TeamPresence() {
   const { data, isLoading } = useTeamPresence()
   const currentUserId = useAuthStore((state) => state.user?.id)

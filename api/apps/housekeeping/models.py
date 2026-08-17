@@ -87,7 +87,6 @@ class CleaningTask(BaseModel):
         verbose_name_plural = "Tareas de limpieza"
         ordering = ["priority", "created_at"]
         constraints = [
-            # Una habitación no puede tener dos limpiezas abiertas a la vez.
             models.UniqueConstraint(
                 fields=["room"],
                 condition=models.Q(

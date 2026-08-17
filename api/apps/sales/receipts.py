@@ -99,10 +99,8 @@ def _enqueue(receipt_id: int, *, open_drawer: bool = False) -> None:
         from apps.sales.tasks import print_receipt_task
 
         try:
-            # ``retry=False``: si el broker no contesta se falla de inmediato y
-            # se imprime en línea, en vez de dejar al cajero esperando.
             print_receipt_task.apply_async(args=[receipt_id, open_drawer], retry=False)
-        except Exception:  # noqa: BLE001 - broker inalcanzable
+        except Exception:
             logger.warning("Broker no disponible; se imprime el ticket en línea.")
             print_receipt_task.run(receipt_id, open_drawer)
 

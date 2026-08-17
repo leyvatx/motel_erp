@@ -8,6 +8,6 @@ class AuditConfig(AppConfig):
     verbose_name = "Auditoría"
 
     def ready(self) -> None:
-        from apps.audit import receivers, registry  # noqa: F401
+        from apps.audit import receivers, registry
 
         registry.connect()

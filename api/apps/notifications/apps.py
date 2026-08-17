@@ -8,5 +8,4 @@ class NotificationsConfig(AppConfig):
     verbose_name = "Notificaciones y tiempo real"
 
     def ready(self) -> None:
-        # Conecta las señales de dominio con el bus de eventos en tiempo real.
-        from apps.notifications import receivers  # noqa: F401
+        from apps.notifications import receivers

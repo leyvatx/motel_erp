@@ -14,13 +14,6 @@ interface Props {
   label?: string
 }
 
-/**
- * Captura de efectivo por denominación.
- *
- * El cajero no teclea un total: cuenta billetes y monedas y el sistema suma.
- * Así el número que entra al corte es el que realmente está en el cajón, y de
- * paso queda el desglose para el arqueo.
- */
 export function CashBreakdownInput({ value, onChange, total, label = 'Total contado' }: Props) {
   const filled = useMemo(() => Object.keys(value).length, [value])
 
@@ -73,7 +66,6 @@ export function CashBreakdownInput({ value, onChange, total, label = 'Total cont
   )
 }
 
-/** Suma del desglose. */
 export function breakdownTotal(value: CashBreakdown): number {
   return Object.entries(value).reduce(
     (sum, [denomination, count]) => sum + Number(denomination) * (count || 0),

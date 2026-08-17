@@ -99,7 +99,7 @@ def record(
             ip_address=get_current_ip(),
             user_agent=get_current_user_agent(),
         )
-    except Exception:  # noqa: BLE001 - la auditoría nunca rompe el negocio
+    except Exception:
         logger.exception("No se pudo escribir la bitácora de auditoría (%s).", action)
         return None
 
@@ -120,7 +120,6 @@ def record_model_change(instance, previous=None, actor=None) -> AuditLog | None:
     if not cambios:
         return None
 
-    # La baja lógica se distingue de una modificación cualquiera.
     if "is_active" in cambios:
         activo = cambios["is_active"]["after"]
         accion = AuditAction.RESTORE if activo else AuditAction.SOFT_DELETE

@@ -153,7 +153,6 @@ class StayTimerTaskTests(TestCase):
             ).exists()
         )
 
-        # El segundo barrido no debe repetir el aviso.
         self.assertEqual(sweep_stay_timers()["warned"], 0)
 
     def test_renta_vencida_genera_aviso_critico(self) -> None:

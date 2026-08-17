@@ -43,7 +43,6 @@ export interface Room {
   is_active: boolean
 }
 
-/** Renta activa embebida en la tarjeta del grid. */
 export interface GridStay {
   id: number
   code: string
@@ -165,7 +164,6 @@ export interface Reservation {
   created_at: IsoDateTime
 }
 
-// --- Cuerpos de petición -------------------------------------------------
 export interface RentRoomPayload {
   room_id: number
   tariff_block_id: number

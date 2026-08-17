@@ -219,4 +219,3 @@ class ExpenseViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.
         return Response(
             [{"category": fila["category"], "total": str(fila["total"])} for fila in filas]
         )
-

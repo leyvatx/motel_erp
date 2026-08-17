@@ -18,9 +18,7 @@ from apps.users.constants import Role
 
 logger = logging.getLogger(__name__)
 
-#: Horas de silencio antes de repetir la misma alerta de stock.
 LOW_STOCK_COOLDOWN_HOURS = 6
-#: Días de anticipacion para avisar de un lote por caducar.
 EXPIRY_WARNING_DAYS = 7
 
 

@@ -178,7 +178,6 @@ class StockMovementSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-# --- Entradas -------------------------------------------------------------
 class StockEntrySerializer(serializers.Serializer):
     """Entrada de mercancia (compra, devolución, inventario inicial)."""
 

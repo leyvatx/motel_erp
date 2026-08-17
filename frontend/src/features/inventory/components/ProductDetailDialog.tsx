@@ -26,13 +26,7 @@ interface Props {
   onOpenChange: (open: boolean) => void
 }
 
-/**
- * Ficha del producto: existencias en todos los almacenes y sus últimos
- * movimientos. Es la pantalla que contesta "¿por qué hay tan poco de esto?".
- */
 export function ProductDetailDialog({ stock, onOpenChange }: Props) {
-  // El contenido va en un componente aparte para que sus consultas solo se
-  // monten cuando hay producto: si no, se dispararían con `product=0`.
   if (!stock) return null
   return <Detail stock={stock} onOpenChange={onOpenChange} />
 }

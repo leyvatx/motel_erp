@@ -27,10 +27,6 @@ function Lazy({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageFallback />}>{children}</Suspense>
 }
 
-/**
- * Cada seccion declara a que parte del menu pertenece; `ProtectedRoute` la
- * compara contra el rol para no mostrar pantallas inutiles.
- */
 const routes: RouteObject[] = [
   {
     path: '/login',

@@ -34,7 +34,6 @@ def on_room_status_changed(sender, room, from_status, to_status, stay=None, acto
             "to_status": to_status,
         },
     )
-    # Ama de llaves necesita enterarse en el momento en que el cuarto se libera.
     if to_status == RoomStatus.CLEANING:
         broadcast(
             Event.CLEANING_TASK,

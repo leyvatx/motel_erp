@@ -120,7 +120,6 @@ class BlindCashCountTests(FinancesTestCase):
         turno = self._abrir_turno()
         self._renta_cobrada()
 
-        # Fondo 500 + venta en efectivo 300.
         cerrado = services.close_shift(
             shift_id=turno.pk, declared_cash=Decimal("800.00"), actor=self.cajero
         )

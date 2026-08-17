@@ -13,7 +13,6 @@ interface Props {
   onSelectStay: (stayId: number) => void
 }
 
-/** Buscador del topbar: placas, número de cuarto, folio o nombre. */
 export function GlobalSearch({ onSelectStay }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [term, setTerm] = useState('')
@@ -25,7 +24,6 @@ export function GlobalSearch({ onSelectStay }: Props) {
     return () => window.clearTimeout(timer)
   }, [term])
 
-  // Atajo de teclado: recepción busca placas sin soltar el mouse.
   useEffect(() => {
     const handler = (event: KeyboardEvent): void => {
       if (event.key === 'k' && (event.metaKey || event.ctrlKey)) {

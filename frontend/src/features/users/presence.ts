@@ -22,14 +22,11 @@ export function useTeamPresence() {
   return useQuery({
     queryKey: teamKeys.roster,
     queryFn: () => get<TeamMember[]>('/auth/team/'),
-    // El evento `presence.changed` refresca esto al instante; el intervalo
-    // solo cubre el caso de un socket caído sin aviso.
     refetchInterval: 60_000,
     staleTime: 15_000,
   })
 }
 
-/** Iniciales para el avatar, sin depender de imágenes. */
 export function initials(fullName: string): string {
   const parts = fullName.trim().split(/\s+/)
   if (parts.length === 0) return '?'
@@ -38,7 +35,6 @@ export function initials(fullName: string): string {
   return `${first}${second}`.toUpperCase()
 }
 
-/** Color estable por rol: el mismo empleado siempre se ve igual. */
 export function roleTone(role: Role): string {
   const tones: Record<Role, string> = {
     SUPERADMIN: 'bg-violet-500',

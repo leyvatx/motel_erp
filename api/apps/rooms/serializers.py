@@ -11,7 +11,7 @@ from decimal import Decimal
 
 from rest_framework import serializers
 
-from common.serializers import ReasonSerializer  # noqa: F401 (reexport)
+from common.serializers import ReasonSerializer
 
 from apps.rooms.constants import RoomStatus
 from apps.rooms.models import (
@@ -249,7 +249,6 @@ class RoomGridSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_current_stay(self, room: Room) -> dict | None:
-        # ``active_stays`` viene de un Prefetch filtrado en la vista.
         stays = getattr(room, "active_stays", [])
         if not stays:
             return None
@@ -326,7 +325,6 @@ class RoomStatusLogSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-# --- Entradas -------------------------------------------------------------
 class RentRoomSerializer(serializers.Serializer):
     """Alta de renta. El servidor calcula precio y vencimiento."""
 

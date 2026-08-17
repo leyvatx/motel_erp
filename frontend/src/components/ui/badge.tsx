@@ -17,7 +17,6 @@ const badgeVariants = cva(
         secondary: 'border-transparent bg-secondary text-secondary-foreground',
         destructive: 'border-transparent bg-destructive text-destructive-foreground',
         outline: 'text-foreground',
-        /* Estados: contorno tenue en vez de relleno saturado. */
         available: 'border-status-available/30 bg-status-available/10 text-status-available',
         occupied: 'border-status-occupied/30 bg-status-occupied/10 text-status-occupied',
         cleaning: 'border-status-cleaning/30 bg-status-cleaning/10 text-status-cleaning',

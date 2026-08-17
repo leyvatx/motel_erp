@@ -30,8 +30,6 @@ export function useLogout() {
     mutationFn: async () => {
       const refresh = useAuthStore.getState().refresh
       if (refresh) {
-        // Un falló al invalidar en el servidor no debe dejar al usuario
-        // atrapado en la sesión.
         await authApi.logout(refresh).catch(() => undefined)
       }
     },
@@ -44,7 +42,6 @@ export function useLogout() {
   })
 }
 
-/** Revalida la sesión contra el servidor al arrancar la aplicación. */
 export function useCurrentUser() {
   const access = useAuthStore((state) => state.access)
   const setUser = useAuthStore((state) => state.setUser)

@@ -185,7 +185,6 @@ class MaintenanceFlowTests(HousekeepingTestCase):
         self.assertEqual(reporte.cost, Decimal("850.00"))
         self.assertEqual(MaintenanceUpdate.objects.filter(report=reporte).count(), 3)
         self.assertEqual(self.room.status, RoomStatus.CLEANING)
-        # El cierre del mantenimiento levanta su limpieza preventiva.
         tarea = CleaningTask.objects.get(room=self.room)
         self.assertEqual(tarea.task_type, CleaningTaskType.PREVENTIVE)
 

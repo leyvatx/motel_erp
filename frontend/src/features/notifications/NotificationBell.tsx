@@ -45,12 +45,6 @@ function NotificationRow({ item }: { item: Notification }) {
   )
 }
 
-/**
- * Campana del topbar.
- *
- * El contador se refresca solo: `useRealtime` invalida su consulta en cuanto
- * llega un evento `notification.new` por WebSocket.
- */
 export function NotificationBell() {
   const { data: counter } = useUnreadCount()
   const { data, isLoading } = useNotifications({ page_size: 12 })

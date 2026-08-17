@@ -6,11 +6,6 @@ import { cn } from '@/lib/utils'
 import type { RoomGridItem } from '@/features/frontdesk/types'
 import type { RoomStatus } from '@/types/api'
 
-/**
- * El color va en una barra superior delgada y en el punto de estado, no en el
- * fondo de la tarjeta: con veinte cuartos en pantalla, veinte rellenos de
- * color compiten entre sí y ninguno destaca.
- */
 const STATUS_BAR: Record<RoomStatus, string> = {
   AVAILABLE: 'bg-status-available',
   RESERVED: 'bg-brand-accent',
@@ -60,7 +55,6 @@ export function RoomCard({ room, onSelect, warningMinutes = 15 }: Props) {
         isOccupied && countdown.level === 'expired' && 'border-status-occupied/40',
       )}
     >
-      {/* Barra de estado */}
       <span
         className={cn(
           'absolute inset-x-0 top-0 h-[3px]',

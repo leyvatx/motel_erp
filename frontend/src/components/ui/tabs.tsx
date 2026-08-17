@@ -45,9 +45,6 @@ const TabsContent = React.forwardRef<
   <TabsPrimitive.Content
     ref={ref}
     className={cn(
-      // Radix mantiene montados todos los paneles y solo les pone `hidden`.
-      // Una clase `flex` sobre el panel gana a la regla del navegador y los
-      // paneles inactivos seguirían ocupando espacio, repartiéndose el alto.
       'mt-4 focus-visible:outline-none data-[state=inactive]:!hidden',
       className,
     )}

@@ -372,27 +372,23 @@ class Stay(BaseModel):
         db_index=True,
     )
 
-    # --- Cronómetro (siempre UTC) ---
     check_in_at = models.DateTimeField("Entrada", default=timezone.now, db_index=True)
     expires_at = models.DateTimeField("Vence en", db_index=True)
     checked_out_at = models.DateTimeField("Salida real", null=True, blank=True)
     base_minutes = models.PositiveIntegerField("Minutos contratados")
     extended_minutes = models.PositiveIntegerField("Minutos extendidos", default=0)
 
-    # --- Importes snapshot (la tarifa puede cambiar después) ---
     base_price = models.DecimalField("Precio base", max_digits=10, decimal_places=2)
     extra_person_price = models.DecimalField(
         "Cargo por personas extra", max_digits=10, decimal_places=2, default=ZERO
     )
 
-    # --- Datos del huesped / vehículo ---
     occupants = models.PositiveSmallIntegerField("Ocupantes", default=2)
     guest_name = models.CharField("Nombre del huesped", max_length=120, blank=True)
     vehicle_plate = models.CharField("Placas", max_length=15, blank=True, db_index=True)
     vehicle_description = models.CharField("Vehículo", max_length=80, blank=True)
     notes = models.TextField("Notas", blank=True)
 
-    # --- Cierre / cancelación ---
     closed_by = models.ForeignKey(
         "users.User",
         verbose_name="Cerrada por",
@@ -404,7 +400,6 @@ class Stay(BaseModel):
     cancelled_at = models.DateTimeField("Cancelada en", null=True, blank=True)
     cancellation_reason = models.CharField("Motivo de cancelación", max_length=255, blank=True)
 
-    # --- Control de notificaciones (evita avisos duplicados desde Celery) ---
     warning_notified_at = models.DateTimeField(
         "Aviso de por vencer", null=True, blank=True, editable=False
     )
@@ -417,7 +412,6 @@ class Stay(BaseModel):
         verbose_name_plural = "Rentas"
         ordering = ["-check_in_at"]
         constraints = [
-            # Blindaje real contra doble renta simultanea de la misma habitación.
             models.UniqueConstraint(
                 fields=["room"],
                 condition=models.Q(status=StayStatus.ACTIVE),

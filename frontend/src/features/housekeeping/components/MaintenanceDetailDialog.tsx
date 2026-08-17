@@ -22,7 +22,6 @@ interface Props {
   onOpenChange: (open: boolean) => void
 }
 
-/** Ficha del reporte con su historial de seguimiento. */
 export function MaintenanceDetailDialog({ report, onOpenChange }: Props) {
   if (!report) return null
 

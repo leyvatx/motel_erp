@@ -63,7 +63,6 @@ export function useKardex(params?: KardexParams) {
   })
 }
 
-/** Un movimiento de inventario deja obsoletas existencias, lotes y Kardex. */
 function useInventoryInvalidation() {
   const queryClient = useQueryClient()
 

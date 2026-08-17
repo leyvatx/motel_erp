@@ -68,7 +68,6 @@ const TableCell = React.forwardRef<
 ))
 TableCell.displayName = 'TableCell'
 
-/** Fila de estado vacío, con el mismo aire que el resto de la tabla. */
 const TableEmpty = ({ colSpan, message }: { colSpan: number; message: string }) => (
   <TableRow className="hover:bg-transparent">
     <TableCell colSpan={colSpan} className="h-28 text-center text-sm text-muted-foreground">

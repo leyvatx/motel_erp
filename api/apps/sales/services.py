@@ -46,9 +46,6 @@ class OrderItemInput(TypedDict, total=False):
     notes: str
 
 
-# ---------------------------------------------------------------------------
-# Folio
-# ---------------------------------------------------------------------------
 def _next_folio_code() -> str:
     return DocumentSequence.next_value("folio", "F", period_key())
 
@@ -230,9 +227,6 @@ def apply_discount(*, folio_id: int, amount: Decimal, reason: str, actor) -> Fol
     )
 
 
-# ---------------------------------------------------------------------------
-# Ordenes de consumo
-# ---------------------------------------------------------------------------
 @transaction.atomic
 def create_order(
     *,
@@ -519,9 +513,6 @@ def mark_order_delivered(*, order_id: int, actor) -> Order:
     return order
 
 
-# ---------------------------------------------------------------------------
-# Pagos y cierre
-# ---------------------------------------------------------------------------
 @transaction.atomic
 def register_payment(
     *,

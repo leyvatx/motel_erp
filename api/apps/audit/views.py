@@ -33,7 +33,6 @@ class AuditLogViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets
         if hasta:
             queryset = queryset.filter(created_at__date__lte=hasta)
 
-        # Rastro completo de un objeto: ?target=rooms.stay&object_id=12
         target = params.get("target")
         object_id = params.get("object_id")
         if target and "." in target:

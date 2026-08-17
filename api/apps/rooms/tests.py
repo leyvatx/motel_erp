@@ -52,7 +52,6 @@ class FrontDeskTestCase(TestCase):
             base_price=Decimal("600.00"),
             is_overnight=True,
         )
-        # Todo cobro exige turno de caja abierto (Fase 5).
         cls.shift = open_shift(cashier=cls.user, opening_balance=Decimal("500.00"))
 
 
@@ -221,7 +220,6 @@ class ReservationTests(FrontDeskTestCase):
         )
         reservation.refresh_from_db()
         self.assertEqual(reservation.status, ReservationStatus.CHECKED_IN)
-        # 350 de renta menos 100 de anticipo ya cobrado.
         self.assertEqual(stay.folio.total, Decimal("250.00"))
 
     def test_cancelar_reservacion_libera_la_ventana(self) -> None:
@@ -283,8 +281,6 @@ class CheckoutTests(FrontDeskTestCase):
         stay = services.rent_room(
             room_id=self.room.pk, tariff_block_id=self.block4.pk, actor=self.user
         )
-        # Se simula que el huesped entro hace 5.5 h y se paso 90 minutos
-        # (más allá de la tolerancia de 15 min del bloque).
         ahora = timezone.now()
         Stay.objects.filter(pk=stay.pk).update(
             check_in_at=ahora - timedelta(minutes=330),

@@ -56,7 +56,6 @@ class ExpenseStatus(models.TextChoices):
     CANCELLED = "CANCELLED", "Cancelado"
 
 
-#: Denominaciones de billete y moneda en circulacion (MXN).
 CASH_DENOMINATIONS: tuple[Decimal, ...] = (
     Decimal("1000"),
     Decimal("500"),
@@ -71,5 +70,4 @@ CASH_DENOMINATIONS: tuple[Decimal, ...] = (
     Decimal("0.50"),
 )
 
-#: Diferencia tolerada entre lo declarado y lo esperado antes de marcar el corte.
 CASH_DIFFERENCE_TOLERANCE = Decimal("1.00")

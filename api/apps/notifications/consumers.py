@@ -78,7 +78,6 @@ class AuthenticatedConsumer(AsyncJsonWebsocketConsumer):
                 await self._presence_touch(user, section)
             await self.send_json({"event": "pong", "payload": {}})
 
-    # -- Presencia ---------------------------------------------------------
     @database_sync_to_async
     def _presence_connect(self, user) -> None:
         from apps.users import presence

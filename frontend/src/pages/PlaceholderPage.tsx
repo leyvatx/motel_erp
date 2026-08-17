@@ -5,7 +5,6 @@ interface Props {
   description?: string
 }
 
-/** Pantalla temporal para las secciones que llegan en las Fases 8 y 9. */
 export default function PlaceholderPage({ title, description }: Props) {
   return (
     <Card>

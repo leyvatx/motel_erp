@@ -168,7 +168,6 @@ class ExpenseSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-# --- Entradas -------------------------------------------------------------
 class OpenShiftSerializer(serializers.Serializer):
     opening_balance = serializers.DecimalField(
         max_digits=12, decimal_places=2, min_value=Decimal("0"), default=Decimal("0")

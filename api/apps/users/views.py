@@ -144,7 +144,6 @@ class TeamPresenceView(APIView):
             }
             for fila in presence.roster()
         ]
-        # Primero los conectados, luego por nombre.
         filas.sort(key=lambda fila: (not fila["is_online"], fila["user"].full_name))
         return Response(UserPresenceSerializer(filas, many=True).data)
 

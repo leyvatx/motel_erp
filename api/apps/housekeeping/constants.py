@@ -44,7 +44,6 @@ class MaintenanceStatus(models.TextChoices):
     CANCELLED = "CANCELLED", "Cancelado"
 
 
-#: Transiciones válidas del reporte de mantenimiento.
 MAINTENANCE_TRANSITIONS: dict[str, frozenset[str]] = {
     MaintenanceStatus.REPORTED: frozenset(
         {MaintenanceStatus.ACKNOWLEDGED, MaintenanceStatus.IN_PROGRESS, MaintenanceStatus.CANCELLED}
@@ -59,7 +58,6 @@ MAINTENANCE_TRANSITIONS: dict[str, frozenset[str]] = {
     MaintenanceStatus.CANCELLED: frozenset(),
 }
 
-#: Transiciones válidas de la tarea de limpieza.
 CLEANING_TRANSITIONS: dict[str, frozenset[str]] = {
     CleaningTaskStatus.PENDING: frozenset(
         {CleaningTaskStatus.ASSIGNED, CleaningTaskStatus.IN_PROGRESS, CleaningTaskStatus.CANCELLED}

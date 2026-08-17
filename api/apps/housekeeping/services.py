@@ -42,9 +42,6 @@ def _validate_cleaning_transition(current: str, target: str) -> None:
         )
 
 
-# ---------------------------------------------------------------------------
-# Limpieza
-# ---------------------------------------------------------------------------
 @transaction.atomic
 def create_cleaning_task(
     *,
@@ -190,9 +187,6 @@ def cancel_cleaning_task(*, task_id: int, reason: str, actor) -> CleaningTask:
     return task
 
 
-# ---------------------------------------------------------------------------
-# Mantenimiento
-# ---------------------------------------------------------------------------
 @transaction.atomic
 def report_maintenance(
     *,
@@ -356,7 +350,6 @@ def update_maintenance_status(
         created_by=actor,
     )
 
-    # Al cerrar el reporte, el cuarto vuelve a limpieza antes de venderse.
     cerrado = new_status in {MaintenanceStatus.RESOLVED, MaintenanceStatus.CANCELLED}
     if cerrado and release_room and report.room_id and report.blocks_room:
         room = Room.objects.select_for_update().get(pk=report.room_id)
@@ -375,8 +368,6 @@ def update_maintenance_status(
             .exists()
         )
         if not otros_bloqueos and room.status == RoomStatus.MAINTENANCE:
-            # El receiver de ``room_status_changed`` levanta la tarea de
-            # limpieza posterior al mantenimiento.
             transition_room(
                 room,
                 RoomStatus.CLEANING,

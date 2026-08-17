@@ -64,5 +64,5 @@ class JWTAuthMiddleware:
         return None
 
 
-def JWTAuthMiddlewareStack(inner):  # noqa: N802 - convencion de Channels
+def JWTAuthMiddlewareStack(inner):
     return JWTAuthMiddleware(AuthMiddlewareStack(inner))

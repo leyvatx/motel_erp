@@ -1,11 +1,3 @@
-/**
- * Avisos emergentes.
- *
- * Implementacion propia sobre Zustand: los toasts se disparan desde
- * mutaciones y desde eventos de WebSocket, es decir fuera del arbol de React,
- * y un store global lo resuelve sin pasar callbacks por media aplicación.
- */
-
 import { useEffect } from 'react'
 import { AlertTriangle, CheckCircle2, Info, X, XCircle } from 'lucide-react'
 import { create } from 'zustand'
@@ -40,7 +32,6 @@ export const useToastStore = create<ToastState>((set) => ({
   dismiss: (id) => set((state) => ({ toasts: state.toasts.filter((item) => item.id !== id) })),
 }))
 
-/** Atajo para usar fuera de componentes. */
 export const toast = {
   info: (title: string, description?: string) =>
     useToastStore.getState().push({ title, description, variant: 'info' }),

@@ -1,13 +1,3 @@
-/**
- * Alertas sonoras del grid.
- *
- * El tono se sintetiza con Web Audio en vez de cargar un archivo: no depende
- * de ningun recurso externo y suena igual en cualquier equipo de recepción.
- * Los navegadores exigen un gesto del usuario antes de reproducir audio, así
- * que el contexto se crea con el primer clic y los avisos previos se ignoran
- * en silencio.
- */
-
 let context: AudioContext | null = null
 let unlocked = false
 
@@ -21,7 +11,6 @@ function ensureContext(): AudioContext | null {
   return context
 }
 
-/** Se engancha a la primera interaccion para habilitar el audio. */
 export function unlockAudio(): void {
   if (unlocked) return
   const ctx = ensureContext()
@@ -51,7 +40,6 @@ function beep({ frequency = 880, durationMs = 180, volume = 0.15 }: BeepOptions 
   gain.connect(ctx.destination)
 
   const end = ctx.currentTime + durationMs / 1000
-  // Apagado suave: un corte seco produce un chasquido molesto.
   gain.gain.exponentialRampToValueAtTime(0.0001, end)
 
   oscillator.start()
@@ -64,12 +52,10 @@ function sequence(steps: readonly BeepOptions[], gapMs: number): void {
   })
 }
 
-/** Dos tonos ascendentes: una renta está por vencer. */
 export function playWarningAlert(): void {
   sequence([{ frequency: 740 }, { frequency: 988 }], 220)
 }
 
-/** Tres tonos graves e insistentes: la renta ya vencio. */
 export function playExpiredAlert(): void {
   sequence(
     [
@@ -81,7 +67,6 @@ export function playExpiredAlert(): void {
   )
 }
 
-/** Tono corto de confirmacion. */
 export function playSuccessTone(): void {
   beep({ frequency: 1046, durationMs: 120, volume: 0.1 })
 }

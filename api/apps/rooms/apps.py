@@ -8,5 +8,4 @@ class RoomsConfig(AppConfig):
     verbose_name = "Habitaciones y rentas"
 
     def ready(self) -> None:
-        # Registra las señales de dominio (cambio de estado -> limpieza, eventos WS).
-        from apps.rooms import signals  # noqa: F401
+        from apps.rooms import signals

@@ -14,7 +14,6 @@ export function useUnreadCount() {
   return useQuery({
     queryKey: queryKeys.notifications.unreadCount,
     queryFn: notificationsApi.unreadCount,
-    // Respaldo por si el WebSocket se cae: el badge no se queda congelado.
     refetchInterval: 120_000,
   })
 }

@@ -288,7 +288,6 @@ export default function HousekeepingPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Cierre de limpieza: se pide la observación en el momento de terminar. */}
       {closing ? (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background p-4 shadow-lg">
           <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-3">

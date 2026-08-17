@@ -21,7 +21,6 @@ interface Props {
   onRent: (room: RoomGridItem) => void
 }
 
-/** Acciones de un cuarto sin renta activa. */
 export function RoomActionsDialog({ room, open, onOpenChange, onRent }: Props) {
   const finishCleaning = useFinishCleaning()
   const outOfService = useSetOutOfService()

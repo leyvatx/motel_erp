@@ -48,7 +48,6 @@ export const frontdeskApi = {
       { reason, blocked },
     ),
 
-  // --- Rentas ---
   stays: (params?: ListParams & { status?: string }): Promise<PaginatedResponse<StayListItem>> =>
     get<PaginatedResponse<StayListItem>>('/frontdesk/stays/', { params }),
 
@@ -69,7 +68,6 @@ export const frontdeskApi = {
   cancelStay: (stayId: number, reason: string): Promise<Stay> =>
     post<Stay, { reason: string }>(`/frontdesk/stays/${stayId}/cancel/`, { reason }),
 
-  // --- Reservaciones ---
   reservations: (params?: ListParams): Promise<PaginatedResponse<Reservation>> =>
     get<PaginatedResponse<Reservation>>('/frontdesk/reservations/', { params }),
 

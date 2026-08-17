@@ -39,7 +39,6 @@ class PriceMode(models.TextChoices):
     DELTA = "DELTA", "Monto adicional"
 
 
-#: Colores semanticos del grid de recepción (los mismos del frontend).
 ROOM_STATUS_COLORS = {
     RoomStatus.AVAILABLE: "status-available",
     RoomStatus.RESERVED: "brand-accent",
@@ -49,7 +48,6 @@ ROOM_STATUS_COLORS = {
     RoomStatus.BLOCKED: "status-maintenance",
 }
 
-#: Estados en los que la habitación no puede rentarse.
 NON_RENTABLE_STATUSES = frozenset(
     {RoomStatus.OCCUPIED, RoomStatus.CLEANING, RoomStatus.MAINTENANCE, RoomStatus.BLOCKED}
 )

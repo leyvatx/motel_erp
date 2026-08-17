@@ -46,14 +46,6 @@ interface Props {
   onRegisterExpense: () => void
 }
 
-/**
- * Barra de estado del turno.
- *
- * Ocupa una línea y concentra todo lo que se hace "con la caja" en un solo
- * menú, para que el cajero no tenga que buscar entre pestañas qué botón mueve
- * dinero. Mientras el turno está abierto no muestra el efectivo esperado:
- * verlo antes de contar arruinaría el corte ciego.
- */
 export function ShiftBar({ shift, onRegisterExpense }: Props) {
   const [closing, setClosing] = useState(false)
   const [movement, setMovement] = useState<'IN' | 'OUT' | null>(null)

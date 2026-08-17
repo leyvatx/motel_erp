@@ -1,5 +1,3 @@
-/** Eventos que el backend publica por WebSocket. */
-
 import type { IsoDateTime, Money, RoomStatus, StayStatus } from '@/types/api'
 
 export const RealtimeEvent = {
@@ -82,7 +80,6 @@ export interface LowStockEventPayload {
   min_stock: string
 }
 
-/** Sobre común de todo mensaje entrante. */
 export interface RealtimeMessage<TPayload = unknown> {
   event: RealtimeEventName | string
   payload: TPayload

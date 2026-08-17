@@ -102,8 +102,6 @@ def api_exception_handler(exc: Exception, context: dict[str, Any]) -> Response |
         logger.exception("Error no controlado en %s", context.get("view"))
         return None
 
-    # ErrorDetail conserva el ``code`` puntual que levantó el service; si no
-    # lo trae, se cae al code por defecto de la clase de excepción.
     code = getattr(getattr(exc, "detail", None), "code", None) or getattr(
         exc, "default_code", "error"
     )

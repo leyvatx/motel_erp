@@ -54,7 +54,6 @@ class Shift(BaseModel):
         validators=[MinValueValidator(ZERO)],
     )
 
-    # --- Cifras calculadas al cerrar (nunca capturadas a mano) ---
     cash_sales = models.DecimalField("Ventas en efectivo", max_digits=12, decimal_places=2, default=ZERO)
     card_sales = models.DecimalField("Ventas con tarjeta", max_digits=12, decimal_places=2, default=ZERO)
     transfer_sales = models.DecimalField("Transferencias", max_digits=12, decimal_places=2, default=ZERO)
@@ -64,7 +63,6 @@ class Shift(BaseModel):
     expenses_total = models.DecimalField("Gastos aprobados", max_digits=12, decimal_places=2, default=ZERO)
     expected_cash = models.DecimalField("Efectivo esperado", max_digits=12, decimal_places=2, default=ZERO)
 
-    # --- Lo que declara el cajero (corte ciego) ---
     declared_cash = models.DecimalField(
         "Efectivo declarado", max_digits=12, decimal_places=2, null=True, blank=True
     )
@@ -100,7 +98,6 @@ class Shift(BaseModel):
         verbose_name_plural = "Turnos de caja"
         ordering = ["-opened_at"]
         constraints = [
-            # Un cajero no puede tener dos turnos abiertos al mismo tiempo.
             models.UniqueConstraint(
                 fields=["cashier"],
                 condition=models.Q(status=ShiftStatus.OPEN),

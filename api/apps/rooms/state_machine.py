@@ -12,11 +12,6 @@ from common.exceptions import InvalidStateTransition
 
 from apps.rooms.constants import RoomStatus, StayStatus
 
-#: Grafo de transiciones permitidas del ciclo de vida de una habitación.
-#:
-#:   AVAILABLE -> OCCUPIED -> CLEANING -> AVAILABLE
-#:        \-> RESERVED -> OCCUPIED
-#:        \-> MAINTENANCE / BLOCKED (rama de servicio)
 ROOM_TRANSITIONS: dict[str, frozenset[str]] = {
     RoomStatus.AVAILABLE: frozenset(
         {
@@ -35,9 +30,6 @@ ROOM_TRANSITIONS: dict[str, frozenset[str]] = {
             RoomStatus.BLOCKED,
         }
     ),
-    # OCCUPIED -> AVAILABLE existe únicamente para revertir una renta
-    # capturada por error (``cancel_stay``). El check-out normal siempre
-    # pasa por CLEANING.
     RoomStatus.OCCUPIED: frozenset(
         {
             RoomStatus.CLEANING,
@@ -68,7 +60,6 @@ ROOM_TRANSITIONS: dict[str, frozenset[str]] = {
     ),
 }
 
-#: Ciclo de vida de una renta.
 STAY_TRANSITIONS: dict[str, frozenset[str]] = {
     StayStatus.ACTIVE: frozenset({StayStatus.CLOSED, StayStatus.CANCELLED}),
     StayStatus.CLOSED: frozenset(),

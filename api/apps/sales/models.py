@@ -70,8 +70,6 @@ class Folio(BaseModel):
         blank=True,
     )
 
-    # Totales materializados: se recalculan en el service dentro de la
-    # transacción que agrega o cancela cargos.
     subtotal = models.DecimalField("Subtotal", max_digits=12, decimal_places=2, default=ZERO)
     discount_total = models.DecimalField("Descuentos", max_digits=12, decimal_places=2, default=ZERO)
     tax_total = models.DecimalField("Impuestos", max_digits=12, decimal_places=2, default=ZERO)

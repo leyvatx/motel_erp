@@ -46,13 +46,9 @@ from apps.rooms.state_machine import validate_room_transition, validate_stay_tra
 from apps.sales import services as sales_services
 from apps.sales.constants import ChargeType, FolioStatus, FolioType
 
-#: Reservaciones que todavía bloquean la habitación.
 BLOCKING_RESERVATION_STATUSES = (ReservationStatus.PENDING, ReservationStatus.CONFIRMED)
 
 
-# ---------------------------------------------------------------------------
-# Tarifas dinamicas
-# ---------------------------------------------------------------------------
 def resolve_tariff_price(tariff_block: TariffBlock, moment: datetime | None = None) -> Decimal:
     """Precio vigente del bloque para un instante dado.
 
@@ -63,7 +59,7 @@ def resolve_tariff_price(tariff_block: TariffBlock, moment: datetime | None = No
     local = to_business_time(moment)
     local_date = local.date()
     local_time = local.time()
-    weekday = local.weekday()  # 0 = lunes
+    weekday = local.weekday()
 
     is_holiday = Holiday.objects.filter(date=local_date, is_active=True).exists()
 
@@ -84,7 +80,6 @@ def _rule_matches(rule, local_date, local_time, weekday: int, is_holiday: bool) 
         if rule.start_time <= rule.end_time:
             if not (rule.start_time <= local_time <= rule.end_time):
                 return False
-        # Ventana que cruza la medianoche (p. ej. 22:00 a 06:00).
         elif not (local_time >= rule.start_time or local_time <= rule.end_time):
             return False
 
@@ -101,9 +96,6 @@ def _rule_matches(rule, local_date, local_time, weekday: int, is_holiday: bool) 
     return False
 
 
-# ---------------------------------------------------------------------------
-# Máquina de estados del cuarto
-# ---------------------------------------------------------------------------
 def transition_room(
     room: Room,
     target_status: str,
@@ -158,9 +150,6 @@ def transition_room(
     return room
 
 
-# ---------------------------------------------------------------------------
-# Reservaciones
-# ---------------------------------------------------------------------------
 def find_conflicting_reservation(
     *,
     room: Room,
@@ -299,9 +288,6 @@ def cancel_reservation(*, reservation_id: int, reason: str, actor) -> Reservatio
     return reservation
 
 
-# ---------------------------------------------------------------------------
-# Renta
-# ---------------------------------------------------------------------------
 @transaction.atomic
 def rent_room(
     *,
@@ -422,8 +408,6 @@ def rent_room(
         )
 
     if reservation is not None and reservation.deposit_amount > ZERO:
-        # El anticipo ya se cobró al reservar: entra como ajuste negativo para
-        # no contaminar el total de descuentos comerciales del turno.
         sales_services.add_charge(
             folio=folio,
             charge_type=ChargeType.ADJUSTMENT,

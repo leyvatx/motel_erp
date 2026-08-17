@@ -6,7 +6,6 @@ interface Props {
   actions?: ReactNode
 }
 
-/** Encabezado común a todas las secciones: mismo ritmo en toda la aplicación. */
 export function PageHeader({ title, description, actions }: Props) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-3">

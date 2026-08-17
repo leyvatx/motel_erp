@@ -152,7 +152,6 @@ function NewExpenseDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
 export function ExpensesPanel({ openIntent = 0 }: { openIntent?: number }) {
   const [creating, setCreating] = useState(false)
 
-  // La barra del turno puede pedir "registrar gasto"; abre el formulario.
   useEffect(() => {
     if (openIntent > 0) setCreating(true)
   }, [openIntent])
@@ -164,7 +163,6 @@ export function ExpensesPanel({ openIntent = 0 }: { openIntent?: number }) {
     (state) => state.user?.role === 'MANAGER' || state.user?.role === 'SUPERADMIN',
   )
 
-  /** Aprobar y rechazar solo aparecen si hay algo que revisar y quien revise. */
   const actionsFor = (expense: Expense): RowAction[] => {
     if (!isManagement || expense.status !== 'PENDING') return []
     return [

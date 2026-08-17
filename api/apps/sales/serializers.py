@@ -6,7 +6,7 @@ from decimal import Decimal
 
 from rest_framework import serializers
 
-from common.serializers import ReasonSerializer  # noqa: F401 (reexport)
+from common.serializers import ReasonSerializer
 
 from apps.sales.constants import OrderType, PaymentMethod
 from apps.sales.models import Folio, FolioCharge, Order, OrderItem, Payment
@@ -185,7 +185,6 @@ class FolioListSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-# --- Entradas -------------------------------------------------------------
 class OrderItemInputSerializer(serializers.Serializer):
     product_id = serializers.IntegerField()
     quantity = serializers.DecimalField(max_digits=10, decimal_places=3, min_value=Decimal("0.001"))

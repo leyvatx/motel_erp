@@ -77,7 +77,6 @@ export default function InventoryPage() {
   const lots = useExpiringLots(15)
   const openContextMenu = useRowContextMenu()
 
-  /** Lo crítico primero: nadie busca en la tabla lo que ya está al día. */
   const rows = useMemo(() => {
     const all = stocks.data?.results ?? []
     const ordered = [...all].sort((a, b) => {

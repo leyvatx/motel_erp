@@ -19,11 +19,8 @@ from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
-#: Grupo del grid de recepción (cuartos, cronómetros, rentas).
 GROUP_FRONTDESK = "frontdesk"
-#: Grupo del topbar de notificaciones.
 GROUP_NOTIFICATIONS = "notifications"
-#: Grupo de ordenes / room service.
 GROUP_ORDERS = "orders"
 
 
@@ -58,7 +55,7 @@ class Event:
 
 def _send_now(groups: list[str], event: str, payload: dict[str, Any]) -> None:
     layer = get_channel_layer()
-    if layer is None:  # pragma: no cover - solo si no hay CHANNEL_LAYERS
+    if layer is None:
         logger.warning("Sin channel layer configurado; se omite el evento %s", event)
         return
 
@@ -71,7 +68,7 @@ def _send_now(groups: list[str], event: str, payload: dict[str, Any]) -> None:
     for group in groups:
         try:
             async_to_sync(layer.group_send)(group, message)
-        except Exception:  # noqa: BLE001 - el negocio no depende del WebSocket
+        except Exception:
             logger.exception("No se pudo emitir '%s' al grupo '%s'", event, group)
 
 
@@ -90,9 +87,6 @@ def broadcast(
         transaction.on_commit(lambda: _send_now(targets, event, payload))
 
 
-# ---------------------------------------------------------------------------
-# Serializacion ligera para los eventos (no se reusa DRF para no acoplar)
-# ---------------------------------------------------------------------------
 def room_payload(room, stay=None) -> dict[str, Any]:
     data: dict[str, Any] = {
         "room_id": room.pk,

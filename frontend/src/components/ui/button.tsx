@@ -53,8 +53,6 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const Comp = asChild ? Slot : 'button'
 
-    // Con `asChild`, Radix Slot exige un único hijo: inyectar el spinner
-    // rompería el clonado, así que en ese modo el contenido pasa tal cual.
     return (
       <Comp
         ref={ref}

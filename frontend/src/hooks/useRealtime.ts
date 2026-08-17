@@ -1,11 +1,3 @@
-/**
- * Puente entre el WebSocket y la cache de TanStack Query.
- *
- * En vez de refrescar por temporizador, cada evento del backend invalida
- * exactamente las consultas que quedaron viejas. El grid de recepción se
- * entera del cambio en el momento en que ocurre.
- */
-
 import { useEffect, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -22,7 +14,6 @@ import type { ConnectionState, RealtimeMessage } from '@/types/realtime'
 
 type QueryKeyList = readonly (readonly unknown[])[]
 
-/** Que consultas quedan obsoletas con cada evento. */
 const INVALIDATION_MAP: Record<string, QueryKeyList> = {
   [RealtimeEvent.RoomStatusChanged]: [
     queryKeys.frontdesk.grid,
@@ -60,10 +51,6 @@ const INVALIDATION_MAP: Record<string, QueryKeyList> = {
   [RealtimeEvent.PresenceChanged]: [teamKeys.roster],
 }
 
-/**
- * Abre los canales mientras haya sesión y mantiene la cache al día.
- * Se monta una sola vez, en el layout principal.
- */
 export function useRealtime(): { state: ConnectionState } {
   const queryClient = useQueryClient()
   const access = useAuthStore((state) => state.access)
@@ -97,7 +84,6 @@ export function useRealtime(): { state: ConnectionState } {
     }
   }, [access, queryClient])
 
-  // El token cambia al renovarse: hay que reabrir con el nuevo.
   const previousAccess = useRef<string | null>(access)
   useEffect(() => {
     if (access && previousAccess.current && previousAccess.current !== access) {
@@ -109,10 +95,6 @@ export function useRealtime(): { state: ConnectionState } {
   return { state }
 }
 
-/**
- * Escucha un evento concreto. Sirve para efectos que la invalidacion de
- * cache no cubre: sonar una alarma, mostrar un toast, animar una tarjeta.
- */
 export function useRealtimeEvent<TPayload = unknown>(
   event: string,
   handler: (payload: TPayload) => void,

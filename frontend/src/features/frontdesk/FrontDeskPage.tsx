@@ -63,7 +63,6 @@ export default function FrontDeskPage() {
 
   const allRooms = useMemo(() => grid.data?.results ?? [], [grid.data])
 
-  /** Pisos y tipos existentes, calculados de lo que realmente hay cargado. */
   const floors = useMemo(
     () => [...new Set(allRooms.map((room) => room.floor))].sort((a, b) => a - b),
     [allRooms],
@@ -86,7 +85,6 @@ export default function FrontDeskPage() {
     [allRooms, floorFilter, typeFilter],
   )
 
-  /** Mismas acciones para el clic derecho sobre la tarjeta del cuarto. */
   const roomActions = (room: RoomGridItem): RowAction[] => {
     const stay = room.current_stay
     if (stay) {
@@ -134,7 +132,6 @@ export default function FrontDeskPage() {
     ]
   }
 
-  /** Un cuarto ocupado abre su renta; el resto, el menu de acciones. */
   const handleSelect = (room: RoomGridItem): void => {
     if (room.status === 'OCCUPIED' && room.current_stay) {
       setStayId(room.current_stay.id)
@@ -211,8 +208,6 @@ export default function FrontDeskPage() {
         </Card>
       ) : null}
 
-      {/* Filtros: en un motel de dos edificios, ver solo el piso que atiendes
-          ahorra recorrer el grid completo. */}
       {floors.length > 1 || types.length > 1 ? (
         <div className="flex flex-wrap items-center gap-2">
           <Select value={floorFilter} onValueChange={setFloorFilter}>

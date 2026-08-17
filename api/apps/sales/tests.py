@@ -118,7 +118,6 @@ class OrderTests(SalesTestCase):
         self.assertEqual(stock.quantity, Decimal("24.000"))
         self.assertEqual(order.status, OrderStatus.CANCELLED)
         self.assertEqual(self.folio.total, Decimal("300.00"))
-        # El Kardex conserva la venta y suma la reversa: nada se borro.
         self.assertEqual(StockMovement.objects.filter(product=self.product).count(), 3)
 
     def test_cancelar_orden_completa_revierte_todo(self) -> None:

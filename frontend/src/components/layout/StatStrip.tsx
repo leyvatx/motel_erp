@@ -22,13 +22,6 @@ const TONES: Record<StatTone, string> = {
   danger: 'text-status-occupied',
 }
 
-/**
- * Cifras de cabecera de un módulo.
- *
- * Cuando la métrica sirve de filtro, la tarjeta es pulsable: el número deja
- * de ser decorativo y se convierte en la forma rápida de llegar al problema
- * ("cinco bajo mínimo" -> clic -> esos cinco).
- */
 export function StatStrip({ stats, isLoading }: { stats: Stat[]; isLoading?: boolean }) {
   if (isLoading) {
     return (

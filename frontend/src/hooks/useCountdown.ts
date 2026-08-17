@@ -1,11 +1,3 @@
-/**
- * Cuenta regresiva de una renta.
- *
- * El único dato de verdad es `expires_at`, que viene del servidor. Aquí solo
- * se pinta el descuento segundo a segundo, corregido con el desfase de reloj:
- * el cliente jamás decide cuándo vence un cuarto.
- */
-
 import { useEffect, useState } from 'react'
 
 import { secondsUntil } from '@/lib/serverTime'
@@ -19,7 +11,6 @@ export interface Countdown {
 }
 
 interface Options {
-  /** Minutos antes del vencimiento en que la tarjeta pasa a amarillo. */
   warningMinutes?: number
   intervalMs?: number
 }
