@@ -1,0 +1,13 @@
+from django.apps import AppConfig
+
+
+class AuditConfig(AppConfig):
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "apps.audit"
+    label = "audit"
+    verbose_name = "Auditoría"
+
+    def ready(self) -> None:
+        from apps.audit import receivers, registry  # noqa: F401
+
+        registry.connect()
