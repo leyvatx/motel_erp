@@ -1,0 +1,32 @@
+# --- Core ---
+Django>=5.1,<5.3
+djangorestframework>=3.15,<3.17
+djangorestframework-simplejwt>=5.3,<6.0
+django-cors-headers>=4.4,<5.0
+django-filter>=24.3,<26.0
+drf-spectacular>=0.27,<0.29
+
+# --- Base de datos ---
+psycopg[binary]>=3.2,<4.0
+
+# --- Tiempo real (WebSockets) ---
+channels>=4.1,<5.0
+channels-redis>=4.2,<5.0
+daphne>=4.1,<5.0
+
+# --- Tareas asincronas / periodicas ---
+celery>=5.4,<6.0
+django-celery-beat>=2.7,<3.0
+django-celery-results>=2.5,<3.0
+redis>=5.0,<7.0
+
+# --- Configuracion / utilidades ---
+django-environ>=0.11,<0.13
+python-dateutil>=2.9,<3.0
+
+# --- Impresion termica ESC/POS (Fase 5) ---
+python-escpos>=3.0,<4.0
+
+# --- Servidores ---
+gunicorn>=23.0,<24.0
+uvicorn[standard]>=0.30,<1.0
