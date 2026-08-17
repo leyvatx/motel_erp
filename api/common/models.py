@@ -13,7 +13,37 @@ from django.db import models, transaction
 from django.utils import timezone
 
 from common.exceptions import ImmutableRecordError
-from common.managers import ActiveManager, AllObjectsManager
+from common.managers import ActiveManager, AllObjectsManager, TenantManager
+from common.tenancy import current_motel_id
+
+
+class TenantModel(models.Model):
+    """Registro que pertenece a un motel.
+
+    El campo admite nulos porque hay renglones que son de la plataforma y no
+    de un motel concreto -- la bitácora de quien da de alta un motel, por
+    ejemplo -- pero en la operación normal nunca queda vacio: si el registro
+    se crea dentro de una petición, hereda solo el motel de quien la hizo.
+    """
+
+    motel = models.ForeignKey(
+        "settings.Motel",
+        verbose_name="Motel",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        db_index=True,
+        related_name="+",
+        editable=False,
+    )
+
+    class Meta:
+        abstract = True
+
+    def save(self, *args, **kwargs):
+        if self.motel_id is None:
+            self.motel_id = current_motel_id()
+        return super().save(*args, **kwargs)
 
 
 class TimeStampedModel(models.Model):
@@ -75,8 +105,6 @@ class SoftDeleteModel(models.Model):
 
     class Meta:
         abstract = True
-        # Las relaciones ForeignKey hacía adelante deben poder resolver
-        # registros dados de baja; de lo contrario reventarian los reportes.
         base_manager_name = "all_objects"
 
     def delete(self, using=None, keep_parents=False, user=None, reason: str = ""):
@@ -108,22 +136,26 @@ class SoftDeleteModel(models.Model):
         return super().delete(using=using, keep_parents=keep_parents)
 
 
-class BaseModel(TimeStampedModel, AuthorStampedModel, SoftDeleteModel):
-    """Base estándar para entidades de negocio."""
+class BaseModel(TenantModel, TimeStampedModel, AuthorStampedModel, SoftDeleteModel):
+    """Base estándar para entidades de negocio, siempre acotada a un motel."""
 
     class Meta(SoftDeleteModel.Meta):
         abstract = True
 
 
-class ImmutableModel(TimeStampedModel):
+class ImmutableModel(TenantModel, TimeStampedModel):
     """Registro de solo-escritura: se crea una vez y jamás se altera.
 
     Se usa en el Kardex de inventario y en la bitácora de auditoría, donde
     modificar un renglón destruiria la trazabilidad.
     """
 
+    objects = TenantManager()
+    all_objects = models.Manager()
+
     class Meta:
         abstract = True
+        base_manager_name = "all_objects"
 
     def save(self, *args, **kwargs):
         if self.pk is not None and not self._state.adding:
@@ -138,11 +170,13 @@ class ImmutableModel(TimeStampedModel):
         )
 
 
-class DocumentSequence(models.Model):
+class DocumentSequence(TenantModel):
     """Folios consecutivos seguros ante concurrencia.
 
     Se bloquea el renglón con ``select_for_update`` para que dos recepcionistas
-    no generen el mismo consecutivo al rentar al mismo tiempo.
+    no generen el mismo consecutivo al rentar al mismo tiempo. Cada motel lleva
+    su propia numeración: dos moteles distintos pueden emitir el folio
+    ``R-20260815-00001`` el mismo día sin pisarse.
     """
 
     key = models.CharField("Clave", max_length=40)
@@ -151,12 +185,15 @@ class DocumentSequence(models.Model):
     current_number = models.PositiveIntegerField("Consecutivo actual", default=0)
     padding = models.PositiveSmallIntegerField("Digitos", default=5)
 
+    objects = models.Manager()
+
     class Meta:
         verbose_name = "Consecutivo de documento"
         verbose_name_plural = "Consecutivos de documento"
         constraints = [
             models.UniqueConstraint(
-                fields=["key", "period_key"], name="uniq_document_sequence_key_period"
+                fields=["motel", "key", "period_key"],
+                name="uniq_document_sequence_motel_key_period",
             )
         ]
 
@@ -172,14 +209,17 @@ class DocumentSequence(models.Model):
         padding: int = 5,
     ) -> str:
         """Devuelve el siguiente folio formateado, p. ej. ``R-20260815-00042``."""
+        motel_id = current_motel_id()
+
         with transaction.atomic():
             sequence = (
                 cls.objects.select_for_update()
-                .filter(key=key, period_key=period_key)
+                .filter(motel_id=motel_id, key=key, period_key=period_key)
                 .first()
             )
             if sequence is None:
                 sequence, _ = cls.objects.get_or_create(
+                    motel_id=motel_id,
                     key=key,
                     period_key=period_key,
                     defaults={"prefix": prefix, "padding": padding},

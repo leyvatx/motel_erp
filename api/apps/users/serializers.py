@@ -13,6 +13,9 @@ from apps.users.models import User
 
 class UserSerializer(serializers.ModelSerializer):
     role_display = serializers.CharField(source="get_role_display", read_only=True)
+    motel_name = serializers.CharField(source="motel.name", read_only=True, default=None)
+    motel_slug = serializers.CharField(source="motel.slug", read_only=True, default=None)
+    is_platform_admin = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = User
@@ -24,6 +27,10 @@ class UserSerializer(serializers.ModelSerializer):
             "phone",
             "role",
             "role_display",
+            "motel",
+            "motel_name",
+            "motel_slug",
+            "is_platform_admin",
             "employee_number",
             "hired_at",
             "is_active",
@@ -32,7 +39,14 @@ class UserSerializer(serializers.ModelSerializer):
             "last_login",
             "created_at",
         )
-        read_only_fields = ("id", "last_login", "created_at", "is_staff")
+        read_only_fields = (
+            "id",
+            "motel",
+            "last_login",
+            "created_at",
+            "is_staff",
+            "is_platform_admin",
+        )
 
 
 class UserWriteSerializer(serializers.ModelSerializer):

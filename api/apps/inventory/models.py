@@ -15,7 +15,7 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
 
-from common.models import BaseModel, ImmutableModel
+from common.models import BaseModel, ImmutableModel, TenantModel
 from common.utils import ZERO
 
 from apps.inventory.constants import (
@@ -156,7 +156,7 @@ class Product(BaseModel):
         return f"{self.sku} - {self.name}"
 
 
-class WarehouseStock(models.Model):
+class WarehouseStock(TenantModel):
     """Saldo vigente de un producto en un almacén.
 
     No se borra ni se versiona: es el estado actual. El histórico esta en el
@@ -299,7 +299,6 @@ class StockMovement(ImmutableModel):
         blank=True,
     )
 
-    # Documento origen (renglón de orden, renta, traspaso, ajuste...).
     content_type = models.ForeignKey(
         ContentType, on_delete=models.PROTECT, null=True, blank=True, related_name="+"
     )

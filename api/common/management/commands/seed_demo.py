@@ -20,22 +20,21 @@ from apps.inventory.services import register_entry
 from apps.rooms.constants import PriceMode, TariffRuleType
 from apps.rooms.models import Room, RoomType, TariffBlock
 from apps.rooms.services import rent_room
+from apps.settings.models import Motel
 from apps.users.constants import Role
 from apps.users.models import User
+from common.tenancy import use_motel
 
-# Solo para el motel de ejemplo. Se puede sobrescribir con SEED_DEMO_PASSWORD
-# y nunca debe usarse en una instalacion real.
 DEMO_PASSWORD = os.environ.get("SEED_DEMO_PASSWORD", "Demo.1234")
 
 USERS = [
     ("admin", "Admin General", Role.SUPERADMIN, True),
     ("gerente", "Ines Gerente", Role.MANAGER, False),
-    ("recepción", "Ana Recepción", Role.RECEPTION, False),
+    ("recepcion", "Ana Recepción", Role.RECEPTION, False),
     ("limpieza", "Eva Limpieza", Role.HOUSEKEEPING, False),
 ]
 
 ROOM_TYPES = [
-    # (nombre, clave, ocupantes, precio persona extra, orden)
     ("Sencilla", "SEN", 2, "80.00", 1),
     ("Jacuzzi", "JAC", 2, "120.00", 2),
     ("Suite", "SUI", 4, "150.00", 3),
@@ -68,24 +67,43 @@ class Command(BaseCommand):
         parser.add_argument(
             "--rooms", type=int, default=18, help="Cantidad de habitaciones a crear."
         )
+        parser.add_argument(
+            "--motel", default="", help="Nombre del motel de ejemplo. Vacío usa el primero."
+        )
 
     @transaction.atomic
     def handle(self, *args, **options) -> None:
-        usuarios = self._crear_usuarios()
-        tipos = self._crear_tipos_y_tarifas()
-        self._crear_habitaciones(tipos, options["rooms"])
-        self._crear_inventario(usuarios["gerente"])
-        self._rentar_algunas(usuarios["recepción"])
+        motel = self._crear_motel(options["motel"])
 
-        self.stdout.write(self.style.SUCCESS("\nMotel de ejemplo listo."))
+        with use_motel(motel):
+            usuarios = self._crear_usuarios(motel)
+            tipos = self._crear_tipos_y_tarifas()
+            self._crear_habitaciones(tipos, options["rooms"])
+            self._crear_inventario(usuarios["gerente"])
+            self._rentar_algunas(usuarios["recepcion"])
+
+        self.stdout.write(self.style.SUCCESS(f"\nMotel de ejemplo listo: {motel.name}."))
         self.stdout.write(f"Usuarios: {', '.join(u[0] for u in USERS)}")
         self.stdout.write(f"Contrasena: {DEMO_PASSWORD}")
 
-    # -- Bloques ----------------------------------------------------------
-    def _crear_usuarios(self) -> dict[str, User]:
+    def _crear_motel(self, nombre: str) -> Motel:
+        if nombre:
+            motel, creado = Motel.all_objects.get_or_create(name=nombre)
+        else:
+            motel = Motel.objects.order_by("pk").first()
+            creado = motel is None
+            if motel is None:
+                motel = Motel.defaults()
+                motel.save()
+
+        if creado:
+            self.stdout.write(f"  motel {motel.name}")
+        return motel
+
+    def _crear_usuarios(self, motel: Motel) -> dict[str, User]:
         creados: dict[str, User] = {}
         for username, nombre, rol, es_super in USERS:
-            user = User.all_objects.filter(username=username).first()
+            user = User.all_objects.filter(username=username, motel=motel).first()
             if user is None:
                 factory = User.objects.create_superuser if es_super else User.objects.create_user
                 user = factory(
@@ -93,6 +111,7 @@ class Command(BaseCommand):
                     password=DEMO_PASSWORD,
                     full_name=nombre,
                     role=rol,
+                    motel=motel,
                 )
                 self.stdout.write(f"  usuario {username} ({rol})")
             creados[username] = user
@@ -127,7 +146,6 @@ class Command(BaseCommand):
                     },
                 )
 
-        # Fin de semana con recargo: viernes, sabado y domingo.
         for tipo in tipos.values():
             for bloque in tipo.tariff_blocks.all():
                 bloque.rules.get_or_create(
@@ -205,7 +223,7 @@ class Command(BaseCommand):
 
     def _rentar_algunas(self, actor: User) -> None:
         """Deja algunas habitaciones ocupadas para ver el grid con vida."""
-        if not open_shift.__module__:  # pragma: no cover - guarda defensiva
+        if not open_shift.__module__:
             return
 
         from apps.finances.services import get_open_shift

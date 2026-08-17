@@ -14,13 +14,10 @@ class Role(models.TextChoices):
     HOUSEKEEPING = "HOUSEKEEPING", "Ama de llaves"
 
 
-#: Roles que pueden operar caja y cobrar.
 CASHIER_ROLES = frozenset({Role.SUPERADMIN, Role.MANAGER, Role.RECEPTION})
 
-#: Roles con visibilidad de reportes gerenciales y cortes ciegos.
 MANAGEMENT_ROLES = frozenset({Role.SUPERADMIN, Role.MANAGER})
 
-#: Roles que atienden tareas de limpieza y mantenimiento.
 HOUSEKEEPING_ROLES = frozenset({Role.SUPERADMIN, Role.MANAGER, Role.HOUSEKEEPING})
 
 
@@ -50,18 +47,15 @@ class PermissionCode(models.TextChoices):
     AUDIT_VIEW = "audit.view", "Consultar bitácora de auditoría"
     CONFIG_MANAGE = "config.manage", "Administrar configuración y tarifas"
     USER_MANAGE = "user.manage", "Administrar usuarios"
+    MOTEL_MANAGE = "motel.manage", "Dar de alta y administrar moteles"
     SHIFT_VERIFY = "shift.verify", "Arquear y verificar turnos"
     CASH_MOVE = "cash.move", "Registrar entradas y salidas de efectivo"
 
 
-#: Matriz rol -> permisos. Es la única fuente de verdad de quién puede qué.
-#:
-#: Criterio: recepción opera el día a día y su propia caja; ama de llaves solo
-#: toca su tablero; todo lo que implique perdonar dinero, ajustar inventario o
-#: revisar a otros queda en gerencia.
 ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
-    Role.SUPERADMIN: frozenset(PermissionCode.values),
-    Role.MANAGER: frozenset(PermissionCode.values) - {PermissionCode.USER_MANAGE},
+    Role.SUPERADMIN: frozenset(PermissionCode.values) - {PermissionCode.MOTEL_MANAGE},
+    Role.MANAGER: frozenset(PermissionCode.values)
+    - {PermissionCode.USER_MANAGE, PermissionCode.MOTEL_MANAGE},
     Role.RECEPTION: frozenset(
         {
             PermissionCode.ROOM_RENT,
@@ -92,7 +86,16 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
 
 
 def permissions_for(user) -> frozenset[str]:
-    """Permisos efectivos de un usuario."""
-    if getattr(user, "is_superuser", False):
+    """Permisos efectivos de un usuario.
+
+    Administrar moteles es de la plataforma: ni el dueño de un motel lo tiene,
+    porque desde ahí se veria y editaria la competencia.
+    """
+    platform = getattr(user, "is_superuser", False) and getattr(user, "motel_id", None) is None
+    if platform:
         return frozenset(PermissionCode.values)
-    return ROLE_PERMISSIONS.get(getattr(user, "role", None), frozenset())
+
+    granted = ROLE_PERMISSIONS.get(getattr(user, "role", None), frozenset())
+    if getattr(user, "is_superuser", False):
+        granted = frozenset(PermissionCode.values) - {PermissionCode.MOTEL_MANAGE}
+    return granted

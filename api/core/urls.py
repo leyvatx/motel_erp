@@ -16,6 +16,7 @@ from drf_spectacular.views import (
 
 api_v1_patterns = [
     path("auth/", include("apps.users.urls")),
+    path("settings/", include("apps.settings.urls")),
     path("frontdesk/", include("apps.rooms.urls")),
     path("sales/", include("apps.sales.urls")),
     path("", include("apps.notifications.urls")),
@@ -28,7 +29,6 @@ api_v1_patterns = [
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/", include((api_v1_patterns, "api"), namespace="v1")),
-    # Documentacion OpenAPI autogenerada
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
         "api/docs/",

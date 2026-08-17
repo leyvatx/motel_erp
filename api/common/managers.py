@@ -1,12 +1,31 @@
-"""Managers y querysets base para el borrado lógico (soft delete)."""
+"""Managers y querysets base: borrado lógico y acotado por motel."""
 
 from __future__ import annotations
 
 from django.db import models
 from django.utils import timezone
 
+from common.tenancy import current_motel_id
 
-class SoftDeleteQuerySet(models.QuerySet):
+
+class TenantQuerySet(models.QuerySet):
+    """QuerySet que se limita al motel en curso.
+
+    El filtro se aplica al construir la consulta, no al definirla, porque el
+    motel depende de quien pregunta y eso solo se sabe en tiempo de petición.
+    """
+
+    def for_current_motel(self) -> "TenantQuerySet":
+        motel_id = current_motel_id()
+        if motel_id is None:
+            return self
+        return self.filter(motel_id=motel_id)
+
+    def for_motel(self, motel) -> "TenantQuerySet":
+        return self.filter(motel_id=getattr(motel, "pk", motel))
+
+
+class SoftDeleteQuerySet(TenantQuerySet):
     """QuerySet que prohíbe el borrado físico accidental."""
 
     def alive(self) -> "SoftDeleteQuerySet":
@@ -15,7 +34,7 @@ class SoftDeleteQuerySet(models.QuerySet):
     def dead(self) -> "SoftDeleteQuerySet":
         return self.filter(is_active=False)
 
-    def delete(self):  # noqa: A003 - se sobreescribe intencionalmente
+    def delete(self):
         """Redirige cualquier ``.delete()`` masivo a un borrado lógico."""
         return self.soft_delete()
 
@@ -40,12 +59,46 @@ class SoftDeleteQuerySet(models.QuerySet):
         return super().delete()
 
 
-class ActiveManager(models.Manager.from_queryset(SoftDeleteQuerySet)):
-    """Manager por defecto: expone únicamente los registros vigentes."""
+class ScopedQuerySet(SoftDeleteQuerySet):
+    """QuerySet que se vuelve a acotar cada vez que se reutiliza.
 
-    def get_queryset(self) -> SoftDeleteQuerySet:
-        return super().get_queryset().filter(is_active=True)
+    Las vistas de DRF declaran su consulta como atributo de clase, así que se
+    construye una sola vez al importar el módulo -- cuando todavia no hay
+    petición ni motel -- y luego la reutilizan llamando a ``all()``. Volver a
+    aplicar el filtro ahí es lo que evita que una pantalla termine mostrando
+    las habitaciones de otro motel.
+    """
+
+    def all(self) -> "ScopedQuerySet":
+        return super().all().for_current_motel()
+
+
+class ScopedTenantQuerySet(TenantQuerySet):
+    """Igual que ``ScopedQuerySet`` para los registros inmutables."""
+
+    def all(self) -> "ScopedTenantQuerySet":
+        return super().all().for_current_motel()
+
+
+class TenantManager(models.Manager.from_queryset(ScopedTenantQuerySet)):
+    """Manager por defecto de los registros que pertenecen a un motel."""
+
+    def get_queryset(self) -> ScopedTenantQuerySet:
+        return super().get_queryset().for_current_motel()
+
+
+class ActiveManager(models.Manager.from_queryset(ScopedQuerySet)):
+    """Manager por defecto: registros vigentes del motel en curso."""
+
+    def get_queryset(self) -> ScopedQuerySet:
+        return super().get_queryset().for_current_motel().filter(is_active=True)
 
 
 class AllObjectsManager(models.Manager.from_queryset(SoftDeleteQuerySet)):
-    """Manager sin filtros: necesario para auditoría y reportes históricos."""
+    """Manager sin filtros, ni de baja lógica ni de motel.
+
+    Es el ``base_manager_name`` de los modelos de negocio: Django lo usa para
+    resolver relaciones, y si aquí se filtrara por motel una llave foránea
+    apuntando a otro motel reventaria en vez de fallar de forma visible.
+    Reservado para auditoría, reportes históricos y mantenimiento.
+    """

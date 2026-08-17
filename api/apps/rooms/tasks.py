@@ -12,7 +12,6 @@ import logging
 from datetime import timedelta
 
 from celery import shared_task
-from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
@@ -21,6 +20,7 @@ from apps.notifications.models import NotificationCategory, NotificationLevel
 from apps.notifications.services import notify
 from apps.rooms.constants import StayStatus
 from apps.rooms.models import Stay
+from apps.settings.models import Motel
 from apps.users.constants import Role
 
 logger = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ def _stays_to_process(queryset, limit: int = 200) -> list[Stay]:
 def sweep_stay_timers() -> dict[str, int]:
     """Detecta cronómetros por vencer y vencidos, y emite sus eventos."""
     now = timezone.now()
-    warning_limit = now + timedelta(minutes=settings.EXPIRATION_WARNING_MINUTES)
+    warning_limit = now + timedelta(minutes=Motel.current().expiration_warning_minutes)
     warned = 0
     expired = 0
 

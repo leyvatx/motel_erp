@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from django.conf import settings
 from django.db import transaction
 from django.db.models import Count, Q, Sum
 from django.utils import timezone
@@ -73,9 +72,6 @@ def _validate_breakdown(breakdown: dict, declared_total: Decimal) -> Decimal:
     return total
 
 
-# ---------------------------------------------------------------------------
-# Turnos
-# ---------------------------------------------------------------------------
 @transaction.atomic
 def open_shift(
     *,
@@ -168,7 +164,6 @@ def compute_shift_totals(shift: Shift) -> dict[str, Decimal | int]:
     )
 
     cash_sales = money(pagos["cash"] or ZERO)
-    # El fondo inicial ya entro como movimiento IN: no se suma dos veces.
     cash_in = money(movimientos["entradas"] or ZERO)
     cash_out = money(movimientos["salidas"] or ZERO)
 
@@ -296,9 +291,6 @@ def verify_shift(
     return shift
 
 
-# ---------------------------------------------------------------------------
-# Movimientos de efectivo
-# ---------------------------------------------------------------------------
 @transaction.atomic
 def register_cash_movement(
     *,
@@ -342,11 +334,10 @@ def register_cash_movement(
     )
 
 
-# ---------------------------------------------------------------------------
-# Gastos
-# ---------------------------------------------------------------------------
 def approval_threshold() -> Decimal:
-    return Decimal(str(settings.EXPENSE_APPROVAL_THRESHOLD))
+    from apps.settings.models import Motel
+
+    return Decimal(str(Motel.current().expense_approval_threshold))
 
 
 @transaction.atomic
@@ -452,9 +443,6 @@ def review_expense(
     return expense
 
 
-# ---------------------------------------------------------------------------
-# Avisos
-# ---------------------------------------------------------------------------
 def _broadcast_shift(shift: Shift, action: str) -> None:
     from apps.notifications.events import Event, broadcast, role_group
     from apps.users.constants import Role

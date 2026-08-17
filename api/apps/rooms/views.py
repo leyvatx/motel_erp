@@ -247,10 +247,13 @@ class StayViewSet(
         """Rentas vencidas o a punto de vencer (para la barra de alertas)."""
         from datetime import timedelta
 
-        from django.conf import settings
         from django.utils import timezone
 
-        limit = timezone.now() + timedelta(minutes=settings.EXPIRATION_WARNING_MINUTES)
+        from apps.settings.models import Motel
+
+        limit = timezone.now() + timedelta(
+            minutes=Motel.current().expiration_warning_minutes
+        )
         queryset = (
             self.get_queryset()
             .filter(status=StayStatus.ACTIVE)

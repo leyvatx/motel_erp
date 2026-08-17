@@ -4,16 +4,20 @@ from __future__ import annotations
 
 from django.contrib.auth.models import BaseUserManager
 
-from common.managers import SoftDeleteQuerySet
+from common.managers import ScopedQuerySet, SoftDeleteQuerySet
 
 
-class UserManager(BaseUserManager.from_queryset(SoftDeleteQuerySet)):
-    """Manager por defecto: solo usuarios vigentes (los dados de baja no entran)."""
+class UserManager(BaseUserManager.from_queryset(ScopedQuerySet)):
+    """Manager por defecto: empleados vigentes del motel en curso.
+
+    Quien administra la plataforma no tiene motel asignado, así que ve a todos;
+    dentro de un motel nadie ve la plantilla de otro.
+    """
 
     use_in_migrations = True
 
     def get_queryset(self) -> SoftDeleteQuerySet:
-        return super().get_queryset().filter(is_active=True)
+        return super().get_queryset().for_current_motel().filter(is_active=True)
 
     def _create_user(self, username: str, password: str | None, **extra_fields):
         if not username:

@@ -10,6 +10,9 @@ from __future__ import annotations
 import contextvars
 from typing import Any, Callable
 
+_current_request: contextvars.ContextVar[Any | None] = contextvars.ContextVar(
+    "current_request", default=None
+)
 _current_user: contextvars.ContextVar[Any | None] = contextvars.ContextVar(
     "current_user", default=None
 )
@@ -22,8 +25,18 @@ _current_user_agent: contextvars.ContextVar[str] = contextvars.ContextVar(
 
 
 def get_current_user():
-    """Usuario autenticado del request en curso, o ``None`` en tareas de Celery."""
+    """Usuario autenticado del request en curso, o ``None`` en tareas de Celery.
+
+    Se guarda el request y no el usuario porque con JWT la autenticación
+    ocurre dentro de la vista, después del middleware: si aquí se copiara el
+    usuario tal como esta al entrar, siempre seria el anónimo. Leyendo el
+    atributo en el momento en que se pregunta, ya viene resuelto.
+    """
     user = _current_user.get()
+    if user is None:
+        request = _current_request.get()
+        user = getattr(request, "user", None) if request is not None else None
+
     if user is not None and getattr(user, "is_authenticated", False):
         return user
     return None
@@ -71,7 +84,7 @@ class PresenceMiddleware:
                 from apps.users.presence import touch_if_stale
 
                 touch_if_stale(user)
-            except Exception:  # noqa: BLE001 - la presencia nunca rompe una respuesta
+            except Exception:
                 pass
 
         return response
@@ -84,12 +97,12 @@ class CurrentRequestMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        user_token = _current_user.set(getattr(request, "user", None))
+        request_token = _current_request.set(request)
         ip_token = _current_ip.set(extract_client_ip(request))
         ua_token = _current_user_agent.set(request.META.get("HTTP_USER_AGENT", "")[:255])
         try:
             return self.get_response(request)
         finally:
-            _current_user.reset(user_token)
+            _current_request.reset(request_token)
             _current_ip.reset(ip_token)
             _current_user_agent.reset(ua_token)

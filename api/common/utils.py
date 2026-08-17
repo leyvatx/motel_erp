@@ -6,7 +6,6 @@ import zoneinfo
 from datetime import date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
-from django.conf import settings
 from django.utils import timezone
 
 MONEY_QUANT = Decimal("0.01")
@@ -15,8 +14,16 @@ ZERO = Decimal("0.00")
 
 
 def business_tz() -> zoneinfo.ZoneInfo:
-    """Zona horaria operativa del motel (solo para presentación y cortes)."""
-    return zoneinfo.ZoneInfo(settings.BUSINESS_TIME_ZONE)
+    """Zona horaria operativa del motel (solo para presentación y cortes).
+
+    La importación va adentro de la función a proposito: ``common`` es la capa
+    de abajo y no puede depender de ``apps`` al cargarse, o el arranque de
+    Django entra en un ciclo. El perfil viene cacheado, así que llamar a esto
+    en cada folio no cuesta una consulta.
+    """
+    from apps.settings.models import Motel
+
+    return zoneinfo.ZoneInfo(Motel.current().time_zone)
 
 
 def to_business_time(value: datetime) -> datetime:

@@ -17,8 +17,8 @@ from apps.audit.services import record_model_change
 
 logger = logging.getLogger(__name__)
 
-#: ``app_label.ModelName`` de todo lo que se audita.
 AUDITED_MODELS: tuple[str, ...] = (
+    "settings.Motel",
     "users.User",
     "rooms.Room",
     "rooms.RoomType",
@@ -56,7 +56,7 @@ def _capture_previous(sender, instance, **kwargs) -> None:
         setattr(instance, _PREVIOUS_ATTR, manager.get(pk=instance.pk))
     except sender.DoesNotExist:
         setattr(instance, _PREVIOUS_ATTR, None)
-    except Exception:  # noqa: BLE001 - la auditoría no bloquea el guardado
+    except Exception:
         logger.exception("No se pudo leer el estado previo de %s", sender.__name__)
         setattr(instance, _PREVIOUS_ATTR, None)
 
@@ -73,7 +73,7 @@ def connect() -> None:
     for label in AUDITED_MODELS:
         try:
             model = django_apps.get_model(label)
-        except LookupError:  # pragma: no cover - modelo aún no creado
+        except LookupError:
             logger.warning("Modelo auditado inexistente: %s", label)
             continue
 

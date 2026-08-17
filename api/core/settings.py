@@ -27,9 +27,6 @@ env = environ.Env(
 
 environ.Env.read_env(BASE_DIR / ".env")
 
-# ---------------------------------------------------------------------------
-# Seguridad
-# ---------------------------------------------------------------------------
 SECRET_KEY = env("DJANGO_SECRET_KEY", default="dev-only-insecure-key")
 DEBUG = env("DJANGO_DEBUG")
 ALLOWED_HOSTS = env("DJANGO_ALLOWED_HOSTS")
@@ -47,9 +44,6 @@ if not DEBUG:
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 
-# ---------------------------------------------------------------------------
-# Aplicaciones
-# ---------------------------------------------------------------------------
 DJANGO_APPS = [
     "daphne",
     "django.contrib.admin",
@@ -75,6 +69,7 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     "common",
+    "apps.settings",
     "apps.users",
     "apps.rooms",
     "apps.inventory",
@@ -96,9 +91,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    # Expone el request actual (usuario + IP) al hilo para la auditoría (Fase 6).
     "common.middleware.CurrentRequestMiddleware",
-    # Marca actividad del empleado para el panel de presencia.
     "common.middleware.PresenceMiddleware",
 ]
 
@@ -121,9 +114,6 @@ TEMPLATES = [
     },
 ]
 
-# ---------------------------------------------------------------------------
-# Base de datos
-# ---------------------------------------------------------------------------
 DATABASES = {
     "default": env.db_url(
         "DATABASE_URL",
@@ -131,13 +121,10 @@ DATABASES = {
     ),
 }
 DATABASES["default"]["CONN_MAX_AGE"] = env("DB_CONN_MAX_AGE")
-DATABASES["default"]["ATOMIC_REQUESTS"] = False  # Transacciones explicitas en services.
+DATABASES["default"]["ATOMIC_REQUESTS"] = False
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# ---------------------------------------------------------------------------
-# Autenticación
-# ---------------------------------------------------------------------------
 AUTH_USER_MODEL = "users.User"
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -148,11 +135,6 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-# ---------------------------------------------------------------------------
-# Internacionalizacion y tiempo
-# El backend SIEMPRE opera y persiste en UTC. BUSINESS_TIME_ZONE se usa solo
-# para agrupar reportes por "día de operación" y para la impresión de tickets.
-# ---------------------------------------------------------------------------
 LANGUAGE_CODE = "es-mx"
 TIME_ZONE = "UTC"
 USE_I18N = True
@@ -161,23 +143,15 @@ USE_TZ = True
 BUSINESS_TIME_ZONE = env("BUSINESS_TIME_ZONE")
 BUSINESS_CURRENCY = env("BUSINESS_CURRENCY")
 
-# ---------------------------------------------------------------------------
-# Archivos estaticos y media
-# ---------------------------------------------------------------------------
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# ---------------------------------------------------------------------------
-# Django REST Framework
-# ---------------------------------------------------------------------------
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    # Toda vista valida sesión activa y, además, el permiso concreto que
-    # declare en ``required_permissions`` (matriz rol -> acción).
     "DEFAULT_PERMISSION_CLASSES": (
         "common.permissions.IsAuthenticatedActive",
         "common.permissions.HasPermission",
@@ -226,6 +200,7 @@ SPECTACULAR_SETTINGS = {
     "COMPONENT_SPLIT_REQUEST": True,
     "SCHEMA_PATH_PREFIX": "/api/v1",
     "ENUM_NAME_OVERRIDES": {
+        "PrinterBackendEnum": "apps.settings.constants.PrinterBackend.choices",
         "RoomStatusEnum": "apps.rooms.constants.RoomStatus.choices",
         "StayStatusEnum": "apps.rooms.constants.StayStatus.choices",
         "ReservationStatusEnum": "apps.rooms.constants.ReservationStatus.choices",
@@ -261,19 +236,11 @@ SPECTACULAR_SETTINGS = {
     },
 }
 
-# ---------------------------------------------------------------------------
-# CORS
-# ---------------------------------------------------------------------------
 CORS_ALLOWED_ORIGINS = env("CORS_ALLOWED_ORIGINS")
 CORS_ALLOW_CREDENTIALS = True
 
-# ---------------------------------------------------------------------------
-# Channels (WebSockets)
-# ---------------------------------------------------------------------------
 REDIS_URL = env("REDIS_URL", default="redis://localhost:6379/0")
 
-# En equipos de desarrollo sin Redis se puede usar la capa en memoria; no
-# sirve para produccion porque no comparte eventos entre procesos.
 if env.bool("USE_IN_MEMORY_CHANNEL_LAYER", default=False):
     CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
 else:
@@ -288,9 +255,6 @@ else:
         },
     }
 
-# ---------------------------------------------------------------------------
-# Celery
-# ---------------------------------------------------------------------------
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/1")
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="django-db")
 CELERY_ACCEPT_CONTENT = ["json"]
@@ -302,14 +266,9 @@ CELERY_TASK_ACKS_LATE = True
 CELERY_TASK_REJECT_ON_WORKER_LOST = True
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
-# Si el broker no contesta rápido, quien publica la tarea no se queda colgado:
-# la impresión de tickets tiene respaldo sincrono.
 CELERY_BROKER_TRANSPORT_OPTIONS = {"socket_connect_timeout": 2, "socket_timeout": 2}
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
-# ---------------------------------------------------------------------------
-# Reglas de negocio configurables
-# ---------------------------------------------------------------------------
 EXPIRATION_WARNING_MINUTES = env("EXPIRATION_WARNING_MINUTES")
 EXPENSE_APPROVAL_THRESHOLD = env("EXPENSE_APPROVAL_THRESHOLD")
 
@@ -317,10 +276,6 @@ BUSINESS_NAME = env("BUSINESS_NAME", default="Motel")
 BUSINESS_ADDRESS = env("BUSINESS_ADDRESS", default="")
 TICKET_FOOTER = env("TICKET_FOOTER", default="Gracias por su visita")
 
-# ---------------------------------------------------------------------------
-# Impresión termica (ESC/POS)
-# backend: dummy | network | usb | file
-# ---------------------------------------------------------------------------
 PRINTER_BACKEND = env("PRINTER_BACKEND", default="dummy")
 PRINTER_HOST = env("PRINTER_HOST", default="192.168.1.100")
 PRINTER_PORT = env.int("PRINTER_PORT", default=9100)
@@ -329,9 +284,6 @@ PRINTER_USB_PRODUCT_ID = env("PRINTER_USB_PRODUCT_ID", default="0x0202")
 PRINTER_FILE_PATH = env("PRINTER_FILE_PATH", default=str(BASE_DIR / "tickets.txt"))
 PRINT_TICKET_ON_FOLIO_CLOSE = env.bool("PRINT_TICKET_ON_FOLIO_CLOSE", default=True)
 
-# ---------------------------------------------------------------------------
-# Logging
-# ---------------------------------------------------------------------------
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

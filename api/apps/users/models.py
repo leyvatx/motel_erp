@@ -30,6 +30,15 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel, SoftDeleteModel
         validators=[username_validator],
         help_text="Clave de acceso del empleado.",
     )
+    motel = models.ForeignKey(
+        "settings.Motel",
+        verbose_name="Motel",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="users",
+        help_text="Vacío solo para quien administra la plataforma completa.",
+    )
     full_name = models.CharField("Nombre completo", max_length=150)
     email = models.EmailField("Correo", blank=True)
     phone = models.CharField("Teléfono", max_length=20, blank=True)
@@ -43,8 +52,6 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel, SoftDeleteModel
     must_change_password = models.BooleanField("Debe cambiar contraseña", default=False)
     last_login_ip = models.GenericIPAddressField("Última IP", null=True, blank=True)
 
-    # ``is_active`` (heredado de SoftDeleteModel) cumple doble función:
-    # baja lógica del empleado y bandera que Django usa para permitir el login.
     is_staff = models.BooleanField(
         "Acceso al admin", default=False, help_text="Permite entrar al panel de Django."
     )
@@ -73,7 +80,11 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel, SoftDeleteModel
     def get_short_name(self) -> str:
         return self.full_name.split(" ")[0] if self.full_name else self.username
 
-    # -- Ayudas de rol -----------------------------------------------------
+    @property
+    def is_platform_admin(self) -> bool:
+        """Administra la plataforma completa, no un motel en particular."""
+        return self.is_superuser and self.motel_id is None
+
     @property
     def is_superadmin(self) -> bool:
         return self.role == Role.SUPERADMIN or self.is_superuser
@@ -102,8 +113,6 @@ class UserPresence(TimeStampedModel):
     mantiene dos (el grid y las notificaciones) y puede tener otra pestaña.
     """
 
-    #: Minutos sin señal tras los cuales se considera desconectado, aunque el
-    #: contador haya quedado en alto por un cierre sucio del servidor.
     STALE_MINUTES = 5
 
     user = models.OneToOneField(

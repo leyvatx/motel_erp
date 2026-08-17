@@ -20,6 +20,7 @@ from typing import Any
 from django.conf import settings
 from django.utils import timezone
 
+from apps.settings.models import Motel
 from common.utils import ZERO, to_business_time
 
 logger = logging.getLogger(__name__)
@@ -31,9 +32,6 @@ class PrinterError(Exception):
     """Falla de comunicacion con la impresora."""
 
 
-# ---------------------------------------------------------------------------
-# Armado del contenido
-# ---------------------------------------------------------------------------
 def build_folio_payload(folio) -> dict[str, Any]:
     """Snapshot imprimible de la cuenta."""
     cargos = [
@@ -59,9 +57,10 @@ def build_folio_payload(folio) -> dict[str, Any]:
     ]
 
     stay = folio.stay
+    negocio = Motel.current()
     return {
-        "business_name": settings.BUSINESS_NAME,
-        "business_address": settings.BUSINESS_ADDRESS,
+        "business_name": negocio.name,
+        "business_address": negocio.address,
         "folio_code": folio.code,
         "folio_type": folio.get_folio_type_display(),
         "room_number": folio.room.number if folio.room_id else None,
@@ -79,15 +78,15 @@ def build_folio_payload(folio) -> dict[str, Any]:
         "total": str(folio.total),
         "paid_total": str(folio.paid_total),
         "payments": pagos,
-        "currency": settings.BUSINESS_CURRENCY,
-        "footer": settings.TICKET_FOOTER,
+        "currency": negocio.currency,
+        "footer": negocio.ticket_footer,
     }
 
 
 def build_shift_payload(shift) -> dict[str, Any]:
     """Snapshot imprimible del corte de turno."""
     return {
-        "business_name": settings.BUSINESS_NAME,
+        "business_name": Motel.current().name,
         "shift_code": shift.code,
         "cashier": shift.cashier.full_name,
         "shift_type": shift.get_shift_type_display(),
@@ -109,9 +108,6 @@ def build_shift_payload(shift) -> dict[str, Any]:
     }
 
 
-# ---------------------------------------------------------------------------
-# Render a texto plano (lo que se manda a la termica)
-# ---------------------------------------------------------------------------
 def _line(left: str, right: str, width: int = TICKET_WIDTH) -> str:
     espacio = max(width - len(left) - len(right), 1)
     return f"{left}{' ' * espacio}{right}"
@@ -210,12 +206,16 @@ def render_shift_ticket(payload: dict[str, Any]) -> str:
     return "\n".join(lineas)
 
 
-# ---------------------------------------------------------------------------
-# Envio a la impresora
-# ---------------------------------------------------------------------------
 def send_to_printer(text: str, *, cut: bool = True, open_drawer: bool = False) -> str:
-    """Manda el texto a la termica y devuelve el backend utilizado."""
-    backend = settings.PRINTER_BACKEND
+    """Manda el texto a la termica y devuelve el backend utilizado.
+
+    Que impresora usar sale del perfil del negocio, no del entorno: cambiar la
+    IP de la termica es una tarea de recepción, no un redespliegue. La ruta del
+    archivo y los identificadores USB siguen en la configuración del servidor
+    porque son propios del equipo donde corre el proceso.
+    """
+    negocio = Motel.current()
+    backend = negocio.printer_backend
 
     if backend == "dummy":
         logger.info("Ticket (backend dummy):\n%s", text)
@@ -229,13 +229,13 @@ def send_to_printer(text: str, *, cut: bool = True, open_drawer: bool = False) -
 
     try:
         from escpos import printer as escpos_printer
-    except ImportError as exc:  # pragma: no cover - depende del entorno
+    except ImportError as exc:
         raise PrinterError("python-escpos no está instalado.") from exc
 
     try:
         if backend == "network":
             device = escpos_printer.Network(
-                settings.PRINTER_HOST, port=settings.PRINTER_PORT, timeout=10
+                negocio.printer_host, port=negocio.printer_port, timeout=10
             )
         elif backend == "usb":
             device = escpos_printer.Usb(
@@ -253,7 +253,7 @@ def send_to_printer(text: str, *, cut: bool = True, open_drawer: bool = False) -
         device.close()
     except PrinterError:
         raise
-    except Exception as exc:  # noqa: BLE001 - la libreria levanta errores variados
+    except Exception as exc:
         raise PrinterError(str(exc)) from exc
 
     return backend
