@@ -1,0 +1,240 @@
+import { useState } from 'react'
+import { NavLink } from 'react-router-dom'
+import {
+  BedDouble,
+  ClipboardList,
+  LayoutGrid,
+  Package,
+  PanelLeftClose,
+  ScrollText,
+  Settings,
+  ShieldCheck,
+  Users,
+  Wallet,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+
+import { cn } from '@/lib/utils'
+import { useAppearanceStore } from '@/store/appearance'
+import { canAccessSection, useAuthStore } from '@/store/auth'
+import { useUiStore } from '@/store/ui'
+
+interface NavItem {
+  section: string
+  to: string
+  label: string
+  icon: LucideIcon
+}
+
+interface NavGroup {
+  label: string
+  items: readonly NavItem[]
+}
+
+/** El menú se agrupa por función: operación diaria y luego control. */
+const NAV_GROUPS: readonly NavGroup[] = [
+  {
+    label: 'Operación',
+    items: [
+      { section: 'frontdesk', to: '/frontdesk', label: 'Recepción', icon: LayoutGrid },
+      { section: 'housekeeping', to: '/housekeeping', label: 'Ama de llaves', icon: ClipboardList },
+      { section: 'inventory', to: '/inventory', label: 'Inventarios', icon: Package },
+      { section: 'finances', to: '/finances', label: 'Finanzas', icon: Wallet },
+    ],
+  },
+  {
+    label: 'Control',
+    items: [
+      { section: 'reports', to: '/reports', label: 'Reportes', icon: ScrollText },
+      { section: 'audit', to: '/audit', label: 'Auditoría', icon: ShieldCheck },
+      { section: 'users', to: '/users', label: 'Usuarios', icon: Users },
+      { section: 'config', to: '/config', label: 'Configuración', icon: Settings },
+    ],
+  },
+]
+
+export function Sidebar() {
+  const pinnedCollapsed = useUiStore((state) => state.sidebarCollapsed)
+  const toggle = useUiStore((state) => state.toggleSidebar)
+  const user = useAuthStore((state) => state.user)
+  const logo = useAppearanceStore((state) => state.logo)
+  const businessName = useAppearanceStore((state) => state.businessName)
+  const [hovered, setHovered] = useState(false)
+
+  /**
+   * Colapsada queda como riel de iconos y se abre sola al pasar el mouse.
+   * La versión abierta flota por encima del contenido en vez de empujarlo:
+   * si el grid se recorriera cada vez que el puntero roza el borde, las
+   * tarjetas bailarían bajo el cursor.
+   */
+  const expanded = !pinnedCollapsed || hovered
+  const floating = pinnedCollapsed && hovered
+
+  const groups = NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => canAccessSection(user?.role, item.section)),
+  })).filter((group) => group.items.length > 0)
+
+  return (
+    <div
+      className={cn(
+        'relative hidden shrink-0 transition-[width] duration-200 lg:block',
+        pinnedCollapsed ? 'w-[3.75rem]' : 'w-64',
+      )}
+    >
+      <aside
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        className={cn(
+          'absolute inset-y-0 left-0 z-40 flex flex-col overflow-hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground',
+          'transition-[width,box-shadow] duration-200 ease-out',
+          expanded ? 'w-64' : 'w-[3.75rem]',
+          floating && 'shadow-xl',
+        )}
+        aria-label="Navegación principal"
+      >
+        {/* Marca */}
+        <div
+          className={cn(
+            'flex h-14 shrink-0 items-center gap-2.5 border-b border-sidebar-border',
+            expanded ? 'px-3' : 'justify-center px-0',
+          )}
+        >
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-brand-dark">
+            {logo ? (
+              <img src={logo} alt="" className="h-full w-full object-contain" />
+            ) : (
+              <BedDouble className="h-4 w-4 text-white" aria-hidden />
+            )}
+          </div>
+          <div
+            className={cn(
+              'min-w-0 leading-tight transition-opacity duration-150',
+              expanded ? 'opacity-100' : 'w-0 opacity-0',
+            )}
+          >
+            <p className="truncate text-sm font-semibold text-sidebar-accent-foreground">
+              {businessName}
+            </p>
+            <p className="truncate text-2xs text-sidebar-foreground/70">Administración</p>
+          </div>
+        </div>
+
+        <nav className="flex-1 space-y-4 overflow-y-auto overflow-x-hidden scrollbar-thin px-2 py-3">
+          {groups.map((group) => (
+            <div key={group.label}>
+              {expanded ? (
+                <p className="px-3 pb-1.5 text-2xs font-medium uppercase tracking-wider text-sidebar-foreground/50">
+                  {group.label}
+                </p>
+              ) : (
+                <div className="mx-2.5 mb-2 border-t border-sidebar-border" />
+              )}
+
+              <ul className="space-y-0.5">
+                {group.items.map((item) => (
+                  <li key={item.to}>
+                    <NavLink
+                      to={item.to}
+                      className={({ isActive }) =>
+                        cn(
+                          'group relative flex h-9 items-center gap-2.5 rounded-md text-sm outline-none',
+                          'transition-colors duration-150',
+                          'focus-visible:ring-[3px] focus-visible:ring-sidebar-ring/40',
+                          isActive
+                            ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground'
+                            : 'text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground active:scale-[0.98]',
+                          expanded ? 'px-3' : 'justify-center px-0',
+                        )
+                      }
+                    >
+                      {({ isActive }) => (
+                        <>
+                          {/* Marca de sección activa */}
+                          <span
+                            className={cn(
+                              'absolute left-0 h-5 w-[3px] rounded-r-full bg-brand-accent transition-all duration-200',
+                              isActive ? 'opacity-100' : 'opacity-0',
+                            )}
+                            aria-hidden
+                          />
+                          <item.icon
+                            className={cn(
+                              'h-4 w-4 shrink-0 transition-transform duration-150',
+                              !isActive && 'group-hover:scale-110',
+                            )}
+                            aria-hidden
+                          />
+                          <span
+                            className={cn(
+                              'truncate transition-opacity duration-150',
+                              expanded ? 'opacity-100' : 'w-0 opacity-0',
+                            )}
+                          >
+                            {item.label}
+                          </span>
+                        </>
+                      )}
+                    </NavLink>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </nav>
+
+        {/* Usuario y anclaje del menú */}
+        <div className="shrink-0 border-t border-sidebar-border p-2">
+          <div
+            className={cn(
+              'mb-1 flex items-center gap-2.5 rounded-md py-2',
+              expanded ? 'px-2' : 'justify-center px-0',
+            )}
+          >
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sidebar-accent text-2xs font-semibold text-sidebar-accent-foreground">
+              {user?.full_name.slice(0, 2).toUpperCase()}
+            </span>
+            <div
+              className={cn(
+                'min-w-0 leading-tight transition-opacity duration-150',
+                expanded ? 'opacity-100' : 'w-0 opacity-0',
+              )}
+            >
+              <p className="truncate text-xs font-medium text-sidebar-accent-foreground">
+                {user?.full_name}
+              </p>
+              <p className="truncate text-2xs text-sidebar-foreground/70">{user?.role_display}</p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={toggle}
+            className={cn(
+              'flex h-8 w-full items-center gap-2.5 rounded-md text-xs text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground',
+              expanded ? 'px-3' : 'justify-center px-0',
+            )}
+            aria-label={pinnedCollapsed ? 'Anclar menú abierto' : 'Colapsar menú'}
+            title={pinnedCollapsed ? 'Anclar menú abierto' : 'Colapsar menú'}
+          >
+            <PanelLeftClose
+              className={cn(
+                'h-4 w-4 shrink-0 transition-transform duration-200',
+                pinnedCollapsed && 'rotate-180',
+              )}
+              aria-hidden
+            />
+            <span
+              className={cn(
+                'truncate transition-opacity duration-150',
+                expanded ? 'opacity-100' : 'w-0 opacity-0',
+              )}
+            >
+              {pinnedCollapsed ? 'Anclar abierto' : 'Colapsar'}
+            </span>
+          </button>
+        </div>
+      </aside>
+    </div>
+  )
+}
