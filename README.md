@@ -1,7 +1,11 @@
 # Motel ERP
 
-Sistema integral de administración para motel: recepción con cronómetros,
+Sistema integral de administración para moteles: recepción con cronómetros,
 inventario multialmacen, ama de llaves, finanzas por turno y auditoría.
+
+Un mismo servidor atiende a varios moteles. Cada uno tiene sus habitaciones,
+su inventario, su caja y su plantilla, y no ve nada de los demás: el motel es
+dueño de cada registro y los managers acotan solas todas las consultas.
 
 ## Estructura
 
@@ -55,6 +59,13 @@ python -m venv api/.venv && api/.venv/Scripts/activate && pip install -r api/req
 
 Todas tienen un valor por defecto razonable para desarrollo en
 `api/core/settings.py`, salvo `DJANGO_SECRET_KEY` en producción.
+
+Las de negocio (`BUSINESS_NAME`, `BUSINESS_ADDRESS`, `TICKET_FOOTER`,
+`BUSINESS_CURRENCY`, `BUSINESS_TIME_ZONE`, `EXPIRATION_WARNING_MINUTES`,
+`EXPENSE_APPROVAL_THRESHOLD` y las de impresora) solo **siembran el primer
+motel**. A partir de ahí manda la base de datos y se editan desde
+Configuración -> Negocio, sin reiniciar nada. En una instalación ya migrada,
+cambiar el `.env` no tiene efecto.
 
 4. Migrar y crear el superusuario:
 
@@ -159,8 +170,19 @@ Cada mensaje llega como `{"event": "...", "payload": {...}, "timestamp": "..."}`
 | 7 | Base del frontend | Completa |
 | 8 | Layout y dashboard de recepción | Completa |
 | 9 | Inventario, ama de llaves y finanzas en frontend | Completa |
+| 10 | Identidad del negocio en el servidor: título, favicon, logotipo, moneda y zona horaria | Completa |
+| 11 | Multi-motel: varios moteles en un sistema, con sus datos separados | Completa |
+| 12 | Auditoría, usuarios, reportes y dashboard en frontend | Pendiente |
 
-## Permisos
+Las secciones de Reportes, Auditoría y Usuarios todavía son pantallas vacías;
+el plan para cerrarlas está en `ROADMAP.md`.
+
+## Moteles y permisos
+
+Quien administra la plataforma no pertenece a ningún motel: es el único que da
+de alta moteles (`POST /api/v1/settings/motels/`, junto con su usuario dueño) y
+el único que los ve todos. Dentro de un motel, el dueño (SuperAdmin) puede
+todo salvo administrar la plataforma.
 
 La matriz rol -> permiso vive en `apps/users/constants.py` (`ROLE_PERMISSIONS`) y
 es la única fuente de verdad. Cada vista declara qué exige cada acción:
@@ -187,3 +209,8 @@ de usuarios es exclusiva de SuperAdmin.
   y se dan de baja con `soft_delete()`.
 - Fechas siempre en UTC en el backend; la conversion a hora local es del cliente.
 - Ninguna lista de la API responde sin paginar.
+- Todo registro de negocio pertenece a un motel y hereda el de quien lo crea.
+  Las consultas se acotan solas: si algo necesita cruzar moteles, va explícito
+  con `common.tenancy.without_motel()`.
+- Prohibido cualquier comentario en el código. Si algo necesita explicación,
+  va en el docstring del módulo o de la función.
