@@ -1,0 +1,18 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.sqlite3
+.env
+staticfiles/
+media/
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+*.log
+.DS_Store
+
+# Configuracion local del editor / herramientas
+.claude/
+.vscode/
+.idea/
