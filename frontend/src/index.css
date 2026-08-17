@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * Sistema de color de Shadcn UI.
+ *
+ * La base es neutra (zinc): el azul de marca se reserva para la acción
+ * principal y la navegación activa, y los colores de estado solo aparecen en
+ * acentos pequeños -- puntos, barras y etiquetas -- nunca como relleno de
+ * tarjetas completas. Un tablero operativo se lee mejor cuando el color
+ * significa algo.
+ */
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 217 91% 60%;
+
+    --radius: 0.625rem;
+
+    /* Acento de marca; lo sobreescribe la configuración de apariencia. */
+    --brand-accent: 217 91% 60%;
+
+    /* Barra lateral: superficie clara, apenas separada del lienzo. Un panel
+       negro junto a contenido blanco parte la pantalla en dos y cansa la
+       vista en una jornada completa de turno. */
+    --sidebar: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-accent: 240 4.8% 93%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 240 5.9% 90%;
+    --sidebar-ring: 217 91% 60%;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 6% 8%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 6% 8%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 45%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 18%;
+    --ring: 217 91% 60%;
+
+    --sidebar: 240 6% 6%;
+    --sidebar-foreground: 240 5% 64.9%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 3.7% 14%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+    font-variation-settings: 'opsz' 32;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Cronómetros e importes: sin saltos al cambiar de dígito. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+  }
+
+  ::selection {
+    @apply bg-primary/20;
+  }
+}
+
+@layer components {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply rounded-full border-2 border-transparent bg-border bg-clip-content;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/40 bg-clip-content;
+  }
+}
+
+@layer utilities {
+  /* Sombra sutil de Shadcn: separa sin ensuciar. */
+  .shadow-xs {
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+  }
+}

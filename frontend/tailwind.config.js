@@ -1,0 +1,110 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  darkMode: ['class'],
+  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  theme: {
+    container: {
+      center: true,
+      padding: '1.5rem',
+      screens: { '2xl': '1400px' },
+    },
+    extend: {
+      colors: {
+        /* Identidad de marca. El acento es variable para que se pueda
+           cambiar desde Configuración sin recompilar. */
+        'brand-dark': '#0f172a',
+        'brand-accent': 'hsl(var(--brand-accent))',
+
+        /* Estados de habitación */
+        'status-available': '#10b981',
+        'status-occupied': '#ef4444',
+        'status-cleaning': '#f59e0b',
+        'status-maintenance': '#6b7280',
+
+        /* Tokens de Shadcn UI */
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+        },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+        },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
+        },
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+        },
+        sidebar: {
+          DEFAULT: 'hsl(var(--sidebar))',
+          foreground: 'hsl(var(--sidebar-foreground))',
+          accent: 'hsl(var(--sidebar-accent))',
+          'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
+          border: 'hsl(var(--sidebar-border))',
+          ring: 'hsl(var(--sidebar-ring))',
+        },
+      },
+      borderRadius: {
+        xl: 'calc(var(--radius) + 4px)',
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
+      },
+      fontFamily: {
+        sans: [
+          'Inter var',
+          'Inter',
+          'ui-sans-serif',
+          'system-ui',
+          'Segoe UI',
+          'sans-serif',
+        ],
+        mono: ['ui-monospace', 'SFMono-Regular', 'JetBrains Mono', 'monospace'],
+      },
+      fontSize: {
+        '2xs': ['0.6875rem', { lineHeight: '1rem' }],
+      },
+      keyframes: {
+        'accordion-down': {
+          from: { height: '0' },
+          to: { height: 'var(--radix-accordion-content-height)' },
+        },
+        'accordion-up': {
+          from: { height: 'var(--radix-accordion-content-height)' },
+          to: { height: '0' },
+        },
+        /* Latido del acento cuando un cronómetro ya venció. */
+        'pulse-alert': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.4' },
+        },
+      },
+      animation: {
+        'accordion-down': 'accordion-down 0.2s ease-out',
+        'accordion-up': 'accordion-up 0.2s ease-out',
+        'pulse-alert': 'pulse-alert 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      },
+    },
+  },
+  plugins: [require('tailwindcss-animate')],
+}
