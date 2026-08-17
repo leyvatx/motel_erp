@@ -1,11 +1,3 @@
-/**
- * Cliente HTTP.
- *
- * Un solo interceptor renueva el access token cuando expira. Si llegan varias
- * peticiones con 401 al mismo tiempo, se encolan y esperan a que termine el
- * único refresh en vuelo, en vez de disparar uno por petición.
- */
-
 import axios, {
   AxiosError,
   type AxiosInstance,
@@ -25,7 +17,6 @@ export const api: AxiosInstance = axios.create({
   timeout: 20000,
 })
 
-/** Cliente sin interceptores: lo usa el propio refresh para no morderse la cola. */
 const plain: AxiosInstance = axios.create({
   baseURL: `${BASE_URL}/api/v1`,
   headers: { 'Content-Type': 'application/json' },
@@ -65,7 +56,6 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 
 api.interceptors.response.use(
   (response) => {
-    // La cabecera Date del servidor mantiene los cronómetros en hora.
     const serverDate = response.headers['date']
     if (typeof serverDate === 'string') syncServerTime(serverDate)
     return response
@@ -85,7 +75,6 @@ api.interceptors.response.use(
         return api.request(original)
       }
 
-      // Sin refresh válido: la sesión murio y hay que volver al login.
       if (window.location.pathname !== '/login') {
         window.location.assign('/login')
       }
@@ -95,7 +84,6 @@ api.interceptors.response.use(
   },
 )
 
-/** Mensaje legible de un error de la API, listo para un toast. */
 export function apiErrorMessage(error: unknown, fallback = 'Ocurrio un error inesperado.'): string {
   if (!axios.isAxiosError(error)) return fallback
 
@@ -113,7 +101,6 @@ export function apiErrorMessage(error: unknown, fallback = 'Ocurrio un error ine
   return fallback
 }
 
-/** Código de error de dominio, útil para reaccionar a casos concretos. */
 export function apiErrorCode(error: unknown): string | null {
   if (!axios.isAxiosError(error)) return null
   return (error.response?.data as ApiErrorBody | undefined)?.error?.code ?? null
@@ -139,8 +126,9 @@ export async function post<TResponse, TBody = unknown>(
 export async function patch<TResponse, TBody = unknown>(
   url: string,
   body?: TBody,
+  config?: AxiosRequestConfig,
 ): Promise<TResponse> {
-  const { data } = await api.patch<TResponse>(url, body)
+  const { data } = await api.patch<TResponse>(url, body, config)
   return data
 }
 

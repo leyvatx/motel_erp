@@ -14,8 +14,7 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     proxy: {
-      // El backend corre en 8000; el proxy evita CORS en desarrollo y deja
-      // que el WebSocket use el mismo origen que la aplicación.
+
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
@@ -23,6 +22,11 @@ export default defineConfig({
       '/ws': {
         target: 'ws://localhost:8000',
         ws: true,
+      },
+
+      '/media': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
       },
     },
   },

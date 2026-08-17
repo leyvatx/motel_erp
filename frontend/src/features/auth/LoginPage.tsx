@@ -9,8 +9,9 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useLogin } from '@/features/auth/hooks'
+import { useBrand } from '@/features/config/hooks'
+import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { apiErrorMessage } from '@/lib/axios'
-import { useAppearanceStore } from '@/store/appearance'
 import { useAuthStore } from '@/store/auth'
 
 const loginSchema = z.object({
@@ -22,9 +23,10 @@ type LoginForm = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
   const access = useAuthStore((state) => state.access)
-  const logo = useAppearanceStore((state) => state.logo)
-  const businessName = useAppearanceStore((state) => state.businessName)
+  const { name: businessName, logoUrl } = useBrand()
   const login = useLogin()
+
+  useDocumentTitle('Acceso')
 
   const {
     register,
@@ -44,14 +46,16 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-6">
         <div className="flex flex-col items-center gap-3 text-center">
           <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl bg-brand-dark">
-            {logo ? (
-              <img src={logo} alt="" className="h-full w-full object-contain" />
+            {logoUrl ? (
+              <img src={logoUrl} alt="" className="h-full w-full object-contain" />
             ) : (
               <BedDouble className="h-5 w-5 text-white" aria-hidden />
             )}
           </div>
           <div className="space-y-1">
-            <h1 className="text-xl font-semibold tracking-tight">{businessName}</h1>
+            <h1 className="text-xl font-semibold tracking-tight">
+              {businessName || 'Motel ERP'}
+            </h1>
             <p className="text-sm text-muted-foreground">
               Ingresa con tu clave de empleado para continuar.
             </p>

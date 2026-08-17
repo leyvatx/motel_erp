@@ -1,10 +1,3 @@
-/**
- * Sesión del usuario.
- *
- * Los tokens se guardan en localStorage para sobrevivir al refresco de la
- * página; el interceptor de axios se encarga de renovarlos.
- */
-
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
@@ -14,6 +7,7 @@ interface AuthState {
   user: User | null
   access: string | null
   refresh: string | null
+  motelSlug: string | null
   setSession: (data: LoginResponse) => void
   setAccess: (access: string) => void
   setUser: (user: User) => void
@@ -26,16 +20,22 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       access: null,
       refresh: null,
-      setSession: (data) => set({ user: data.user, access: data.access, refresh: data.refresh }),
+      motelSlug: null,
+      setSession: (data) =>
+        set({
+          user: data.user,
+          access: data.access,
+          refresh: data.refresh,
+          motelSlug: data.user.motel_slug,
+        }),
       setAccess: (access) => set({ access }),
-      setUser: (user) => set({ user }),
+      setUser: (user) => set({ user, motelSlug: user.motel_slug }),
       clear: () => set({ user: null, access: null, refresh: null }),
     }),
     { name: 'motel-erp-auth' },
   ),
 )
 
-/** Lectura fuera de React (interceptores de axios, cliente WebSocket). */
 export const authSnapshot = {
   access: (): string | null => useAuthStore.getState().access,
   refresh: (): string | null => useAuthStore.getState().refresh,
@@ -46,7 +46,10 @@ export function isAuthenticated(): boolean {
   return Boolean(useAuthStore.getState().access)
 }
 
-/** Matriz de acceso por rol, espejo de la del backend. */
+export function isPlatformAdmin(user: User | null | undefined): boolean {
+  return Boolean(user?.is_platform_admin)
+}
+
 const ROLE_SECTIONS: Record<Role, readonly string[]> = {
   SUPERADMIN: [
     'frontdesk',

@@ -1,72 +1,20 @@
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import {
-  BedDouble,
-  ClipboardList,
-  LayoutGrid,
-  Package,
-  PanelLeftClose,
-  ScrollText,
-  Settings,
-  ShieldCheck,
-  Users,
-  Wallet,
-} from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { BedDouble, PanelLeftClose } from 'lucide-react'
 
+import { NAV_GROUPS } from '@/components/layout/navigation'
+import { useBrand } from '@/features/config/hooks'
 import { cn } from '@/lib/utils'
-import { useAppearanceStore } from '@/store/appearance'
 import { canAccessSection, useAuthStore } from '@/store/auth'
 import { useUiStore } from '@/store/ui'
-
-interface NavItem {
-  section: string
-  to: string
-  label: string
-  icon: LucideIcon
-}
-
-interface NavGroup {
-  label: string
-  items: readonly NavItem[]
-}
-
-/** El menú se agrupa por función: operación diaria y luego control. */
-const NAV_GROUPS: readonly NavGroup[] = [
-  {
-    label: 'Operación',
-    items: [
-      { section: 'frontdesk', to: '/frontdesk', label: 'Recepción', icon: LayoutGrid },
-      { section: 'housekeeping', to: '/housekeeping', label: 'Ama de llaves', icon: ClipboardList },
-      { section: 'inventory', to: '/inventory', label: 'Inventarios', icon: Package },
-      { section: 'finances', to: '/finances', label: 'Finanzas', icon: Wallet },
-    ],
-  },
-  {
-    label: 'Control',
-    items: [
-      { section: 'reports', to: '/reports', label: 'Reportes', icon: ScrollText },
-      { section: 'audit', to: '/audit', label: 'Auditoría', icon: ShieldCheck },
-      { section: 'users', to: '/users', label: 'Usuarios', icon: Users },
-      { section: 'config', to: '/config', label: 'Configuración', icon: Settings },
-    ],
-  },
-]
 
 export function Sidebar() {
   const pinnedCollapsed = useUiStore((state) => state.sidebarCollapsed)
   const toggle = useUiStore((state) => state.toggleSidebar)
   const user = useAuthStore((state) => state.user)
-  const logo = useAppearanceStore((state) => state.logo)
-  const businessName = useAppearanceStore((state) => state.businessName)
+  const { name: businessName, logoUrl } = useBrand()
   const [hovered, setHovered] = useState(false)
 
-  /**
-   * Colapsada queda como riel de iconos y se abre sola al pasar el mouse.
-   * La versión abierta flota por encima del contenido en vez de empujarlo:
-   * si el grid se recorriera cada vez que el puntero roza el borde, las
-   * tarjetas bailarían bajo el cursor.
-   */
   const expanded = !pinnedCollapsed || hovered
   const floating = pinnedCollapsed && hovered
 
@@ -93,7 +41,6 @@ export function Sidebar() {
         )}
         aria-label="Navegación principal"
       >
-        {/* Marca */}
         <div
           className={cn(
             'flex h-14 shrink-0 items-center gap-2.5 border-b border-sidebar-border',
@@ -101,8 +48,8 @@ export function Sidebar() {
           )}
         >
           <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-brand-dark">
-            {logo ? (
-              <img src={logo} alt="" className="h-full w-full object-contain" />
+            {logoUrl ? (
+              <img src={logoUrl} alt="" className="h-full w-full object-contain" />
             ) : (
               <BedDouble className="h-4 w-4 text-white" aria-hidden />
             )}
@@ -114,7 +61,7 @@ export function Sidebar() {
             )}
           >
             <p className="truncate text-sm font-semibold text-sidebar-accent-foreground">
-              {businessName}
+              {businessName || 'Motel ERP'}
             </p>
             <p className="truncate text-2xs text-sidebar-foreground/70">Administración</p>
           </div>
@@ -150,7 +97,6 @@ export function Sidebar() {
                     >
                       {({ isActive }) => (
                         <>
-                          {/* Marca de sección activa */}
                           <span
                             className={cn(
                               'absolute left-0 h-5 w-[3px] rounded-r-full bg-brand-accent transition-all duration-200',
@@ -183,7 +129,6 @@ export function Sidebar() {
           ))}
         </nav>
 
-        {/* Usuario y anclaje del menú */}
         <div className="shrink-0 border-t border-sidebar-border p-2">
           <div
             className={cn(

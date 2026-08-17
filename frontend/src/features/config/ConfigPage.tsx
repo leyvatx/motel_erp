@@ -3,6 +3,7 @@ import { Ban, Pencil, Plus } from 'lucide-react'
 
 import { PageShell, TableScroll } from '@/components/layout/PageShell'
 import { AppearanceSettings } from '@/features/config/components/AppearanceSettings'
+import { BusinessSettings } from '@/features/config/components/BusinessSettings'
 import { Badge } from '@/components/ui/badge'
 import { Pagination } from '@/components/ui/pagination'
 import { Button } from '@/components/ui/button'
@@ -123,15 +124,20 @@ export default function ConfigPage() {
   return (
     <PageShell
       title="Configuración"
-      description="Habitaciones, tipos, tarifas y apariencia del sistema."
+      description="Datos del negocio, habitaciones, tarifas y apariencia."
     >
-      <Tabs defaultValue="rooms" className="flex min-h-0 flex-1 flex-col">
+      <Tabs defaultValue="business" className="flex min-h-0 flex-1 flex-col">
         <TabsList className="w-fit">
+          <TabsTrigger value="business">Negocio</TabsTrigger>
           <TabsTrigger value="rooms">Habitaciones</TabsTrigger>
           <TabsTrigger value="types">Tipos</TabsTrigger>
           <TabsTrigger value="tariffs">Tarifas</TabsTrigger>
           <TabsTrigger value="appearance">Apariencia</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="business" className="min-h-0 flex-1 overflow-auto scrollbar-thin">
+          <BusinessSettings />
+        </TabsContent>
 
         <TabsContent value="rooms" className="flex min-h-0 flex-1 flex-col">
           <Card className="min-h-0 flex-1">

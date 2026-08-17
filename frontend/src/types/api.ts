@@ -1,15 +1,5 @@
-/**
- * Contratos compartidos con la API.
- *
- * Los importes viajan como string (Decimal en el backend) para no perder
- * centavos en el punto flotante de JavaScript. Se convierten con `toNumber`
- * solo en el momento de mostrarlos o sumarlos en pantalla.
- */
-
-/** Importe monetario serializado por DRF, p. ej. "1250.00". */
 export type Money = string
 
-/** Fecha y hora ISO-8601 en UTC tal como la manda el backend. */
 export type IsoDateTime = string
 
 export interface PaginatedResponse<T> {
@@ -47,6 +37,10 @@ export interface User {
   phone: string
   role: Role
   role_display: string
+  motel: number | null
+  motel_name: string | null
+  motel_slug: string | null
+  is_platform_admin: boolean
   employee_number: string
   hired_at: string | null
   is_active: boolean

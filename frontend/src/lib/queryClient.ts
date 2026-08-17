@@ -1,19 +1,15 @@
-/** Configuración de TanStack Query y llaves de cache centralizadas. */
-
 import { QueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Los datos llegan por WebSocket: no hace falta refrescar al enfocar.
       refetchOnWindowFocus: false,
       staleTime: 30_000,
       gcTime: 5 * 60_000,
       retry: (failureCount, error) => {
         if (axios.isAxiosError(error)) {
           const status = error.response?.status ?? 0
-          // 4xx no se reintenta: el problema es la petición, no la red.
           if (status >= 400 && status < 500) return false
         }
         return failureCount < 2
@@ -25,10 +21,6 @@ export const queryClient = new QueryClient({
   },
 })
 
-/**
- * Llaves de cache. Centralizarlas evita invalidaciones que no coinciden
- * cuando llega un evento de WebSocket.
- */
 export const queryKeys = {
   auth: {
     me: ['auth', 'me'] as const,
@@ -79,5 +71,10 @@ export const queryKeys = {
   },
   audit: {
     logs: (params?: unknown) => ['audit', 'logs', params ?? {}] as const,
+  },
+  settings: {
+    business: ['settings', 'business'] as const,
+    publicBusiness: ['settings', 'business', 'public'] as const,
+    timeZones: ['settings', 'time-zones'] as const,
   },
 } as const

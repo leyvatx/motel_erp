@@ -1,5 +1,11 @@
-import { del, patch, post } from '@/lib/axios'
+import { del, get, patch, post } from '@/lib/axios'
 import type { Room, RoomType, TariffBlock } from '@/features/frontdesk/types'
+import type {
+  BusinessProfile,
+  BusinessProfilePayload,
+  PublicBusinessProfile,
+  TimeZoneOption,
+} from '@/features/config/types'
 
 export interface RoomPayload {
   number: string
@@ -29,6 +35,31 @@ export interface TariffPayload {
   is_overnight?: boolean
   is_default?: boolean
   sort_order?: number
+}
+
+export const businessApi = {
+  public: (slug: string | null): Promise<PublicBusinessProfile> =>
+    get<PublicBusinessProfile>('/settings/business/public/', {
+      params: slug ? { slug } : undefined,
+    }),
+
+  profile: (): Promise<BusinessProfile> => get<BusinessProfile>('/settings/business/'),
+
+  update: (payload: BusinessProfilePayload): Promise<BusinessProfile> =>
+    patch<BusinessProfile, BusinessProfilePayload>('/settings/business/', payload),
+
+  updateLogo: (file: File | null): Promise<BusinessProfile> => {
+    if (!file) {
+      return patch<BusinessProfile, { logo: null }>('/settings/business/', { logo: null })
+    }
+    const form = new FormData()
+    form.append('logo', file)
+    return patch<BusinessProfile, FormData>('/settings/business/', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
+
+  timeZones: (): Promise<TimeZoneOption[]> => get<TimeZoneOption[]>('/settings/time-zones/'),
 }
 
 export const configApi = {

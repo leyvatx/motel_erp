@@ -1,19 +1,9 @@
-/**
- * Apariencia del sistema: tema, color de acento y logotipo.
- *
- * Se guarda en el navegador del equipo. Cada computadora de recepción puede
- * tener su propio tema (la de la caseta nocturna suele preferir oscuro), pero
- * el logotipo se captura una vez por equipo; moverlo al servidor es el
- * siguiente paso natural si se quiere compartir entre todas las terminales.
- */
-
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 export interface AccentPreset {
   id: string
   label: string
-  /** Valor HSL sin la función, tal como lo consumen las variables CSS. */
   hsl: string
 }
 
@@ -27,16 +17,15 @@ export const ACCENTS: readonly AccentPreset[] = [
 ]
 
 export type ThemeMode = 'light' | 'dark' | 'system'
+export type Density = 'comfortable' | 'compact'
 
 interface AppearanceState {
   theme: ThemeMode
   accentId: string
-  logo: string | null
-  businessName: string
+  density: Density
   setTheme: (theme: ThemeMode) => void
   setAccent: (accentId: string) => void
-  setLogo: (logo: string | null) => void
-  setBusinessName: (name: string) => void
+  setDensity: (density: Density) => void
 }
 
 export const useAppearanceStore = create<AppearanceState>()(
@@ -44,14 +33,24 @@ export const useAppearanceStore = create<AppearanceState>()(
     (set) => ({
       theme: 'light',
       accentId: 'blue',
-      logo: null,
-      businessName: 'Motel ERP',
+      density: 'comfortable',
       setTheme: (theme) => set({ theme }),
       setAccent: (accentId) => set({ accentId }),
-      setLogo: (logo) => set({ logo }),
-      setBusinessName: (businessName) => set({ businessName }),
+      setDensity: (density) => set({ density }),
     }),
-    { name: 'motel-erp-appearance' },
+    {
+      name: 'motel-erp-appearance',
+      version: 2,
+      migrate: (persisted, version) => {
+        const previous = (persisted ?? {}) as Partial<AppearanceState>
+        if (version >= 2) return previous as AppearanceState
+        return {
+          theme: previous.theme ?? 'light',
+          accentId: previous.accentId ?? 'blue',
+          density: 'comfortable',
+        } as AppearanceState
+      },
+    },
   ),
 )
 
@@ -59,8 +58,7 @@ export function accentById(id: string): AccentPreset {
   return ACCENTS.find((accent) => accent.id === id) ?? ACCENTS[0]!
 }
 
-/** Aplica tema y acento sobre las variables CSS del documento. */
-export function applyAppearance(theme: ThemeMode, accentId: string): void {
+export function applyAppearance(theme: ThemeMode, accentId: string, density: Density): void {
   const root = document.documentElement
 
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -72,4 +70,6 @@ export function applyAppearance(theme: ThemeMode, accentId: string): void {
   root.style.setProperty('--ring', accent.hsl)
   root.style.setProperty('--brand-accent', accent.hsl)
   root.style.setProperty('--sidebar-ring', accent.hsl)
+
+  root.dataset.density = density
 }
