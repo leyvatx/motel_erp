@@ -259,7 +259,7 @@ class TariffRule(BaseModel):
 class Reservation(BaseModel):
     """Reservación anticipada de una habitación o de un tipo de habitación."""
 
-    code = models.CharField("Folio", max_length=25, unique=True, editable=False)
+    code = models.CharField("Folio", max_length=25, editable=False)
     room = models.ForeignKey(
         Room,
         verbose_name="Habitación",
@@ -318,10 +318,13 @@ class Reservation(BaseModel):
             models.Index(fields=["status", "scheduled_start"], name="reservation_status_idx"),
         ]
         constraints = [
+            models.UniqueConstraint(
+                fields=["motel", "code"], name="uniq_reservation_code_motel"
+            ),
             models.CheckConstraint(
                 condition=models.Q(scheduled_end__gt=models.F("scheduled_start")),
                 name="reservation_window_valid",
-            )
+            ),
         ]
 
     def __str__(self) -> str:
@@ -340,7 +343,7 @@ class Stay(BaseModel):
     servidor al rentar y se recalcula en cada extensión.
     """
 
-    code = models.CharField("Folio de renta", max_length=25, unique=True, editable=False)
+    code = models.CharField("Folio de renta", max_length=25, editable=False)
     room = models.ForeignKey(
         Room, verbose_name="Habitación", on_delete=models.PROTECT, related_name="stays"
     )
@@ -412,6 +415,7 @@ class Stay(BaseModel):
         verbose_name_plural = "Rentas"
         ordering = ["-check_in_at"]
         constraints = [
+            models.UniqueConstraint(fields=["motel", "code"], name="uniq_stay_code_motel"),
             models.UniqueConstraint(
                 fields=["room"],
                 condition=models.Q(status=StayStatus.ACTIVE),

@@ -34,6 +34,7 @@ jobs:
       DATABASE_URL: postgres://motel:motel@localhost:5432/motel_erp_test
       REDIS_URL: redis://localhost:6379/0
       CELERY_BROKER_URL: redis://localhost:6379/1
+      CACHE_URL: redis://localhost:6379/2
       PRINTER_BACKEND: dummy
     defaults:
       run:

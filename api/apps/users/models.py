@@ -4,6 +4,12 @@ Se usa ``username`` (clave de empleado) en lugar de email porque el personal
 operativo -- limpieza, recepción -- no siempre tiene correo corporativo.
 La baja de un empleado es lógica: ``is_active=False`` lo deshabilita para
 iniciar sesión pero conserva toda su trazabilidad histórica.
+
+La clave es única *dentro de su motel*, no en toda la plataforma: cincuenta
+moteles quieren los mismos nombres obvios -- ``recepcion``, ``caja1`` -- y
+obligarlos a inventar variantes termina en que alguien entra a la cuenta
+equivocada. Quien no pertenece a ningún motel (plataforma y corporativo)
+comparte un solo espacio de nombres aparte.
 """
 
 from __future__ import annotations
@@ -26,7 +32,7 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel, SoftDeleteModel
     username = models.CharField(
         "Usuario",
         max_length=40,
-        unique=True,
+        db_index=True,
         validators=[username_validator],
         help_text="Clave de acceso del empleado.",
     )
@@ -67,6 +73,16 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel, SoftDeleteModel
         verbose_name_plural = "Usuarios"
         ordering = ["full_name"]
         base_manager_name = "all_objects"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["motel", "username"], name="uniq_user_username_motel"
+            ),
+            models.UniqueConstraint(
+                fields=["username"],
+                condition=models.Q(motel__isnull=True),
+                name="uniq_user_username_sin_motel",
+            ),
+        ]
         indexes = [
             models.Index(fields=["role", "is_active"], name="user_role_active_idx"),
         ]

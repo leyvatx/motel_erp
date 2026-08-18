@@ -41,6 +41,20 @@ HEX_COLOR = RegexValidator(
 )
 
 
+def _cache_safe(operation, *args, **kwargs):
+    """Ejecuta una operación de caché sin dejar que tumbe la petición.
+
+    La caché es un atajo, no una dependencia: vive en Redis, que también
+    atiende WebSockets y Celery. Si se cae, recepción tiene que poder seguir
+    rentando y cobrando aunque pierda el tiempo real. Un fallo aquí solo
+    significa que no hubo valor guardado.
+    """
+    try:
+        return operation(*args, **kwargs)
+    except Exception:
+        return None
+
+
 def validate_time_zone(value: str) -> None:
     try:
         zoneinfo.ZoneInfo(value)
@@ -176,7 +190,7 @@ class Motel(TimeStampedModel, AuthorStampedModel, SoftDeleteModel):
         if not self.slug:
             self.slug = self._build_slug()
         result = super().save(*args, **kwargs)
-        cache.delete(f"{CACHE_PREFIX}:{self.pk}")
+        _cache_safe(cache.delete, f"{CACHE_PREFIX}:{self.pk}")
         return result
 
     def _build_slug(self) -> str:
@@ -224,7 +238,7 @@ class Motel(TimeStampedModel, AuthorStampedModel, SoftDeleteModel):
             return cls.defaults()
 
         key = f"{CACHE_PREFIX}:{motel_id}"
-        cached = cache.get(key)
+        cached = _cache_safe(cache.get, key)
         if cached is not None:
             return cached
 
@@ -236,5 +250,5 @@ class Motel(TimeStampedModel, AuthorStampedModel, SoftDeleteModel):
         if motel is None:
             return cls.defaults()
 
-        cache.set(key, motel, CACHE_TTL_SECONDS)
+        _cache_safe(cache.set, key, motel, CACHE_TTL_SECONDS)
         return motel

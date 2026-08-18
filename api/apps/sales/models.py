@@ -33,7 +33,7 @@ from apps.sales.constants import (
 class Folio(BaseModel):
     """Cuenta abierta asociada a una renta o a una venta de mostrador."""
 
-    code = models.CharField("Folio", max_length=25, unique=True, editable=False)
+    code = models.CharField("Folio", max_length=25, editable=False)
     folio_type = models.CharField(
         "Tipo", max_length=10, choices=FolioType.choices, default=FolioType.ROOM
     )
@@ -83,6 +83,9 @@ class Folio(BaseModel):
         verbose_name = "Folio"
         verbose_name_plural = "Folios"
         ordering = ["-opened_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["motel", "code"], name="uniq_folio_code_motel")
+        ]
         indexes = [
             models.Index(fields=["status", "-opened_at"], name="folio_status_opened_idx"),
             models.Index(fields=["room", "status"], name="folio_room_status_idx"),
@@ -170,7 +173,7 @@ class FolioCharge(BaseModel):
 class Order(BaseModel):
     """Orden de consumo (room service, frigobar, tienda o mostrador)."""
 
-    code = models.CharField("Número de orden", max_length=25, unique=True, editable=False)
+    code = models.CharField("Número de orden", max_length=25, editable=False)
     folio = models.ForeignKey(
         Folio, verbose_name="Folio", on_delete=models.PROTECT, related_name="orders"
     )
@@ -208,6 +211,9 @@ class Order(BaseModel):
         verbose_name = "Orden"
         verbose_name_plural = "Ordenes"
         ordering = ["-placed_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["motel", "code"], name="uniq_order_code_motel")
+        ]
         indexes = [
             models.Index(fields=["status", "-placed_at"], name="order_status_placed_idx"),
             models.Index(fields=["folio"], name="order_folio_idx"),

@@ -1,5 +1,6 @@
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+from django.core.cache import cache
 from django.core.management.base import BaseCommand, CommandError
 from django.db import connection
 
@@ -7,7 +8,7 @@ from core.celery import app as celery_app
 
 
 class Command(BaseCommand):
-    help = "Comprueba PostgreSQL, Redis/Channels y el broker de Celery."
+    help = "Comprueba PostgreSQL, Redis/Channels, la caché y el broker de Celery."
 
     def handle(self, *args, **options):
         failures = []
@@ -32,6 +33,15 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("Redis/Channels: OK"))
         except Exception as exc:
             failures.append(f"Redis/Channels: {exc}")
+
+        try:
+            cache.set("runtime.check", "ok", 10)
+            if cache.get("runtime.check") != "ok":
+                raise RuntimeError("No devolvió el valor que se acaba de guardar")
+            cache.delete("runtime.check")
+            self.stdout.write(self.style.SUCCESS("Caché: OK"))
+        except Exception as exc:
+            failures.append(f"Caché: {exc}")
 
         try:
             with celery_app.connection_for_write() as broker:

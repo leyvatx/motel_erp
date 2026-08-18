@@ -20,6 +20,7 @@ from apps.inventory.models import (
     Supplier,
 )
 from common.models import DocumentSequence
+from common.serializers import CostVisibilityMixin
 
 
 class WarehouseSerializer(serializers.ModelSerializer):
@@ -50,7 +51,9 @@ class ProductCategorySerializer(serializers.ModelSerializer):
         fields = ("id", "name", "kind", "kind_display", "description", "sort_order", "is_active")
 
 
-class ProductSerializer(serializers.ModelSerializer):
+class ProductSerializer(CostVisibilityMixin, serializers.ModelSerializer):
+    cost_fields = ("last_cost", "average_cost")
+
     category_name = serializers.CharField(source="category.name", read_only=True)
     unit_display = serializers.CharField(source="get_unit_display", read_only=True)
     total_stock = serializers.SerializerMethodField()
@@ -232,7 +235,9 @@ class WarehouseStockSerializer(serializers.ModelSerializer):
         )
 
 
-class StockLotSerializer(serializers.ModelSerializer):
+class StockLotSerializer(CostVisibilityMixin, serializers.ModelSerializer):
+    cost_fields = ("unit_cost",)
+
     product_name = serializers.CharField(source="product.name", read_only=True)
     warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
     is_expired = serializers.BooleanField(read_only=True)
@@ -256,8 +261,10 @@ class StockLotSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class StockMovementSerializer(serializers.ModelSerializer):
+class StockMovementSerializer(CostVisibilityMixin, serializers.ModelSerializer):
     """Renglón del Kardex. Es de solo lectura por definicion: es inmutable."""
+
+    cost_fields = ("unit_cost", "total_cost")
 
     product_sku = serializers.CharField(source="product.sku", read_only=True)
     product_name = serializers.CharField(source="product.name", read_only=True)

@@ -2,12 +2,22 @@
 
 Toda la configuración sensible se lee de variables de entorno (django-environ).
 El proyecto corre bajo ASGI (Daphne) para soportar HTTP + WebSockets (Channels).
+
+``auth.E003`` queda silenciado a propósito: la clave de empleado es única por
+motel, no en toda la plataforma. Lo que esa verificación protege -- que
+``authenticate`` encuentre más de un usuario con la misma clave -- lo resuelve
+``apps.users.managers.UserManager.get_by_natural_key``.
+
+La caché va a Redis y no al proceso: con varios workers una caché local
+significa que el límite de intentos de acceso se multiplica por el número de
+procesos y que un cambio de configuración tarda en verse en unos y no en otros.
 """
 
 from datetime import timedelta
 from pathlib import Path
 
 import environ
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -23,14 +33,26 @@ env = environ.Env(
     BUSINESS_CURRENCY=(str, "MXN"),
     EXPIRATION_WARNING_MINUTES=(int, 15),
     EXPENSE_APPROVAL_THRESHOLD=(str, "1000.00"),
+    LOGIN_THROTTLE_RATE=(str, "20/min"),
+    REPORT_THROTTLE_RATE=(str, "60/min"),
 )
 
 environ.Env.read_env(BASE_DIR / ".env")
 
-SECRET_KEY = env("DJANGO_SECRET_KEY", default="dev-only-insecure-key")
+INSECURE_SECRET_KEY = "dev-only-insecure-key"
+
+SECRET_KEY = env("DJANGO_SECRET_KEY", default=INSECURE_SECRET_KEY)
 DEBUG = env("DJANGO_DEBUG")
 ALLOWED_HOSTS = env("DJANGO_ALLOWED_HOSTS")
 CSRF_TRUSTED_ORIGINS = env("DJANGO_CSRF_TRUSTED_ORIGINS")
+
+if not DEBUG and SECRET_KEY == INSECURE_SECRET_KEY:
+    raise ImproperlyConfigured(
+        "Falta DJANGO_SECRET_KEY. Esa llave firma los JWT de todos los moteles: "
+        "con la de desarrollo cualquiera puede fabricarse una sesión de cualquier "
+        "motel. Genera una con: python -c \"from django.core.management.utils "
+        "import get_random_secret_key as k; print(k())\""
+    )
 
 if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000
@@ -43,6 +65,8 @@ if not DEBUG:
 
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
+
+SILENCED_SYSTEM_CHECKS = ["auth.E003"]
 
 DJANGO_APPS = [
     "daphne",
@@ -172,8 +196,8 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.ScopedRateThrottle",
     ),
     "DEFAULT_THROTTLE_RATES": {
-        "login": "10/min",
-        "reports": "60/min",
+        "login": env("LOGIN_THROTTLE_RATE"),
+        "reports": env("REPORT_THROTTLE_RATE"),
     },
     "DATETIME_FORMAT": "iso-8601",
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
@@ -257,6 +281,15 @@ else:
             },
         },
     }
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": env("CACHE_URL", default="redis://localhost:6379/2"),
+        "KEY_PREFIX": "motel_erp",
+        "OPTIONS": {"socket_connect_timeout": 1, "socket_timeout": 2},
+    }
+}
 
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/1")
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="django-db")

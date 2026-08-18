@@ -7,6 +7,7 @@ from decimal import Decimal
 
 from django.test import TestCase
 from django.utils import timezone
+from rest_framework.test import APIClient
 
 from common.exceptions import DomainError, ImmutableRecordError, InsufficientStock
 
@@ -23,8 +24,10 @@ from apps.inventory.models import (
     WarehouseStock,
     Supplier,
 )
+from apps.settings.models import Motel
 from apps.users.constants import Role
 from apps.users.models import User
+from common.tenancy import use_motel
 
 
 class InventoryTestCase(TestCase):
@@ -316,3 +319,71 @@ class PurchaseTests(InventoryTestCase):
                 receipts=[{"item_id": perishable_item.id, "quantity": Decimal("1")}],
                 actor=self.user,
             )
+
+
+PRODUCTS_URL = "/api/v1/inventory/products/"
+KARDEX_URL = "/api/v1/inventory/kardex/"
+
+
+class CostVisibilityTests(TestCase):
+    """El costo y el margen son del dueño; el catálogo es de todos.
+
+    Recepción necesita el producto para cargarlo al folio, pero saber en
+    cuánto se compró es otra cosa.
+    """
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls.motel = Motel.objects.create(name="Motel de Almacén")
+        cls.gerente = User.objects.create_user(
+            username="gerencia.almacen", password="Demo.1234", full_name="Gerencia",
+            role=Role.MANAGER, motel=cls.motel,
+        )
+        cls.recepcion = User.objects.create_user(
+            username="recepcion.almacen", password="Demo.1234", full_name="Recepción",
+            role=Role.RECEPTION, motel=cls.motel,
+        )
+        with use_motel(cls.motel):
+            cls.almacen = Warehouse.objects.create(code="GEN", name="General")
+            cls.categoria = ProductCategory.objects.create(
+                name="Botanas", kind=ProductKind.FOOD
+            )
+            cls.producto = Product.objects.create(
+                sku="BOT-100", name="Cacahuates", category=cls.categoria,
+                sale_price=Decimal("30.00"),
+            )
+            services.register_entry(
+                product=cls.producto,
+                warehouse=cls.almacen,
+                quantity=Decimal("10"),
+                unit_cost=Decimal("12.50"),
+                actor=cls.gerente,
+            )
+
+    def auth(self, user: User) -> APIClient:
+        client = APIClient()
+        client.force_authenticate(user=user)
+        return client
+
+    def test_gerencia_ve_el_costo_del_producto(self) -> None:
+        response = self.auth(self.gerente).get(PRODUCTS_URL)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("average_cost", response.data["results"][0])
+
+    def test_recepcion_ve_el_producto_pero_no_su_costo(self) -> None:
+        response = self.auth(self.recepcion).get(PRODUCTS_URL)
+
+        self.assertEqual(response.status_code, 200)
+        fila = response.data["results"][0]
+        self.assertEqual(fila["sku"], "BOT-100")
+        self.assertNotIn("average_cost", fila)
+        self.assertNotIn("last_cost", fila)
+
+    def test_el_kardex_tampoco_delata_el_costo(self) -> None:
+        response = self.auth(self.recepcion).get(KARDEX_URL)
+
+        self.assertEqual(response.status_code, 200)
+        fila = response.data["results"][0]
+        self.assertNotIn("unit_cost", fila)
+        self.assertNotIn("total_cost", fila)

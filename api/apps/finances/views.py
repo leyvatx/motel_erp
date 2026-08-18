@@ -37,11 +37,16 @@ class ShiftViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Ge
 
     El resumen de cifras (``summary``) es exclusivo de gerencia: mostrarlo al
     cajero antes de declarar convertiría el corte ciego en uno a modo.
+
+    Por la misma razón el listado solo devuelve los turnos propios de quien
+    pregunta. Lo que cuadró o faltó en la caja de los demás es información del
+    dueño, no del compañero de turno.
     """
 
     queryset = Shift.objects.select_related("cashier", "closed_by", "verified_by")
     serializer_class = ShiftSerializer
     required_permissions = {
+        "read": [PermissionCode.SHIFT_OPEN],
         "open": [PermissionCode.SHIFT_OPEN],
         "close": [PermissionCode.SHIFT_CLOSE],
         "verify": [PermissionCode.SHIFT_VERIFY],
@@ -55,6 +60,12 @@ class ShiftViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Ge
 
     def get_serializer_class(self):
         return ShiftListSerializer if self.action == "list" else ShiftSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.request.user.is_management:
+            return queryset
+        return queryset.filter(cashier=self.request.user)
 
     @extend_schema(request=OpenShiftSerializer, responses=ShiftSerializer)
     @action(detail=False, methods=["post"])
@@ -132,7 +143,8 @@ class ShiftViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Ge
     @extend_schema(responses=CashCountSerializer(many=True))
     @action(detail=True, methods=["get"], url_path="cash-counts")
     def cash_counts(self, request, pk=None) -> Response:
-        queryset = CashCount.objects.filter(shift_id=pk).select_related("counted_by")
+        shift = self.get_object()
+        queryset = CashCount.objects.filter(shift=shift).select_related("counted_by")
         page = self.paginate_queryset(queryset)
         return self.get_paginated_response(CashCountSerializer(page, many=True).data)
 
@@ -159,16 +171,28 @@ class ShiftViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Ge
 class CashMovementViewSet(
     mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
 ):
+    """Entradas y salidas de efectivo, acotadas al turno de quien pregunta."""
+
     queryset = CashMovement.objects.select_related("shift", "performed_by", "expense")
     serializer_class = CashMovementSerializer
+    required_permissions = {"read": [PermissionCode.CASH_MOVE]}
     filterset_fields = ["shift", "direction", "reason"]
     ordering_fields = ["created_at", "amount"]
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.request.user.is_management:
+            return queryset
+        return queryset.filter(shift__cashier=self.request.user)
+
 
 class ExpenseViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    """Gastos operativos. Cada quien ve los suyos; gerencia ve todos."""
+
     queryset = Expense.objects.select_related("shift", "requested_by", "reviewed_by")
     serializer_class = ExpenseSerializer
     required_permissions = {
+        "read": [PermissionCode.EXPENSE_REGISTER],
         "create": [PermissionCode.EXPENSE_REGISTER],
         "review": [PermissionCode.EXPENSE_APPROVE],
         "pending": [PermissionCode.EXPENSE_APPROVE],
@@ -177,6 +201,12 @@ class ExpenseViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.
     filterset_fields = ["status", "category", "shift", "requires_approval"]
     search_fields = ["folio", "description", "supplier"]
     ordering_fields = ["created_at", "amount"]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.request.user.is_management:
+            return queryset
+        return queryset.filter(requested_by=self.request.user)
 
     @extend_schema(request=ExpenseInputSerializer, responses=ExpenseSerializer)
     def create(self, request) -> Response:

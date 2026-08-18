@@ -7,8 +7,11 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+from apps.settings.models import Motel
 from apps.users.constants import Role
 from apps.users.models import User
+from common.exceptions import DomainError
+from common.tenancy import current_motel_id, use_motel
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -77,6 +80,21 @@ class UserWriteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(list(exc.messages)) from exc
         return value
 
+    def validate_username(self, value: str) -> str:
+        """La clave solo tiene que ser única dentro del motel que la usa.
+
+        El motel sale del contexto y no del usuario: una cuenta corporativa
+        no tiene motel propio y opera sobre el que trae seleccionado.
+        """
+        username = value.strip().lower()
+        motel_id = self.instance.motel_id if self.instance is not None else current_motel_id()
+        repetido = User.all_objects.filter(motel_id=motel_id, username=username)
+        if self.instance is not None:
+            repetido = repetido.exclude(pk=self.instance.pk)
+        if repetido.exists():
+            raise serializers.ValidationError("Ese usuario ya existe en este motel.")
+        return username
+
     def validate(self, attrs: dict) -> dict:
         instance = self.instance
         if (
@@ -112,7 +130,18 @@ class UserWriteSerializer(serializers.ModelSerializer):
 
 
 class MotelTokenObtainPairSerializer(TokenObtainPairSerializer):
-    """Agrega el perfil del usuario a la respuesta del login."""
+    """Resuelve el motel del acceso y agrega el perfil a la respuesta.
+
+    La clave de empleado se repite entre moteles, así que la terminal manda
+    el identificador del suyo y la búsqueda se acota a él. Cuando no lo manda
+    -- una instalación de un solo motel, la cuenta de plataforma, un cliente
+    de API -- se resuelve sola mientras la clave no exista en dos lugares.
+    """
+
+    motel = serializers.CharField(
+        required=False, allow_blank=True, write_only=True, max_length=140,
+        help_text="Identificador del motel. Solo hace falta si la clave se repite.",
+    )
 
     @classmethod
     def get_token(cls, user: User):
@@ -122,9 +151,36 @@ class MotelTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
 
     def validate(self, attrs: dict) -> dict:
-        data = super().validate(attrs)
+        slug = (attrs.pop("motel", "") or "").strip()
+        username = (attrs.get(self.username_field) or "").strip().lower()
+        attrs[self.username_field] = username
+
+        with use_motel(self._resolve_motel_id(username, slug)):
+            data = super().validate(attrs)
+
         data["user"] = UserSerializer(self.user).data
         return data
+
+    def _resolve_motel_id(self, username: str, slug: str) -> int | None:
+        if slug:
+            motel_id = (
+                Motel.objects.filter(slug__iexact=slug).values_list("pk", flat=True).first()
+            )
+            if motel_id is None:
+                raise DomainError(
+                    "Ese motel no existe o está suspendido.", code="motel_desconocido"
+                )
+            return motel_id
+
+        candidatos = list(
+            User.objects.filter(username=username).values_list("motel_id", flat=True)[:2]
+        )
+        if len(candidatos) > 1:
+            raise DomainError(
+                "Esa clave de empleado se usa en varios moteles. Indica cuál es el tuyo.",
+                code="motel_requerido",
+            )
+        return candidatos[0] if candidatos else None
 
 
 class UserPresenceSerializer(serializers.Serializer):

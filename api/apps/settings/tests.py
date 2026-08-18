@@ -11,7 +11,8 @@ from rest_framework.test import APIClient
 
 from apps.audit.constants import AuditAction, AuditModule
 from apps.audit.models import AuditLog
-from apps.rooms.models import Room, RoomType
+from apps.rooms import services as frontdesk
+from apps.rooms.models import Room, RoomType, TariffBlock
 from apps.settings.constants import PrinterBackend
 from apps.settings.models import Motel
 from apps.settings.services import create_motel
@@ -376,8 +377,8 @@ class PlatformTests(MotelTestCase):
             MOTELS_URL,
             {
                 "name": "Motel Fallido",
-                "owner_username": "recepcion10",
-                "owner_full_name": "Repetido",
+                "owner_username": "Dueño Con Espacios",
+                "owner_full_name": "Clave inválida",
                 "owner_password": "Demo.1234",
             },
         )
@@ -398,6 +399,57 @@ class PlatformTests(MotelTestCase):
 
         self.assertNotIn(PermissionCode.MOTEL_MANAGE, permissions_for(self.vecino))
         self.assertIn(PermissionCode.MOTEL_MANAGE, permissions_for(self.plataforma))
+
+
+class FolioNumberingTests(MotelTestCase):
+    """Dos moteles operando el mismo día emiten folios sin pisarse.
+
+    El consecutivo es por motel, así que ambos sacan el mismo texto. Lo que
+    la base tiene que aceptar es justo eso, y seguir rechazando el repetido
+    dentro de un mismo motel.
+    """
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        super().setUpTestData()
+        cls.rooms: dict[int, list[Room]] = {}
+        cls.blocks: dict[int, TariffBlock] = {}
+        for motel, numeros in ((cls.arcos, ["101", "102"]), (cls.palmas, ["901"])):
+            with use_motel(motel):
+                tipo = RoomType.objects.create(name="Sencilla", code="SEN")
+                cls.rooms[motel.pk] = [
+                    Room.objects.create(number=numero, room_type=tipo) for numero in numeros
+                ]
+                cls.blocks[motel.pk] = TariffBlock.objects.create(
+                    room_type=tipo,
+                    name="4 horas",
+                    duration_minutes=240,
+                    base_price=Decimal("300.00"),
+                )
+
+    def _rentar(self, motel, actor, indice: int = 0):
+        with use_motel(motel):
+            return frontdesk.rent_room(
+                room_id=self.rooms[motel.pk][indice].pk,
+                tariff_block_id=self.blocks[motel.pk].pk,
+                actor=actor,
+            )
+
+    def test_el_vecino_puede_rentar_con_el_mismo_folio_el_mismo_dia(self) -> None:
+        propia = self._rentar(self.arcos, self.gerente)
+        vecina = self._rentar(self.palmas, self.vecino)
+
+        self.assertEqual(propia.code, vecina.code)
+        self.assertEqual(propia.folio.code, vecina.folio.code)
+        self.assertEqual(propia.motel_id, self.arcos.pk)
+        self.assertEqual(vecina.motel_id, self.palmas.pk)
+
+    def test_dentro_del_motel_el_folio_sigue_avanzando(self) -> None:
+        primera = self._rentar(self.arcos, self.gerente)
+        segunda = self._rentar(self.arcos, self.gerente, indice=1)
+
+        self.assertNotEqual(primera.code, segunda.code)
+        self.assertNotEqual(primera.folio.code, segunda.folio.code)
 
 
 class ConsumersTests(MotelTestCase):

@@ -6,8 +6,10 @@ from decimal import Decimal
 
 from django.test import TestCase, override_settings
 from django.utils import timezone
+from rest_framework.test import APIClient
 
 from common.exceptions import DomainError, ShiftRequiredError
+from common.tenancy import use_motel
 
 from apps.finances import services
 from apps.finances.constants import (
@@ -19,6 +21,7 @@ from apps.finances.constants import (
 from apps.finances.models import CashCount, CashMovement, Expense, Shift
 from apps.rooms import services as frontdesk
 from apps.rooms.models import Room, RoomType, TariffBlock
+from apps.settings.models import Motel
 from apps.sales import services as sales_services
 from apps.sales.constants import PaymentMethod
 from apps.sales.models import Receipt
@@ -320,3 +323,102 @@ class ReceiptTests(FinancesTestCase):
         self.assertIn("CORTE DE TURNO", texto)
         self.assertIn(cerrado.code, texto)
         self.assertIn("Efectivo declarado", texto)
+
+
+SHIFTS_URL = "/api/v1/finances/shifts/"
+EXPENSES_URL = "/api/v1/finances/expenses/"
+MOVEMENTS_URL = "/api/v1/finances/cash-movements/"
+PAYMENTS_URL = "/api/v1/sales/payments/"
+
+
+class MoneyReadScopeTests(TestCase):
+    """Un empleado no lee la caja del de al lado, ni la del dueño.
+
+    Las cifras de un turno ajeno -- lo esperado, lo declarado y la diferencia
+    -- son información de quien manda, no del compañero.
+    """
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls.motel = Motel.objects.create(name="Motel de Caja")
+        cls.gerente = User.objects.create_user(
+            username="gerencia.caja", password="Demo.1234", full_name="Gerencia",
+            role=Role.MANAGER, motel=cls.motel,
+        )
+        cls.recepcion = User.objects.create_user(
+            username="recepcion.caja", password="Demo.1234", full_name="Recepción",
+            role=Role.RECEPTION, motel=cls.motel,
+        )
+        cls.limpieza = User.objects.create_user(
+            username="limpieza.caja", password="Demo.1234", full_name="Limpieza",
+            role=Role.HOUSEKEEPING, motel=cls.motel,
+        )
+        with use_motel(cls.motel):
+            cls.turno_gerente = services.open_shift(
+                cashier=cls.gerente, opening_balance=Decimal("500.00")
+            )
+            cls.turno_recepcion = services.open_shift(
+                cashier=cls.recepcion, opening_balance=Decimal("300.00")
+            )
+            cls.gasto_gerente = services.register_expense(
+                amount=Decimal("120.00"), description="Compra de gerencia",
+                actor=cls.gerente, shift_id=cls.turno_gerente.pk,
+            )
+            cls.gasto_recepcion = services.register_expense(
+                amount=Decimal("80.00"), description="Compra de recepción",
+                actor=cls.recepcion, shift_id=cls.turno_recepcion.pk,
+            )
+
+    def auth(self, user: User) -> APIClient:
+        client = APIClient()
+        client.force_authenticate(user=user)
+        return client
+
+    def test_recepcion_solo_ve_su_propio_turno(self) -> None:
+        response = self.auth(self.recepcion).get(SHIFTS_URL)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [fila["code"] for fila in response.data["results"]], [self.turno_recepcion.code]
+        )
+
+    def test_gerencia_sigue_viendo_los_turnos_de_todos(self) -> None:
+        response = self.auth(self.gerente).get(SHIFTS_URL)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            {fila["code"] for fila in response.data["results"]},
+            {self.turno_recepcion.code, self.turno_gerente.code},
+        )
+
+    def test_recepcion_solo_ve_sus_propios_gastos(self) -> None:
+        response = self.auth(self.recepcion).get(EXPENSES_URL)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [fila["folio"] for fila in response.data["results"]], [self.gasto_recepcion.folio]
+        )
+
+    def test_recepcion_no_ve_el_efectivo_del_turno_ajeno(self) -> None:
+        response = self.auth(self.recepcion).get(MOVEMENTS_URL)
+
+        self.assertEqual(response.status_code, 200)
+        turnos = {fila["shift"] for fila in response.data["results"]}
+        self.assertNotIn(self.turno_gerente.pk, turnos)
+        self.assertIn(self.turno_recepcion.pk, turnos)
+
+    def test_el_arqueo_de_otro_cajero_no_se_consulta(self) -> None:
+        url = f"{SHIFTS_URL}{self.turno_gerente.pk}/cash-counts/"
+
+        self.assertEqual(self.auth(self.recepcion).get(url).status_code, 404)
+        self.assertEqual(self.auth(self.gerente).get(url).status_code, 200)
+
+    def test_ama_de_llaves_no_lee_nada_de_dinero(self) -> None:
+        cliente = self.auth(self.limpieza)
+
+        for url in (SHIFTS_URL, EXPENSES_URL, MOVEMENTS_URL, PAYMENTS_URL):
+            with self.subTest(url=url):
+                self.assertEqual(cliente.get(url).status_code, 403)
+
+    def test_recepcion_conserva_la_consulta_de_pagos(self) -> None:
+        self.assertEqual(self.auth(self.recepcion).get(PAYMENTS_URL).status_code, 200)

@@ -257,7 +257,10 @@ class OrderViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Ge
 class PaymentViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = Payment.objects.select_related("folio", "received_by")
     serializer_class = PaymentSerializer
-    required_permissions = {"void": [PermissionCode.FOLIO_VOID]}
+    required_permissions = {
+        "read": [PermissionCode.PAYMENT_REGISTER],
+        "void": [PermissionCode.FOLIO_VOID],
+    }
     filterset_fields = ["method", "status", "folio"]
     ordering_fields = ["paid_at", "amount"]
 

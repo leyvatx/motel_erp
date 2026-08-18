@@ -4,6 +4,7 @@ import type { LoginResponse, User } from '@/types/api'
 export interface LoginPayload {
   username: string
   password: string
+  motel?: string
 }
 
 export interface ChangePasswordPayload {

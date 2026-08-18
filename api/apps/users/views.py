@@ -14,6 +14,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from common.middleware import get_current_ip, get_current_user_agent
+from common.tenancy import current_motel_id
 
 from apps.users.constants import PermissionCode, Role
 from apps.users.models import User, UserActivity
@@ -39,7 +40,7 @@ class LoginView(TokenObtainPairView):
         response = super().post(request, *args, **kwargs)
 
         if response.status_code == status.HTTP_200_OK:
-            user = User.objects.filter(username=username).first()
+            user = User.all_objects.filter(pk=response.data["user"]["id"]).first()
             if user is not None:
                 user.last_login_ip = get_current_ip()
                 user.save(update_fields=["last_login_ip", "updated_at"])
@@ -171,13 +172,11 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         if self.request.query_params.get("include_inactive") == "true":
-            return User.all_objects.filter(motel_id=self.request.user.motel_id).order_by(
-                "full_name"
-            )
+            return User.all_objects.filter(motel_id=current_motel_id()).order_by("full_name")
         return super().get_queryset()
 
     def perform_create(self, serializer) -> None:
-        serializer.save(motel=self.request.user.motel)
+        serializer.save(motel_id=current_motel_id())
 
     def get_serializer_class(self):
         if self.action in {"create", "update", "partial_update"}:

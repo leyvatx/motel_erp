@@ -127,7 +127,7 @@ class CleaningTask(BaseModel):
 class MaintenanceReport(BaseModel):
     """Reporte de mantenimiento con seguimiento hasta su resolución."""
 
-    folio = models.CharField("Folio", max_length=25, unique=True, editable=False)
+    folio = models.CharField("Folio", max_length=25, editable=False)
     room = models.ForeignKey(
         "rooms.Room",
         verbose_name="Habitación",
@@ -206,6 +206,9 @@ class MaintenanceReport(BaseModel):
         verbose_name = "Reporte de mantenimiento"
         verbose_name_plural = "Reportes de mantenimiento"
         ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["motel", "folio"], name="uniq_maintenance_folio_motel")
+        ]
         indexes = [
             models.Index(fields=["status", "priority"], name="maint_status_priority_idx"),
             models.Index(fields=["room", "status"], name="maint_room_status_idx"),

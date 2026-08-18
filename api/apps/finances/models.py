@@ -30,7 +30,7 @@ from apps.finances.constants import (
 class Shift(BaseModel):
     """Turno de caja de un cajero."""
 
-    code = models.CharField("Folio de turno", max_length=25, unique=True, editable=False)
+    code = models.CharField("Folio de turno", max_length=25, editable=False)
     cashier = models.ForeignKey(
         "users.User",
         verbose_name="Cajero",
@@ -98,11 +98,12 @@ class Shift(BaseModel):
         verbose_name_plural = "Turnos de caja"
         ordering = ["-opened_at"]
         constraints = [
+            models.UniqueConstraint(fields=["motel", "code"], name="uniq_shift_code_motel"),
             models.UniqueConstraint(
                 fields=["cashier"],
                 condition=models.Q(status=ShiftStatus.OPEN),
                 name="uniq_open_shift_per_cashier",
-            )
+            ),
         ]
         indexes = [
             models.Index(fields=["status", "-opened_at"], name="shift_status_opened_idx"),
@@ -212,7 +213,7 @@ class Expense(BaseModel):
     que gerencia lo aprueba.
     """
 
-    folio = models.CharField("Folio", max_length=25, unique=True, editable=False)
+    folio = models.CharField("Folio", max_length=25, editable=False)
     shift = models.ForeignKey(
         Shift, verbose_name="Turno", on_delete=models.PROTECT, related_name="expenses"
     )
@@ -253,6 +254,9 @@ class Expense(BaseModel):
         verbose_name = "Gasto"
         verbose_name_plural = "Gastos"
         ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["motel", "folio"], name="uniq_expense_folio_motel")
+        ]
         indexes = [
             models.Index(fields=["shift", "status"], name="expense_shift_status_idx"),
             models.Index(fields=["status", "-created_at"], name="expense_status_created_idx"),

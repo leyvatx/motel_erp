@@ -12,7 +12,10 @@ export function useLogin() {
   const navigate = useNavigate()
 
   return useMutation<LoginResponse, unknown, LoginPayload>({
-    mutationFn: authApi.login,
+    mutationFn: ({ motel, ...credentials }) => {
+      const slug = motel?.trim() || useAuthStore.getState().motelSlug || ''
+      return authApi.login(slug ? { ...credentials, motel: slug } : credentials)
+    },
     onSuccess: (data) => {
       setSession(data)
       navigate(defaultRouteFor(data.user), { replace: true })

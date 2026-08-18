@@ -19,6 +19,23 @@ class UserManager(BaseUserManager.from_queryset(ScopedQuerySet)):
     def get_queryset(self) -> SoftDeleteQuerySet:
         return super().get_queryset().for_current_motel().filter(is_active=True)
 
+    def get_by_natural_key(self, username: str):
+        """Resuelve la clave dentro del motel en curso.
+
+        La misma clave vive en varios moteles, así que sin contexto la
+        búsqueda puede traer más de uno. Ahí se niega el acceso en vez de
+        reventar con ``MultipleObjectsReturned``: el login de la API resuelve
+        el motel antes de llegar aquí y explica qué falta, y cualquier otra
+        puerta -- el admin de Django -- no tiene con qué adivinar.
+        """
+        campo = self.model.USERNAME_FIELD
+        coincidencias = list(self.filter(**{campo: username})[:2])
+        if len(coincidencias) != 1:
+            raise self.model.DoesNotExist(
+                f"No hay un usuario único con {campo}={username!r} en este contexto."
+            )
+        return coincidencias[0]
+
     def _create_user(self, username: str, password: str | None, **extra_fields):
         if not username:
             raise ValueError("El nombre de usuario es obligatorio.")

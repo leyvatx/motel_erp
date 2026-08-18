@@ -232,12 +232,12 @@ class MotelCreateSerializer(serializers.ModelSerializer):
         )
 
     def validate_owner_username(self, value: str) -> str:
-        from apps.users.models import User
+        """El motel nace vacío, así que la clave del dueño solo se normaliza.
 
-        username = value.strip().lower()
-        if User.all_objects.filter(username=username).exists():
-            raise serializers.ValidationError("Ese usuario ya existe.")
-        return username
+        Que otro motel ya tenga un dueño con el mismo nombre no estorba: cada
+        uno entra indicando el suyo.
+        """
+        return value.strip().lower()
 
     def validate_time_zone(self, value: str) -> str:
         try:

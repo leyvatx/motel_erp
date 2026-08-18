@@ -17,6 +17,7 @@ import { defaultRouteFor, useAuthStore } from '@/store/auth'
 const loginSchema = z.object({
   username: z.string().min(3, 'Escribe tu usuario.').toLowerCase(),
   password: z.string().min(1, 'Escribe tu contraseña.'),
+  motel: z.string().optional(),
 })
 
 type LoginForm = z.infer<typeof loginSchema>
@@ -41,6 +42,7 @@ export default function LoginPage() {
 
   if (access) return <Navigate to={defaultRouteFor(user)} replace />
 
+  const askForMotel = login.isError
   const onSubmit = handleSubmit((values) => login.mutate(values))
 
   return (
@@ -94,6 +96,16 @@ export default function LoginPage() {
                   <p className="text-xs text-destructive">{errors.password.message}</p>
                 ) : null}
               </div>
+
+              {askForMotel ? (
+                <div className="space-y-2">
+                  <Label htmlFor="motel">Motel</Label>
+                  <Input id="motel" placeholder="arcos-del-sur" {...register('motel')} />
+                  <p className="text-xs text-muted-foreground">
+                    Solo si trabajas en otro motel: escribe su identificador.
+                  </p>
+                </div>
+              ) : null}
 
               {login.isError ? (
                 <p
