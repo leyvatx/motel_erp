@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -62,6 +63,8 @@ class LoginView(TokenObtainPairView):
 class LogoutView(APIView):
     """Invalida el refresh token (lo manda a la blacklist)."""
 
+    allow_platform_scope = True
+
     @extend_schema(
         request={"application/json": {"type": "object", "properties": {"refresh": {"type": "string"}}}},
         responses={204: OpenApiResponse(description="Sesión cerrada")},
@@ -85,12 +88,16 @@ class LogoutView(APIView):
 class MeView(APIView):
     """Perfil del usuario autenticado."""
 
+    allow_platform_scope = True
+
     @extend_schema(responses=UserSerializer)
     def get(self, request) -> Response:
         return Response(UserSerializer(request.user).data)
 
 
 class ChangePasswordView(APIView):
+    allow_platform_scope = True
+
     @extend_schema(
         request=ChangePasswordSerializer,
         responses={204: OpenApiResponse(description="Contraseña actualizada")},
@@ -115,6 +122,8 @@ class ChangePasswordView(APIView):
 
 class RoleListView(APIView):
     """Catalogo de roles disponibles."""
+
+    allow_platform_scope = True
 
     @extend_schema(responses=RoleOptionSerializer(many=True))
     def get(self, request) -> Response:
@@ -162,8 +171,13 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         if self.request.query_params.get("include_inactive") == "true":
-            return User.all_objects.all().order_by("full_name")
+            return User.all_objects.filter(motel_id=self.request.user.motel_id).order_by(
+                "full_name"
+            )
         return super().get_queryset()
+
+    def perform_create(self, serializer) -> None:
+        serializer.save(motel=self.request.user.motel)
 
     def get_serializer_class(self):
         if self.action in {"create", "update", "partial_update"}:
@@ -180,7 +194,11 @@ class UserViewSet(viewsets.ModelViewSet):
     @extend_schema(responses=UserSerializer)
     @action(detail=True, methods=["post"])
     def restore(self, request, pk=None) -> Response:
-        user = User.all_objects.get(pk=pk)
+        user = get_object_or_404(
+            User.all_objects,
+            pk=pk,
+            motel_id=request.user.motel_id,
+        )
         user.restore()
         return Response(UserSerializer(user).data)
 

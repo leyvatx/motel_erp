@@ -245,3 +245,41 @@ class EndpointPermissionTests(AuditTestCase):
 
     def test_sin_sesion_no_se_entra(self) -> None:
         self.assertEqual(APIClient().get("/api/v1/frontdesk/rooms/grid/").status_code, 401)
+
+    def test_resumen_de_auditoria_respeta_filtros(self) -> None:
+        frontdesk.rent_room(
+            room_id=self.room.pk, tariff_block_id=self.block.pk, actor=self.recepcion
+        )
+        response = self._client(self.gerente).get(
+            "/api/v1/audit/logs/summary/", {"action": AuditAction.ROOM_RENTED}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["action"], AuditAction.ROOM_RENTED)
+
+    def test_exportacion_de_auditoria_entrega_csv_filtrado(self) -> None:
+        frontdesk.rent_room(
+            room_id=self.room.pk, tariff_block_id=self.block.pk, actor=self.recepcion
+        )
+        response = self._client(self.gerente).get(
+            "/api/v1/audit/logs/export/", {"action": AuditAction.ROOM_RENTED}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/csv; charset=utf-8")
+        contenido = response.content.decode("utf-8-sig")
+        self.assertIn("Renta de habitación", contenido)
+        self.assertNotIn("Apertura de turno", contenido)
+
+    def test_catalogos_de_filtros_incluyen_actores_del_motel(self) -> None:
+        frontdesk.rent_room(
+            room_id=self.room.pk, tariff_block_id=self.block.pk, actor=self.recepcion
+        )
+        response = self._client(self.gerente).get("/api/v1/audit/logs/filters/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            self.recepcion.pk,
+            [actor["value"] for actor in response.data["actors"]],
+        )

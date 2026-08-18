@@ -36,6 +36,8 @@ AUDITED_MODELS: tuple[str, ...] = (
     "inventory.Warehouse",
     "inventory.Product",
     "inventory.ProductCategory",
+    "inventory.Supplier",
+    "inventory.PurchaseOrder",
     "inventory.StockLot",
     "housekeeping.CleaningTask",
     "housekeeping.MaintenanceReport",

@@ -9,11 +9,14 @@ import {
   ShieldQuestion,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuditLogs, type AuditLog } from '@/features/audit/api'
 import { formatDateTime, formatMoney } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { canAccessSection, useAuthStore } from '@/store/auth'
 
 const MARKS: Record<string, { icon: LucideIcon; tone: string }> = {
   ROOM_RENTED: { icon: BedDouble, tone: 'text-status-available' },
@@ -64,10 +67,15 @@ interface Props {
 }
 
 export function StayTimeline({ stayId, folioId }: Props) {
-  const stayLogs = useAuditLogs({ target: 'rooms.stay', object_id: stayId, page_size: 50 })
+  const user = useAuthStore((state) => state.user)
+  const canViewAudit = canAccessSection(user, 'audit')
+  const stayLogs = useAuditLogs(
+    { target: 'rooms.stay', object_id: stayId, page_size: 50 },
+    canViewAudit,
+  )
   const folioLogs = useAuditLogs(
     { target: 'sales.folio', object_id: folioId ?? 0, page_size: 50 },
-    folioId !== null,
+    canViewAudit && folioId !== null,
   )
 
   const isLoading = stayLogs.isLoading || folioLogs.isLoading
@@ -75,6 +83,14 @@ export function StayTimeline({ stayId, folioId }: Props) {
   const entries = [...(stayLogs.data?.results ?? []), ...(folioLogs.data?.results ?? [])].sort(
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   )
+
+  if (!canViewAudit) {
+    return (
+      <p className="py-4 text-center text-xs text-muted-foreground">
+        El historial detallado está disponible para gerencia.
+      </p>
+    )
+  }
 
   if (isLoading) {
     return (
@@ -95,64 +111,71 @@ export function StayTimeline({ stayId, folioId }: Props) {
   }
 
   return (
-    <ol className="relative space-y-4 pl-6">
-      <span className="absolute bottom-2 left-[7px] top-2 w-px bg-border" aria-hidden />
+    <div className="space-y-3">
+      <ol className="relative space-y-4 pl-6">
+        <span className="absolute bottom-2 left-[7px] top-2 w-px bg-border" aria-hidden />
 
-      {entries.map((log) => {
-        const mark = MARKS[log.action] ?? { icon: ShieldQuestion, tone: 'text-muted-foreground' }
-        const Icon = mark.icon
-        const details = detailsOf(log)
-        const items = itemsOf(log)
+        {entries.map((log) => {
+          const mark = MARKS[log.action] ?? { icon: ShieldQuestion, tone: 'text-muted-foreground' }
+          const Icon = mark.icon
+          const details = detailsOf(log)
+          const items = itemsOf(log)
 
-        return (
-          <li key={`${log.module}-${log.id}`} className="relative">
-            <span
-              className={cn(
-                'absolute -left-6 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-background',
-                mark.tone,
-              )}
-            >
-              <Icon className="h-3.5 w-3.5" aria-hidden />
-            </span>
+          return (
+            <li key={`${log.module}-${log.id}`} className="relative">
+              <span
+                className={cn(
+                  'absolute -left-6 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-background',
+                  mark.tone,
+                )}
+              >
+                <Icon className="h-3.5 w-3.5" aria-hidden />
+              </span>
 
-            <div className="rounded-lg border px-3 py-2">
-              <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                <p className="text-sm font-medium">{log.description}</p>
-                <span className="text-2xs tabular text-muted-foreground">
-                  {formatDateTime(log.created_at)}
-                </span>
+              <div className="rounded-lg border px-3 py-2">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                  <p className="text-sm font-medium">{log.description}</p>
+                  <span className="text-2xs tabular text-muted-foreground">
+                    {formatDateTime(log.created_at)}
+                  </span>
+                </div>
+
+                <p className="mt-0.5 text-2xs text-muted-foreground">
+                  {log.actor_name ?? (log.actor_username || 'Sistema')}
+                  {log.ip_address ? ` · ${log.ip_address}` : ''}
+                </p>
+
+                {details.length > 0 ? (
+                  <p className="mt-1 text-xs text-muted-foreground">{details.join(' · ')}</p>
+                ) : null}
+
+                {items.length > 0 ? (
+                  <ul className="mt-1.5 space-y-0.5 border-t pt-1.5">
+                    {items.map((item, index) => (
+                      <li
+                        key={`${item.product}-${index}`}
+                        className="flex justify-between text-xs text-muted-foreground"
+                      >
+                        <span className="truncate">
+                          {item.quantity} × {item.product}
+                        </span>
+                        {item.line_total ? (
+                          <span className="tabular">{formatMoney(item.line_total)}</span>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
               </div>
-
-              <p className="mt-0.5 text-2xs text-muted-foreground">
-                {log.actor_name ?? (log.actor_username || 'Sistema')}
-                {log.ip_address ? ` · ${log.ip_address}` : ''}
-              </p>
-
-              {details.length > 0 ? (
-                <p className="mt-1 text-xs text-muted-foreground">{details.join(' · ')}</p>
-              ) : null}
-
-              {items.length > 0 ? (
-                <ul className="mt-1.5 space-y-0.5 border-t pt-1.5">
-                  {items.map((item, index) => (
-                    <li
-                      key={`${item.product}-${index}`}
-                      className="flex justify-between text-xs text-muted-foreground"
-                    >
-                      <span className="truncate">
-                        {item.quantity} × {item.product}
-                      </span>
-                      {item.line_total ? (
-                        <span className="tabular">{formatMoney(item.line_total)}</span>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </div>
-          </li>
-        )
-      })}
-    </ol>
+            </li>
+          )
+        })}
+      </ol>
+      <Button asChild variant="ghost" size="sm" className="w-full">
+        <Link to={`/audit?target=rooms.stay&object_id=${stayId}`}>
+          Ver historial completo en Auditoría
+        </Link>
+      </Button>
+    </div>
   )
 }

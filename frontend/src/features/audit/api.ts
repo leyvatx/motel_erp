@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 
-import { get } from '@/lib/axios'
+import { api, get } from '@/lib/axios'
 import type { IsoDateTime, PaginatedResponse } from '@/types/api'
 
 export interface AuditLog {
@@ -36,8 +36,22 @@ export interface AuditParams {
   object_id?: number
 }
 
+export interface AuditSummary {
+  action: string
+  action_display: string
+  total: number
+}
+
+export interface AuditFilterOptions {
+  actions: { value: string; label: string }[]
+  modules: { value: string; label: string }[]
+  actors: { value: number; label: string }[]
+}
+
 export const auditKeys = {
   logs: (params?: AuditParams) => ['audit', 'logs', params ?? {}] as const,
+  summary: (params?: AuditParams) => ['audit', 'summary', params ?? {}] as const,
+  filters: ['audit', 'filters'] as const,
 }
 
 export function useAuditLogs(params: AuditParams, enabled = true) {
@@ -46,4 +60,27 @@ export function useAuditLogs(params: AuditParams, enabled = true) {
     queryFn: () => get<PaginatedResponse<AuditLog>>('/audit/logs/', { params }),
     enabled,
   })
+}
+
+export function useAuditSummary(params: AuditParams) {
+  return useQuery({
+    queryKey: auditKeys.summary(params),
+    queryFn: () => get<AuditSummary[]>('/audit/logs/summary/', { params }),
+  })
+}
+
+export function useAuditFilterOptions() {
+  return useQuery({
+    queryKey: auditKeys.filters,
+    queryFn: () => get<AuditFilterOptions>('/audit/logs/filters/'),
+    staleTime: 5 * 60_000,
+  })
+}
+
+export async function exportAuditLogs(params: AuditParams): Promise<Blob> {
+  const { data } = await api.get<Blob>('/audit/logs/export/', {
+    params,
+    responseType: 'blob',
+  })
+  return data
 }

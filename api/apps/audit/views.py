@@ -2,17 +2,27 @@
 
 from __future__ import annotations
 
+import csv
+import json
+
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Count
+from django.http import HttpResponse
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from apps.audit.constants import AuditAction
+from apps.audit.constants import AuditAction, AuditModule
 from apps.audit.models import AuditLog
 from apps.audit.serializers import AuditLogSerializer, AuditSummarySerializer
 from apps.users.constants import PermissionCode
+
+
+def _csv_safe(value) -> str:
+    """Evita que Excel interprete texto controlado por usuarios como fórmula."""
+    text = str(value or "")
+    return f"'{text}" if text.startswith(("=", "+", "-", "@")) else text
 
 
 class AuditLogViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -63,7 +73,7 @@ class AuditLogViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets
         """Conteo por tipo de acción en el periodo consultado."""
         etiquetas = dict(AuditAction.choices)
         filas = (
-            self.get_queryset()
+            self.filter_queryset(self.get_queryset())
             .values("action")
             .annotate(total=Count("id"))
             .order_by("-total")
@@ -77,3 +87,68 @@ class AuditLogViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets
             for fila in filas
         ]
         return Response(AuditSummarySerializer(data, many=True).data)
+
+    @action(detail=False, methods=["get"], url_path="filters")
+    def filter_options(self, request) -> Response:
+        """Catálogos disponibles sin exponer usuarios de otros moteles."""
+        actors = (
+            self.get_queryset()
+            .exclude(actor__isnull=True)
+            .values("actor_id", "actor__full_name", "actor_username")
+            .distinct()
+            .order_by("actor_username")
+        )
+        return Response(
+            {
+                "actions": [
+                    {"value": value, "label": label} for value, label in AuditAction.choices
+                ],
+                "modules": [
+                    {"value": value, "label": label} for value, label in AuditModule.choices
+                ],
+                "actors": [
+                    {
+                        "value": row["actor_id"],
+                        "label": row["actor__full_name"] or row["actor_username"],
+                    }
+                    for row in actors
+                ],
+            }
+        )
+
+    @action(detail=False, methods=["get"], url_path="export")
+    def export_csv(self, request) -> HttpResponse:
+        """Exporta todos los resultados filtrados, no solo la página visible."""
+        queryset = self.filter_queryset(self.get_queryset())
+        response = HttpResponse(content_type="text/csv; charset=utf-8")
+        response["Content-Disposition"] = 'attachment; filename="auditoria.csv"'
+        response.write("\ufeff")
+        writer = csv.writer(response)
+        writer.writerow(
+            [
+                "Fecha",
+                "Usuario",
+                "Acción",
+                "Módulo",
+                "Descripción",
+                "Objeto",
+                "Cambios",
+                "Datos adicionales",
+                "IP",
+            ]
+        )
+        for log in queryset.iterator():
+            writer.writerow(
+                [
+                    log.created_at.isoformat(),
+                    _csv_safe(log.actor_username or "Sistema"),
+                    log.get_action_display(),
+                    log.get_module_display(),
+                    _csv_safe(log.description),
+                    _csv_safe(log.object_repr),
+                    json.dumps(log.changes, ensure_ascii=False, default=str),
+                    json.dumps(log.extra, ensure_ascii=False, default=str),
+                    log.ip_address or "",
+                ]
+            )
+        return response
