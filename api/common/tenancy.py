@@ -38,7 +38,11 @@ def current_motel_id() -> int | None:
     user = get_current_user()
     if user is None:
         return None
-    return getattr(user, "motel_id", None)
+    return getattr(user, "active_motel_id", None) or getattr(user, "motel_id", None)
+
+
+def all_motels_enabled() -> bool:
+    return _current_motel_id.get() is ALL_MOTELS
 
 
 def activate_motel(motel) -> object:

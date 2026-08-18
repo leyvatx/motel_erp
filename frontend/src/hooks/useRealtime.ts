@@ -3,11 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 
 import { teamKeys } from '@/features/users/presence'
 import { queryKeys } from '@/lib/queryClient'
-import {
-  frontdeskChannel,
-  notificationChannel,
-  realtimeChannels,
-} from '@/lib/websocket'
+import { frontdeskChannel, notificationChannel, realtimeChannels } from '@/lib/websocket'
 import { useAuthStore } from '@/store/auth'
 import { RealtimeEvent } from '@/types/realtime'
 import type { ConnectionState, RealtimeMessage } from '@/types/realtime'
@@ -49,15 +45,18 @@ const INVALIDATION_MAP: Record<string, QueryKeyList> = {
   ],
   [RealtimeEvent.ShiftChanged]: [queryKeys.finances.currentShift, queryKeys.finances.shifts()],
   [RealtimeEvent.PresenceChanged]: [teamKeys.roster],
+  [RealtimeEvent.SettingsChanged]: [queryKeys.settings.business],
 }
 
 export function useRealtime(): { state: ConnectionState } {
   const queryClient = useQueryClient()
   const access = useAuthStore((state) => state.access)
+  const user = useAuthStore((state) => state.user)
+  const activeMotelId = useAuthStore((state) => state.activeMotelId)
   const [state, setState] = useState<ConnectionState>('idle')
 
   useEffect(() => {
-    if (!access) {
+    if (!access || user?.is_platform_admin || (user?.is_corporate_user && !activeMotelId)) {
       realtimeChannels.forEach((channel) => channel.disconnect())
       setState('idle')
       return
@@ -82,7 +81,7 @@ export function useRealtime(): { state: ConnectionState } {
       unsubscribeFrontdesk()
       unsubscribeNotifications()
     }
-  }, [access, queryClient])
+  }, [access, activeMotelId, queryClient, user?.is_corporate_user, user?.is_platform_admin])
 
   const previousAccess = useRef<string | null>(access)
   useEffect(() => {
@@ -91,6 +90,10 @@ export function useRealtime(): { state: ConnectionState } {
     }
     previousAccess.current = access
   }, [access])
+
+  useEffect(() => {
+    if (access && activeMotelId) realtimeChannels.forEach((channel) => channel.refresh())
+  }, [access, activeMotelId])
 
   return { state }
 }

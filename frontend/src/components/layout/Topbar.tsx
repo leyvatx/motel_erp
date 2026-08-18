@@ -1,5 +1,7 @@
-import { useState } from 'react'
-import { LogOut, Menu, Moon, Sun, Volume2, VolumeX } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { KeyRound, LogOut, Menu, Moon, Sun, Volume2, VolumeX } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -16,6 +18,7 @@ import { GlobalSearch } from '@/components/layout/GlobalSearch'
 import { NotificationBell } from '@/features/notifications/NotificationBell'
 import { TeamPresence } from '@/features/users/TeamPresence'
 import { StayDetailDialog } from '@/features/frontdesk/components/StayDetailDialog'
+import { ChangePasswordDialog } from '@/features/auth/ChangePasswordDialog'
 import { useLogout } from '@/features/auth/hooks'
 import { cn } from '@/lib/utils'
 import { useAppearanceStore } from '@/store/appearance'
@@ -37,7 +40,20 @@ export function Topbar({ connection }: Props) {
   const logout = useLogout()
 
   const [stayId, setStayId] = useState<number | null>(null)
+  const [passwordOpen, setPasswordOpen] = useState(false)
   const online = connection === 'open'
+  const platform = Boolean(user?.is_platform_admin)
+  const corporate = Boolean(user?.is_corporate_user)
+  const activeMotelId = useAuthStore((state) => state.activeMotelId)
+  const activeMotelName = useAuthStore((state) => state.activeMotelName)
+  const clearActiveMotel = useAuthStore((state) => state.clearActiveMotel)
+  const operational = !platform && (!corporate || Boolean(activeMotelId))
+  const queryClient = useQueryClient()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if (user?.must_change_password) setPasswordOpen(true)
+  }, [user?.must_change_password])
 
   return (
     <header className="z-30 flex h-14 shrink-0 items-center gap-2 border-b bg-background px-3 lg:px-5">
@@ -57,32 +73,46 @@ export function Topbar({ connection }: Props) {
 
       <Separator orientation="vertical" className="mx-1 hidden h-5 lg:block" />
 
-      <GlobalSearch onSelectStay={setStayId} />
+      {operational ? <GlobalSearch onSelectStay={setStayId} /> : null}
+
+      {corporate && activeMotelName ? (
+        <Button variant="outline" size="sm" className="hidden max-w-52 sm:flex" onClick={() => {
+          clearActiveMotel()
+          queryClient.clear()
+          navigate('/corporate')
+        }}>
+          {activeMotelName} · Volver
+        </Button>
+      ) : null}
 
       <div className="ml-auto flex items-center gap-0.5">
-        <span
-          className="mr-1.5 hidden items-center gap-1.5 rounded-full border px-2 py-1 text-2xs font-medium text-muted-foreground sm:flex"
-          title={online ? 'Conectado en tiempo real' : 'Reconectando al servidor'}
-        >
-          <span
-            className={cn(
-              'h-1.5 w-1.5 rounded-full',
-              online ? 'bg-status-available' : 'animate-pulse-alert bg-status-cleaning',
-            )}
-            aria-hidden
-          />
-          {online ? 'En línea' : 'Reconectando'}
-        </span>
+        {operational ? (
+          <>
+            <span
+              className="mr-1.5 hidden items-center gap-1.5 rounded-full border px-2 py-1 text-2xs font-medium text-muted-foreground sm:flex"
+              title={online ? 'Conectado en tiempo real' : 'Reconectando al servidor'}
+            >
+              <span
+                className={cn(
+                  'h-1.5 w-1.5 rounded-full',
+                  online ? 'bg-status-available' : 'animate-pulse-alert bg-status-cleaning',
+                )}
+                aria-hidden
+              />
+              {online ? 'En línea' : 'Reconectando'}
+            </span>
 
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={() => setSoundAlerts(!soundAlerts)}
-          aria-label={soundAlerts ? 'Silenciar alertas' : 'Activar alertas sonoras'}
-          title={soundAlerts ? 'Alertas sonoras activas' : 'Alertas sonoras silenciadas'}
-        >
-          {soundAlerts ? <Volume2 /> : <VolumeX className="text-muted-foreground" />}
-        </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setSoundAlerts(!soundAlerts)}
+              aria-label={soundAlerts ? 'Silenciar alertas' : 'Activar alertas sonoras'}
+              title={soundAlerts ? 'Alertas sonoras activas' : 'Alertas sonoras silenciadas'}
+            >
+              {soundAlerts ? <Volume2 /> : <VolumeX className="text-muted-foreground" />}
+            </Button>
+          </>
+        ) : null}
 
         <Button
           variant="ghost"
@@ -93,13 +123,14 @@ export function Topbar({ connection }: Props) {
           {theme === 'dark' ? <Sun /> : <Moon />}
         </Button>
 
-        <NotificationBell />
-
-        <Separator orientation="vertical" className="mx-1 h-5" />
-
-        <TeamPresence />
-
-        <Separator orientation="vertical" className="mx-1 h-5" />
+        {operational ? (
+          <>
+            <NotificationBell />
+            <Separator orientation="vertical" className="mx-1 h-5" />
+            <TeamPresence />
+            <Separator orientation="vertical" className="mx-1 h-5" />
+          </>
+        ) : null}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -120,6 +151,11 @@ export function Topbar({ connection }: Props) {
               <p className="text-xs text-muted-foreground">{user?.username}</p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => setPasswordOpen(true)}>
+              <KeyRound />
+              Cambiar contraseña
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => logout.mutate()}>
               <LogOut />
               Cerrar sesión
@@ -128,10 +164,18 @@ export function Topbar({ connection }: Props) {
         </DropdownMenu>
       </div>
 
-      <StayDetailDialog
-        stayId={stayId}
-        open={stayId !== null}
-        onOpenChange={(open) => !open && setStayId(null)}
+      {operational ? (
+        <StayDetailDialog
+          stayId={stayId}
+          open={stayId !== null}
+          onOpenChange={(open) => !open && setStayId(null)}
+        />
+      ) : null}
+
+      <ChangePasswordDialog
+        open={passwordOpen}
+        required={Boolean(user?.must_change_password)}
+        onOpenChange={setPasswordOpen}
       />
     </header>
   )

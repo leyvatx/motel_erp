@@ -17,9 +17,9 @@ from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
 from apps.notifications.events import (
-    GROUP_FRONTDESK,
-    GROUP_NOTIFICATIONS,
-    GROUP_ORDERS,
+    frontdesk_group,
+    notifications_group,
+    orders_group,
     role_group,
     user_group,
 )
@@ -111,11 +111,29 @@ class FrontDeskConsumer(AuthenticatedConsumer):
     """Estado del grid: cuartos, rentas, cronómetros y ordenes."""
 
     def get_groups(self, user) -> list[str]:
-        return [GROUP_FRONTDESK, GROUP_ORDERS, role_group(user.role)]
+        motel_id = getattr(user, "active_motel_id", None) or user.motel_id
+        role = getattr(user, "active_access_role", user.role)
+        if motel_id is None:
+            return []
+        return [
+            frontdesk_group(motel_id),
+            orders_group(motel_id),
+            role_group(role, motel_id),
+        ]
 
 
 class NotificationConsumer(AuthenticatedConsumer):
     """Campana del topbar: avisos dirigidos al rol o al usuario."""
 
     def get_groups(self, user) -> list[str]:
-        return [GROUP_NOTIFICATIONS, role_group(user.role), user_group(user.pk)]
+        groups = [user_group(user.pk)]
+        motel_id = getattr(user, "active_motel_id", None) or user.motel_id
+        role = getattr(user, "active_access_role", user.role)
+        if motel_id is not None:
+            groups.extend(
+                [
+                    notifications_group(motel_id),
+                    role_group(role, motel_id),
+                ]
+            )
+        return groups

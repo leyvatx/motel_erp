@@ -51,6 +51,8 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   if (access) {
     config.headers.set('Authorization', `Bearer ${access}`)
   }
+  const activeMotelId = authSnapshot.activeMotelId()
+  if (activeMotelId) config.headers.set('X-Motel-Id', String(activeMotelId))
   return config
 })
 
@@ -106,10 +108,7 @@ export function apiErrorCode(error: unknown): string | null {
   return (error.response?.data as ApiErrorBody | undefined)?.error?.code ?? null
 }
 
-export async function get<TResponse>(
-  url: string,
-  config?: AxiosRequestConfig,
-): Promise<TResponse> {
+export async function get<TResponse>(url: string, config?: AxiosRequestConfig): Promise<TResponse> {
   const { data } = await api.get<TResponse>(url, config)
   return data
 }

@@ -16,6 +16,7 @@ class UserSerializer(serializers.ModelSerializer):
     motel_name = serializers.CharField(source="motel.name", read_only=True, default=None)
     motel_slug = serializers.CharField(source="motel.slug", read_only=True, default=None)
     is_platform_admin = serializers.BooleanField(read_only=True)
+    is_corporate_user = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = User
@@ -31,6 +32,7 @@ class UserSerializer(serializers.ModelSerializer):
             "motel_name",
             "motel_slug",
             "is_platform_admin",
+            "is_corporate_user",
             "employee_number",
             "hired_at",
             "is_active",
@@ -46,6 +48,7 @@ class UserSerializer(serializers.ModelSerializer):
             "created_at",
             "is_staff",
             "is_platform_admin",
+            "is_corporate_user",
         )
 
 
@@ -73,6 +76,23 @@ class UserWriteSerializer(serializers.ModelSerializer):
         except DjangoValidationError as exc:
             raise serializers.ValidationError(list(exc.messages)) from exc
         return value
+
+    def validate(self, attrs: dict) -> dict:
+        instance = self.instance
+        if (
+            instance is not None
+            and instance.role == Role.SUPERADMIN
+            and attrs.get("role", instance.role) != Role.SUPERADMIN
+            and not User.all_objects.filter(
+                motel_id=instance.motel_id,
+                role=Role.SUPERADMIN,
+                is_active=True,
+            ).exclude(pk=instance.pk).exists()
+        ):
+            raise serializers.ValidationError(
+                {"role": "El motel debe conservar al menos un super administrador activo."}
+            )
+        return attrs
 
     def create(self, validated_data: dict) -> User:
         password = validated_data.pop("password", None)

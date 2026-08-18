@@ -86,12 +86,19 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel, SoftDeleteModel
         return self.is_superuser and self.motel_id is None
 
     @property
+    def is_corporate_user(self) -> bool:
+        if self.motel_id is not None or self.is_platform_admin:
+            return False
+        return self.corporate_accesses.filter(is_active=True).exists()
+
+    @property
     def is_superadmin(self) -> bool:
         return self.role == Role.SUPERADMIN or self.is_superuser
 
     @property
     def is_management(self) -> bool:
-        return self.is_superuser or self.role in MANAGEMENT_ROLES
+        role = getattr(self, "active_access_role", self.role)
+        return self.is_superuser or role in MANAGEMENT_ROLES
 
     @property
     def can_operate_cash(self) -> bool:

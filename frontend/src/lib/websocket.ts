@@ -29,7 +29,10 @@ export class RealtimeChannel {
   constructor(private readonly path: string) {}
 
   connect(): void {
-    if (this.socket && (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING)) {
+    if (
+      this.socket &&
+      (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING)
+    ) {
       return
     }
 
@@ -42,7 +45,9 @@ export class RealtimeChannel {
     this.manuallyClosed = false
     this.setState('connecting')
 
-    const socket = new WebSocket(`${resolveWsUrl(this.path)}?token=${encodeURIComponent(token)}`)
+    const motelId = authSnapshot.activeMotelId()
+    const context = motelId ? `&motel_id=${motelId}` : ''
+    const socket = new WebSocket(`${resolveWsUrl(this.path)}?token=${encodeURIComponent(token)}${context}`)
     this.socket = socket
 
     socket.onopen = () => {
@@ -57,6 +62,7 @@ export class RealtimeChannel {
         if (message.timestamp) syncServerTime(message.timestamp)
         this.messageHandlers.forEach((handler) => handler(message))
       } catch {
+        return
       }
     }
 

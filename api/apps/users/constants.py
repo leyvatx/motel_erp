@@ -37,6 +37,7 @@ class PermissionCode(models.TextChoices):
     INVENTORY_VIEW = "inventory.view", "Consultar inventario"
     INVENTORY_MOVE = "inventory.move", "Registrar movimientos de inventario"
     INVENTORY_WASTE = "inventory.waste", "Registrar mermas"
+    INVENTORY_PURCHASE = "inventory.purchase", "Administrar compras y proveedores"
     HOUSEKEEPING_TASK = "housekeeping.task", "Operar tareas de limpieza"
     MAINTENANCE_REPORT = "maintenance.report", "Reportar mantenimiento"
     SHIFT_OPEN = "shift.open", "Abrir turno"
@@ -50,12 +51,19 @@ class PermissionCode(models.TextChoices):
     MOTEL_MANAGE = "motel.manage", "Dar de alta y administrar moteles"
     SHIFT_VERIFY = "shift.verify", "Arquear y verificar turnos"
     CASH_MOVE = "cash.move", "Registrar entradas y salidas de efectivo"
+    CORPORATE_VIEW = "corporate.view", "Consultar operación corporativa"
+    CORPORATE_MANAGE = "corporate.manage", "Administrar estructura corporativa"
 
 
 ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
     Role.SUPERADMIN: frozenset(PermissionCode.values) - {PermissionCode.MOTEL_MANAGE},
     Role.MANAGER: frozenset(PermissionCode.values)
-    - {PermissionCode.USER_MANAGE, PermissionCode.MOTEL_MANAGE},
+    - {
+        PermissionCode.USER_MANAGE,
+        PermissionCode.MOTEL_MANAGE,
+        PermissionCode.CORPORATE_VIEW,
+        PermissionCode.CORPORATE_MANAGE,
+    },
     Role.RECEPTION: frozenset(
         {
             PermissionCode.ROOM_RENT,
@@ -95,7 +103,12 @@ def permissions_for(user) -> frozenset[str]:
     if platform:
         return frozenset(PermissionCode.values)
 
-    granted = ROLE_PERMISSIONS.get(getattr(user, "role", None), frozenset())
+    role = getattr(user, "active_access_role", getattr(user, "role", None))
+    granted = ROLE_PERMISSIONS.get(role, frozenset())
+    if getattr(user, "is_corporate_user", False):
+        granted = granted | {PermissionCode.CORPORATE_VIEW}
+        if getattr(user, "role", None) in MANAGEMENT_ROLES:
+            granted = granted | {PermissionCode.CORPORATE_MANAGE}
     if getattr(user, "is_superuser", False):
         granted = frozenset(PermissionCode.values) - {PermissionCode.MOTEL_MANAGE}
     return granted

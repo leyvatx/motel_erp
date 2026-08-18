@@ -5,7 +5,8 @@ from __future__ import annotations
 from django.db import models
 from django.utils import timezone
 
-from common.tenancy import current_motel_id
+from common.middleware import has_current_request
+from common.tenancy import all_motels_enabled, current_motel_id
 
 
 class TenantQuerySet(models.QuerySet):
@@ -20,6 +21,14 @@ class TenantQuerySet(models.QuerySet):
         if motel_id is None:
             return self
         return self.filter(motel_id=motel_id)
+
+    def for_request_motel(self) -> "TenantQuerySet":
+        motel_id = current_motel_id()
+        if motel_id is not None:
+            return self.filter(motel_id=motel_id)
+        if has_current_request() and not all_motels_enabled():
+            return self.none()
+        return self
 
     def for_motel(self, motel) -> "TenantQuerySet":
         return self.filter(motel_id=getattr(motel, "pk", motel))
@@ -70,28 +79,28 @@ class ScopedQuerySet(SoftDeleteQuerySet):
     """
 
     def all(self) -> "ScopedQuerySet":
-        return super().all().for_current_motel()
+        return super().all().for_request_motel()
 
 
 class ScopedTenantQuerySet(TenantQuerySet):
     """Igual que ``ScopedQuerySet`` para los registros inmutables."""
 
     def all(self) -> "ScopedTenantQuerySet":
-        return super().all().for_current_motel()
+        return super().all().for_request_motel()
 
 
 class TenantManager(models.Manager.from_queryset(ScopedTenantQuerySet)):
     """Manager por defecto de los registros que pertenecen a un motel."""
 
     def get_queryset(self) -> ScopedTenantQuerySet:
-        return super().get_queryset().for_current_motel()
+        return super().get_queryset().for_request_motel()
 
 
 class ActiveManager(models.Manager.from_queryset(ScopedQuerySet)):
     """Manager por defecto: registros vigentes del motel en curso."""
 
     def get_queryset(self) -> ScopedQuerySet:
-        return super().get_queryset().for_current_motel().filter(is_active=True)
+        return super().get_queryset().for_request_motel().filter(is_active=True)
 
 
 class AllObjectsManager(models.Manager.from_queryset(SoftDeleteQuerySet)):

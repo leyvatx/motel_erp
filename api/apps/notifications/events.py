@@ -24,8 +24,27 @@ GROUP_NOTIFICATIONS = "notifications"
 GROUP_ORDERS = "orders"
 
 
-def role_group(role: str) -> str:
-    return f"role.{role.lower()}"
+def motel_group(group: str, motel) -> str:
+    motel_id = getattr(motel, "pk", motel)
+    if motel_id is None:
+        raise ValueError("Se requiere un motel para crear un grupo en tiempo real.")
+    return f"motel.{motel_id}.{group}"
+
+
+def frontdesk_group(motel) -> str:
+    return motel_group(GROUP_FRONTDESK, motel)
+
+
+def notifications_group(motel) -> str:
+    return motel_group(GROUP_NOTIFICATIONS, motel)
+
+
+def orders_group(motel) -> str:
+    return motel_group(GROUP_ORDERS, motel)
+
+
+def role_group(role: str, motel) -> str:
+    return motel_group(f"role.{role.lower()}", motel)
 
 
 def user_group(user_id: int) -> str:
@@ -51,6 +70,7 @@ class Event:
     STOCK_EXPIRING = "inventory.expiring_lot"
     NOTIFICATION_NEW = "notification.new"
     SHIFT_CHANGED = "finances.shift_changed"
+    SETTINGS_CHANGED = "settings.changed"
 
 
 def _send_now(groups: list[str], event: str, payload: dict[str, Any]) -> None:
@@ -76,11 +96,16 @@ def broadcast(
     event: str,
     payload: dict[str, Any],
     *,
+    motel,
     groups: list[str] | None = None,
     immediate: bool = False,
 ) -> None:
     """Publica un evento a los grupos indicados (por defecto, recepción)."""
-    targets = groups or [GROUP_FRONTDESK]
+    motel_id = getattr(motel, "pk", motel)
+    if motel_id is None:
+        logger.error("Se omitió el evento '%s' porque no tiene motel.", event)
+        return
+    targets = groups or [frontdesk_group(motel_id)]
     if immediate:
         _send_now(targets, event, payload)
     else:

@@ -7,10 +7,10 @@ from typing import Any
 from django.db import transaction
 
 from apps.notifications.events import (
-    GROUP_NOTIFICATIONS,
     Event,
     broadcast,
     notification_payload,
+    notifications_group,
     role_group,
     user_group,
 )
@@ -29,13 +29,21 @@ def notify(
     target_user=None,
     payload: dict[str, Any] | None = None,
     actor=None,
+    motel=None,
 ) -> Notification:
     """Crea el aviso y lo publica al grupo que corresponda.
 
     ``target_role`` vacio significa "todos los roles": el aviso viaja al grupo
     general del topbar.
     """
+    motel_id = getattr(motel, "pk", motel)
+    if motel_id is None and target_user is not None:
+        motel_id = target_user.motel_id
+    if motel_id is None and actor is not None:
+        motel_id = actor.motel_id
+
     notification = Notification.objects.create(
+        motel_id=motel_id,
         category=category,
         level=level,
         title=title[:120],
@@ -46,13 +54,22 @@ def notify(
         created_by=actor,
     )
 
-    groups = [GROUP_NOTIFICATIONS]
+    if notification.motel_id is None:
+        broadcast(Event.NOTIFICATION_NEW, notification_payload(notification), motel=None)
+        return notification
+
+    groups = [notifications_group(notification.motel_id)]
     if target_role:
-        groups = [role_group(target_role)]
+        groups = [role_group(target_role, notification.motel_id)]
     if target_user is not None:
         groups = [user_group(target_user.pk)]
 
-    broadcast(Event.NOTIFICATION_NEW, notification_payload(notification), groups=groups)
+    broadcast(
+        Event.NOTIFICATION_NEW,
+        notification_payload(notification),
+        motel=notification.motel_id,
+        groups=groups,
+    )
     return notification
 
 

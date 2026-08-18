@@ -266,7 +266,11 @@ def _broadcast_maintenance(report: MaintenanceReport) -> None:
     broadcast(
         Event.MAINTENANCE_REPORTED,
         payload,
-        groups=[role_group(Role.MANAGER), role_group(Role.HOUSEKEEPING)],
+        motel=report.motel_id,
+        groups=[
+            role_group(Role.MANAGER, report.motel_id),
+            role_group(Role.HOUSEKEEPING, report.motel_id),
+        ],
     )
     notify(
         category=NotificationCategory.MAINTENANCE,

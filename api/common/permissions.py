@@ -28,6 +28,7 @@ from apps.users.constants import PermissionCode, permissions_for
 
 __all__ = [
     "HasPermission",
+    "HasMotelContext",
     "IsAuthenticatedActive",
     "IsManagement",
     "PermissionCode",
@@ -44,6 +45,28 @@ class IsAuthenticatedActive(BasePermission):
     def has_permission(self, request, view) -> bool:
         user = request.user
         return bool(user and user.is_authenticated and user.is_active)
+
+
+class HasMotelContext(BasePermission):
+    """Cierra la API operativa cuando el usuario no pertenece a un motel.
+
+    Los pocos endpoints propios de la plataforma deben declarar
+    ``allow_platform_scope = True``. De esta forma agregar una vista nueva sin
+    decidir su alcance falla cerrado en vez de exponer datos de todos los
+    clientes a un superusuario global.
+    """
+
+    message = "Tu usuario no pertenece a un motel y no puede operar esta sección."
+
+    def has_permission(self, request, view) -> bool:
+        user = request.user
+        if not (user and user.is_authenticated and user.is_active):
+            return False
+        if user.motel_id is not None or getattr(user, "active_motel_id", None) is not None:
+            return True
+        if getattr(view, "allow_corporate_scope", False) and user.is_corporate_user:
+            return True
+        return bool(user.is_platform_admin and getattr(view, "allow_platform_scope", False))
 
 
 class HasPermission(BasePermission):

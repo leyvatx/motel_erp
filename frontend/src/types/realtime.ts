@@ -19,6 +19,7 @@ export const RealtimeEvent = {
   NotificationNew: 'notification.new',
   ShiftChanged: 'finances.shift_changed',
   PresenceChanged: 'presence.changed',
+  SettingsChanged: 'settings.changed',
 } as const
 
 export type RealtimeEventName = (typeof RealtimeEvent)[keyof typeof RealtimeEvent]

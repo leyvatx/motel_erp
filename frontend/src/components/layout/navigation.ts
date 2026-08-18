@@ -1,5 +1,9 @@
 import {
+  Building2,
+  Network,
+  CalendarDays,
   ClipboardList,
+  LayoutDashboard,
   LayoutGrid,
   Package,
   ScrollText,
@@ -24,9 +28,18 @@ export interface NavGroup {
 
 export const NAV_GROUPS: readonly NavGroup[] = [
   {
+    label: 'Plataforma',
+    items: [
+      { section: 'platform', to: '/platform', label: 'Moteles', icon: Building2 },
+      { section: 'corporate', to: '/corporate', label: 'Corporativo', icon: Network },
+    ],
+  },
+  {
     label: 'Operación',
     items: [
+      { section: 'dashboard', to: '/dashboard', label: 'Inicio', icon: LayoutDashboard },
       { section: 'frontdesk', to: '/frontdesk', label: 'Recepción', icon: LayoutGrid },
+      { section: 'reservations', to: '/reservations', label: 'Reservaciones', icon: CalendarDays },
       { section: 'housekeeping', to: '/housekeeping', label: 'Ama de llaves', icon: ClipboardList },
       { section: 'inventory', to: '/inventory', label: 'Inventarios', icon: Package },
       { section: 'finances', to: '/finances', label: 'Finanzas', icon: Wallet },
@@ -46,7 +59,5 @@ export const NAV_GROUPS: readonly NavGroup[] = [
 const ALL_ITEMS: readonly NavItem[] = NAV_GROUPS.flatMap((group) => group.items)
 
 export function sectionTitle(pathname: string): string | undefined {
-  return ALL_ITEMS.find(
-    (item) => pathname === item.to || pathname.startsWith(`${item.to}/`),
-  )?.label
+  return ALL_ITEMS.find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`))?.label
 }

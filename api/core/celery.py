@@ -1,8 +1,3 @@
-"""Configuración de Celery.
-
-El calendario de tareas periódicas vive en ``beat_schedule`` como valor por
-defecto; ``django-celery-beat`` permite ajustarlo en caliente desde el admin.
-"""
 
 import os
 
@@ -17,20 +12,20 @@ app.autodiscover_tasks()
 
 app.conf.beat_schedule = {
     "sweep-expiring-stays": {
-        "task": "apps.rooms.tasks.sweep_stay_timers",
+        "task": "apps.rooms.tasks.dispatch_stay_timer_sweeps",
         "schedule": 30.0,
         "options": {"expires": 25},
     },
     "expire-stale-reservations": {
-        "task": "apps.rooms.tasks.expire_stale_reservations",
+        "task": "apps.rooms.tasks.dispatch_reservation_expirations",
         "schedule": crontab(minute="*/10"),
     },
     "check-low-stock": {
-        "task": "apps.inventory.tasks.check_low_stock",
+        "task": "apps.inventory.tasks.dispatch_low_stock_checks",
         "schedule": crontab(minute="*/15"),
     },
     "check-expiring-lots": {
-        "task": "apps.inventory.tasks.check_expiring_lots",
+        "task": "apps.inventory.tasks.dispatch_expiring_lot_checks",
         "schedule": crontab(hour=7, minute=0),
     },
 }

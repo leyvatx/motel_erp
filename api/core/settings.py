@@ -78,6 +78,8 @@ LOCAL_APPS = [
     "apps.finances",
     "apps.audit",
     "apps.notifications",
+    "apps.reports",
+    "apps.corporate",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -150,10 +152,11 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "common.authentication.MotelJWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": (
         "common.permissions.IsAuthenticatedActive",
+        "common.permissions.HasMotelContext",
         "common.permissions.HasPermission",
     ),
     "DEFAULT_PAGINATION_CLASS": "common.pagination.DefaultPagination",

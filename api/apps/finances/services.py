@@ -456,7 +456,11 @@ def _broadcast_shift(shift: Shift, action: str) -> None:
             "status": shift.status,
             "action": action,
         },
-        groups=[role_group(Role.MANAGER), role_group(Role.SUPERADMIN)],
+        motel=shift.motel_id,
+        groups=[
+            role_group(Role.MANAGER, shift.motel_id),
+            role_group(Role.SUPERADMIN, shift.motel_id),
+        ],
     )
 
 

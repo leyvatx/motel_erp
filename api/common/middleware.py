@@ -42,6 +42,10 @@ def get_current_user():
     return None
 
 
+def has_current_request() -> bool:
+    return _current_request.get() is not None
+
+
 def get_current_ip() -> str | None:
     return _current_ip.get()
 

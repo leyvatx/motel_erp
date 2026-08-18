@@ -5,14 +5,26 @@ import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ForbiddenPage, NotFoundPage } from '@/pages/ErrorPages'
-import PlaceholderPage from '@/pages/PlaceholderPage'
+import { defaultRouteFor, useAuthStore } from '@/store/auth'
 
 const LoginPage = lazy(() => import('@/features/auth/LoginPage'))
+const DashboardPage = lazy(() => import('@/features/dashboard/DashboardPage'))
 const FrontDeskPage = lazy(() => import('@/features/frontdesk/FrontDeskPage'))
 const InventoryPage = lazy(() => import('@/features/inventory/InventoryPage'))
 const HousekeepingPage = lazy(() => import('@/features/housekeeping/HousekeepingPage'))
 const FinancesPage = lazy(() => import('@/features/finances/FinancesPage'))
 const ConfigPage = lazy(() => import('@/features/config/ConfigPage'))
+const PlatformPage = lazy(() => import('@/features/platform/PlatformPage'))
+const UsersPage = lazy(() => import('@/features/users/UsersPage'))
+const AuditPage = lazy(() => import('@/features/audit/AuditPage'))
+const ReportsPage = lazy(() => import('@/features/reports/ReportsPage'))
+const ReservationsPage = lazy(() => import('@/features/reservations/ReservationsPage'))
+const CorporatePage = lazy(() => import('@/features/corporate/CorporatePage'))
+
+function HomeRedirect() {
+  const user = useAuthStore((state) => state.user)
+  return <Navigate to={defaultRouteFor(user)} replace />
+}
 
 function PageFallback() {
   return (
@@ -45,13 +57,51 @@ const routes: RouteObject[] = [
       </ProtectedRoute>
     ),
     children: [
-      { index: true, element: <Navigate to="/frontdesk" replace /> },
+      { index: true, element: <HomeRedirect /> },
+      {
+        path: 'dashboard',
+        element: (
+          <ProtectedRoute section="dashboard">
+            <Lazy>
+              <DashboardPage />
+            </Lazy>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'platform',
+        element: (
+          <ProtectedRoute section="platform">
+            <Lazy>
+              <PlatformPage />
+            </Lazy>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'corporate',
+        element: (
+          <ProtectedRoute section="corporate">
+            <Lazy><CorporatePage /></Lazy>
+          </ProtectedRoute>
+        ),
+      },
       {
         path: 'frontdesk',
         element: (
           <ProtectedRoute section="frontdesk">
             <Lazy>
               <FrontDeskPage />
+            </Lazy>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'reservations',
+        element: (
+          <ProtectedRoute section="reservations">
+            <Lazy>
+              <ReservationsPage />
             </Lazy>
           </ProtectedRoute>
         ),
@@ -90,7 +140,9 @@ const routes: RouteObject[] = [
         path: 'reports',
         element: (
           <ProtectedRoute section="reports">
-            <PlaceholderPage title="Reportes" description="Tablero gerencial." />
+            <Lazy>
+              <ReportsPage />
+            </Lazy>
           </ProtectedRoute>
         ),
       },
@@ -98,7 +150,9 @@ const routes: RouteObject[] = [
         path: 'audit',
         element: (
           <ProtectedRoute section="audit">
-            <PlaceholderPage title="Auditoría" description="Bitácora de operaciones." />
+            <Lazy>
+              <AuditPage />
+            </Lazy>
           </ProtectedRoute>
         ),
       },
@@ -116,7 +170,9 @@ const routes: RouteObject[] = [
         path: 'users',
         element: (
           <ProtectedRoute section="users">
-            <PlaceholderPage title="Usuarios" description="Altas, bajas y roles." />
+            <Lazy>
+              <UsersPage />
+            </Lazy>
           </ProtectedRoute>
         ),
       },

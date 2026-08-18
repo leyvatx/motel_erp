@@ -17,7 +17,7 @@ export function ProtectedRoute({ children, section }: Props) {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />
   }
 
-  if (section && !canAccessSection(user?.role, section)) {
+  if (section && !canAccessSection(user, section)) {
     return <Navigate to="/sin-acceso" replace />
   }
 

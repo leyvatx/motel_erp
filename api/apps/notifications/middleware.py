@@ -15,15 +15,33 @@ from django.contrib.auth.models import AnonymousUser
 
 
 @database_sync_to_async
-def _get_user(validated_token):
+def _get_user(validated_token, requested_motel_id=None):
     from django.contrib.auth import get_user_model
     from rest_framework_simplejwt.settings import api_settings
 
     user_model = get_user_model()
     try:
         user_id = validated_token[api_settings.USER_ID_CLAIM]
-        return user_model.objects.get(**{api_settings.USER_ID_FIELD: user_id})
-    except (KeyError, user_model.DoesNotExist):
+        user = user_model.objects.get(**{api_settings.USER_ID_FIELD: user_id})
+        if requested_motel_id is None:
+            return user
+        motel_id = int(requested_motel_id)
+        if user.motel_id is not None:
+            if user.motel_id != motel_id:
+                return AnonymousUser()
+            user.active_motel_id = user.motel_id
+            user.active_access_role = user.role
+            return user
+        if user.is_platform_admin:
+            return user
+        from apps.corporate.services import access_role
+        role = access_role(user, motel_id)
+        if not role:
+            return AnonymousUser()
+        user.active_motel_id = motel_id
+        user.active_access_role = role
+        return user
+    except (KeyError, TypeError, ValueError, user_model.DoesNotExist):
         return AnonymousUser()
 
 
@@ -42,7 +60,7 @@ class JWTAuthMiddleware:
 
         if token:
             try:
-                scope["user"] = await _get_user(AccessToken(token))
+                scope["user"] = await _get_user(AccessToken(token), self._motel_id(scope))
             except TokenError:
                 scope["user"] = AnonymousUser()
         else:
@@ -62,6 +80,11 @@ class JWTAuthMiddleware:
                 if len(parts) == 2 and parts[0].lower() == "bearer":
                     return parts[1]
         return None
+
+    @staticmethod
+    def _motel_id(scope: dict) -> str | None:
+        query = parse_qs(scope.get("query_string", b"").decode())
+        return query.get("motel_id", [None])[0]
 
 
 def JWTAuthMiddlewareStack(inner):

@@ -41,6 +41,7 @@ export interface User {
   motel_name: string | null
   motel_slug: string | null
   is_platform_admin: boolean
+  is_corporate_user: boolean
   employee_number: string
   hired_at: string | null
   is_active: boolean
@@ -60,12 +61,7 @@ export interface LoginResponse extends TokenPair {
 }
 
 export type RoomStatus =
-  | 'AVAILABLE'
-  | 'RESERVED'
-  | 'OCCUPIED'
-  | 'CLEANING'
-  | 'MAINTENANCE'
-  | 'BLOCKED'
+  'AVAILABLE' | 'RESERVED' | 'OCCUPIED' | 'CLEANING' | 'MAINTENANCE' | 'BLOCKED'
 
 export type StayStatus = 'ACTIVE' | 'CLOSED' | 'CANCELLED'
 

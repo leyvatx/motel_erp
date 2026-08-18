@@ -16,7 +16,10 @@ from apps.users.models import User, UserPresence
 
 
 def _broadcast(presence: UserPresence, *, online: bool) -> None:
-    from apps.notifications.events import GROUP_NOTIFICATIONS, broadcast
+    from apps.notifications.events import broadcast, notifications_group
+
+    if presence.user.motel_id is None:
+        return
 
     broadcast(
         "presence.changed",
@@ -28,7 +31,8 @@ def _broadcast(presence: UserPresence, *, online: bool) -> None:
             "is_online": online,
             "last_seen_at": presence.last_seen_at.isoformat() if presence.last_seen_at else None,
         },
-        groups=[GROUP_NOTIFICATIONS],
+        motel=presence.user.motel_id,
+        groups=[notifications_group(presence.user.motel_id)],
         immediate=True,
     )
 

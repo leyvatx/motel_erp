@@ -22,8 +22,15 @@ export const queryClient = new QueryClient({
 })
 
 export const queryKeys = {
+  platform: {
+    motels: (params?: unknown) => ['platform', 'motels', params ?? {}] as const,
+  },
   auth: {
     me: ['auth', 'me'] as const,
+  },
+  users: {
+    list: (params?: unknown) => ['users', 'list', params ?? {}] as const,
+    roles: ['users', 'roles'] as const,
   },
   frontdesk: {
     grid: ['frontdesk', 'grid'] as const,
@@ -51,6 +58,8 @@ export const queryKeys = {
     lowStock: ['inventory', 'stocks', 'low'] as const,
     lots: (params?: unknown) => ['inventory', 'lots', params ?? {}] as const,
     kardex: (params?: unknown) => ['inventory', 'kardex', params ?? {}] as const,
+    suppliers: (params?: unknown) => ['inventory', 'suppliers', params ?? {}] as const,
+    purchases: (params?: unknown) => ['inventory', 'purchases', params ?? {}] as const,
   },
   housekeeping: {
     board: (mine?: boolean) => ['housekeeping', 'board', mine ?? false] as const,
