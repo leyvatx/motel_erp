@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { frontdeskApi, type GridParams } from '@/features/frontdesk/api'
+import type { ReservationParams } from '@/features/frontdesk/api'
 import type {
   CheckoutPayload,
   ExtendStayPayload,
   RentRoomPayload,
+  ReservationPayload,
 } from '@/features/frontdesk/types'
 import { toast } from '@/components/ui/toast'
 import { apiErrorMessage } from '@/lib/axios'
@@ -19,10 +21,11 @@ export function useRoomGrid(params?: GridParams) {
   })
 }
 
-export function useRoomSummary() {
+export function useRoomSummary(enabled = true) {
   return useQuery({
     queryKey: queryKeys.frontdesk.summary,
     queryFn: frontdeskApi.summary,
+    enabled,
   })
 }
 
@@ -51,12 +54,70 @@ export function useStay(stayId: number | null) {
   })
 }
 
-export function useExpiringStays() {
+export function useExpiringStays(enabled = true) {
   return useQuery({
     queryKey: queryKeys.frontdesk.expiring,
     queryFn: frontdeskApi.expiring,
+    enabled,
   })
 }
+
+export function useReservations(params?: ReservationParams) {
+  return useQuery({
+    queryKey: queryKeys.frontdesk.reservations(params),
+    queryFn: () => frontdeskApi.reservations(params),
+    placeholderData: (previous) => previous,
+  })
+}
+
+export function useUpcomingReservations(enabled = true) {
+  return useQuery({
+    queryKey: [...queryKeys.frontdesk.reservations(), 'upcoming'],
+    queryFn: frontdeskApi.upcomingReservations,
+    enabled,
+  })
+}
+
+function useReservationMutation<TArgs, TResult>(
+  mutationFn: (args: TArgs) => Promise<TResult>,
+  successMessage: string,
+) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['frontdesk', 'reservations'] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.frontdesk.grid })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.frontdesk.summary })
+      toast.success(successMessage)
+    },
+    onError: (error) => toast.error('No se pudo completar', apiErrorMessage(error)),
+  })
+}
+
+export const useCreateReservation = () =>
+  useReservationMutation<ReservationPayload, unknown>(
+    frontdeskApi.createReservation,
+    'Reservación creada',
+  )
+
+export const useCancelReservation = () =>
+  useReservationMutation<{ id: number; reason: string }, unknown>(
+    ({ id, reason }) => frontdeskApi.cancelReservation(id, reason),
+    'Reservación cancelada',
+  )
+
+export const useCheckInReservation = () =>
+  useReservationMutation<{ id: number; roomId: number; tariffBlockId: number }, unknown>(
+    ({ id, roomId, tariffBlockId }) => frontdeskApi.checkInReservation(id, roomId, tariffBlockId),
+    'Llegada registrada',
+  )
+
+export const useMarkReservationNoShow = () =>
+  useReservationMutation<number, unknown>(
+    frontdeskApi.markReservationNoShow,
+    'Reservación marcada como no-show',
+  )
 
 function useFrontdeskInvalidation() {
   const queryClient = useQueryClient()
@@ -108,10 +169,7 @@ export function useCheckoutStay(stayId: number) {
       void queryClient.invalidateQueries({ queryKey: queryKeys.frontdesk.stay(stayId) })
       void queryClient.invalidateQueries({ queryKey: queryKeys.finances.currentShift })
       playSuccessTone()
-      toast.success(
-        `Cuenta cerrada - habitación ${stay.room_number}`,
-        'El cuarto paso a limpieza.',
-      )
+      toast.success(`Cuenta cerrada - habitación ${stay.room_number}`, 'El cuarto paso a limpieza.')
     },
     onError: (error) => toast.error('No se pudo cerrar la cuenta', apiErrorMessage(error)),
   })
@@ -149,8 +207,15 @@ export function useSetOutOfService() {
   const invalidate = useFrontdeskInvalidation()
 
   return useMutation({
-    mutationFn: ({ roomId, reason, blocked }: { roomId: number; reason: string; blocked?: boolean }) =>
-      frontdeskApi.outOfService(roomId, reason, blocked ?? false),
+    mutationFn: ({
+      roomId,
+      reason,
+      blocked,
+    }: {
+      roomId: number
+      reason: string
+      blocked?: boolean
+    }) => frontdeskApi.outOfService(roomId, reason, blocked ?? false),
     onSuccess: (room) => {
       invalidate()
       toast.warning(`Habitación ${room.number} fuera de servicio`)

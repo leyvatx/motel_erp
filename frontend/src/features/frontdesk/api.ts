@@ -5,6 +5,7 @@ import type {
   ExtendStayPayload,
   RentRoomPayload,
   Reservation,
+  ReservationPayload,
   Room,
   RoomGridItem,
   RoomStatusSummary,
@@ -17,6 +18,14 @@ import type {
 export interface GridParams extends ListParams {
   status?: string
   room_type?: number
+}
+
+export interface ReservationParams extends ListParams {
+  status?: string
+  room_type?: number
+  from?: string
+  to?: string
+  active?: boolean
 }
 
 export const frontdeskApi = {
@@ -43,10 +52,10 @@ export const frontdeskApi = {
     post<Room>(`/frontdesk/rooms/${roomId}/finish-cleaning/`),
 
   outOfService: (roomId: number, reason: string, blocked = false): Promise<Room> =>
-    post<Room, { reason: string; blocked: boolean }>(
-      `/frontdesk/rooms/${roomId}/out-of-service/`,
-      { reason, blocked },
-    ),
+    post<Room, { reason: string; blocked: boolean }>(`/frontdesk/rooms/${roomId}/out-of-service/`, {
+      reason,
+      blocked,
+    }),
 
   stays: (params?: ListParams & { status?: string }): Promise<PaginatedResponse<StayListItem>> =>
     get<PaginatedResponse<StayListItem>>('/frontdesk/stays/', { params }),
@@ -68,9 +77,24 @@ export const frontdeskApi = {
   cancelStay: (stayId: number, reason: string): Promise<Stay> =>
     post<Stay, { reason: string }>(`/frontdesk/stays/${stayId}/cancel/`, { reason }),
 
-  reservations: (params?: ListParams): Promise<PaginatedResponse<Reservation>> =>
+  reservations: (params?: ReservationParams): Promise<PaginatedResponse<Reservation>> =>
     get<PaginatedResponse<Reservation>>('/frontdesk/reservations/', { params }),
+
+  upcomingReservations: (): Promise<PaginatedResponse<Reservation>> =>
+    get<PaginatedResponse<Reservation>>('/frontdesk/reservations/upcoming/'),
+
+  createReservation: (payload: ReservationPayload): Promise<Reservation> =>
+    post<Reservation, ReservationPayload>('/frontdesk/reservations/', payload),
 
   cancelReservation: (id: number, reason: string): Promise<Reservation> =>
     post<Reservation, { reason: string }>(`/frontdesk/reservations/${id}/cancel/`, { reason }),
+
+  checkInReservation: (id: number, roomId: number, tariffBlockId: number): Promise<Stay> =>
+    post<Stay, { room_id: number; tariff_block_id: number }>(
+      `/frontdesk/reservations/${id}/check-in/`,
+      { room_id: roomId, tariff_block_id: tariffBlockId },
+    ),
+
+  markReservationNoShow: (id: number): Promise<Reservation> =>
+    post<Reservation>(`/frontdesk/reservations/${id}/no-show/`),
 }

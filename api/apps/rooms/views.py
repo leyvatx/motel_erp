@@ -34,6 +34,7 @@ from apps.rooms.serializers import (
     HolidaySerializer,
     ReasonSerializer,
     ReservationInputSerializer,
+    ReservationCheckInSerializer,
     ReservationSerializer,
     RentRoomSerializer,
     RoomGridSerializer,
@@ -301,10 +302,25 @@ class ReservationViewSet(
 ):
     queryset = Reservation.objects.select_related("room", "room_type", "tariff_block")
     serializer_class = ReservationSerializer
-    required_permissions = {"write": [PermissionCode.RESERVATION_MANAGE]}
+    required_permissions = {"*": [PermissionCode.RESERVATION_MANAGE]}
     filterset_fields = ["status", "room", "room_type"]
     search_fields = ["code", "guest_name", "vehicle_plate"]
     ordering_fields = ["scheduled_start", "created_at"]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        from_value = self.request.query_params.get("from")
+        to_value = self.request.query_params.get("to")
+        if from_value:
+            queryset = queryset.filter(scheduled_start__gte=from_value)
+        if to_value:
+            queryset = queryset.filter(scheduled_start__lte=to_value)
+        if self.request.query_params.get("active") == "true":
+            from apps.rooms.constants import ReservationStatus
+            queryset = queryset.filter(
+                status__in=[ReservationStatus.PENDING, ReservationStatus.CONFIRMED]
+            )
+        return queryset
 
     @extend_schema(request=ReservationInputSerializer, responses=ReservationSerializer)
     def create(self, request) -> Response:
@@ -322,5 +338,47 @@ class ReservationViewSet(
         serializer.is_valid(raise_exception=True)
         reservation = services.cancel_reservation(
             reservation_id=int(pk), reason=serializer.validated_data["reason"], actor=request.user
+        )
+        return Response(ReservationSerializer(reservation).data)
+
+    @extend_schema(responses=ReservationSerializer(many=True))
+    @action(detail=False, methods=["get"])
+    def upcoming(self, request) -> Response:
+        from datetime import timedelta
+        from django.utils import timezone
+        from apps.rooms.constants import ReservationStatus
+
+        limit = timezone.now() + timedelta(hours=24)
+        queryset = self.get_queryset().filter(
+            status__in=[ReservationStatus.PENDING, ReservationStatus.CONFIRMED],
+            scheduled_start__gte=timezone.now() - timedelta(hours=1),
+            scheduled_start__lte=limit,
+        ).order_by("scheduled_start")
+        page = self.paginate_queryset(queryset)
+        return self.get_paginated_response(ReservationSerializer(page, many=True).data)
+
+    @extend_schema(request=ReservationCheckInSerializer, responses=StaySerializer)
+    @action(detail=True, methods=["post"], url_path="check-in")
+    def check_in(self, request, pk=None) -> Response:
+        serializer = ReservationCheckInSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        reservation = self.get_queryset().get(pk=pk)
+        stay = services.rent_room(
+            actor=request.user,
+            reservation_id=int(pk),
+            occupants=reservation.occupants,
+            guest_name=reservation.guest_name,
+            vehicle_plate=reservation.vehicle_plate,
+            notes=reservation.notes,
+            **serializer.validated_data,
+        )
+        stay = Stay.objects.select_related("room", "room_type", "tariff_block", "folio").get(pk=stay.pk)
+        return Response(StaySerializer(stay).data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(responses=ReservationSerializer)
+    @action(detail=True, methods=["post"], url_path="no-show")
+    def no_show(self, request, pk=None) -> Response:
+        reservation = services.mark_reservation_no_show(
+            reservation_id=int(pk), actor=request.user
         )
         return Response(ReservationSerializer(reservation).data)

@@ -133,7 +133,12 @@ export function RentRoomDialog({ room, open, onOpenChange }: Props) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="plate">Placas</Label>
-              <Input id="plate" className="uppercase" placeholder="ABC-123" {...register('vehicle_plate')} />
+              <Input
+                id="plate"
+                className="uppercase"
+                placeholder="ABC-123"
+                {...register('vehicle_plate')}
+              />
             </div>
           </div>
 

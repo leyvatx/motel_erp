@@ -239,6 +239,34 @@ class ReservationTests(FrontDeskTestCase):
         )
         self.assertEqual(stay.status, StayStatus.ACTIVE)
 
+    def test_no_show_cierra_una_reservacion_vigente(self) -> None:
+        inicio = timezone.now() + timedelta(minutes=30)
+        reservation = services.create_reservation(
+            room_type_id=self.room_type.pk,
+            room_id=self.room.pk,
+            scheduled_start=inicio,
+            scheduled_end=inicio + timedelta(hours=4),
+            actor=self.user,
+        )
+
+        services.mark_reservation_no_show(reservation_id=reservation.pk, actor=self.user)
+
+        reservation.refresh_from_db()
+        self.assertEqual(reservation.status, ReservationStatus.NO_SHOW)
+
+    def test_rechaza_habitacion_de_otro_tipo(self) -> None:
+        otro_tipo = RoomType.objects.create(name="Suite", code="SUI")
+        inicio = timezone.now() + timedelta(minutes=30)
+
+        with self.assertRaises(DomainError):
+            services.create_reservation(
+                room_type_id=otro_tipo.pk,
+                room_id=self.room.pk,
+                scheduled_start=inicio,
+                scheduled_end=inicio + timedelta(hours=4),
+                actor=self.user,
+            )
+
 
 class CheckoutTests(FrontDeskTestCase):
     def test_checkout_cobrado_cierra_folio_y_manda_a_limpieza(self) -> None:

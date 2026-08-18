@@ -47,7 +47,7 @@ class RoomType(BaseModel):
         ordering = ["sort_order", "name"]
         constraints = [
             models.UniqueConstraint(
-                fields=["code"],
+                fields=["motel", "code"],
                 condition=models.Q(is_active=True),
                 name="uniq_active_room_type_code",
             )
@@ -92,7 +92,7 @@ class Room(BaseModel):
         ordering = ["floor", "number"]
         constraints = [
             models.UniqueConstraint(
-                fields=["number"],
+                fields=["motel", "number"],
                 condition=models.Q(is_active=True),
                 name="uniq_active_room_number",
             )
@@ -182,7 +182,7 @@ class Holiday(BaseModel):
         ordering = ["date"]
         constraints = [
             models.UniqueConstraint(
-                fields=["date"],
+                fields=["motel", "date"],
                 condition=models.Q(is_active=True),
                 name="uniq_active_holiday_date",
             )

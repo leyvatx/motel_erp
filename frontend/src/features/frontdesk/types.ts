@@ -164,6 +164,20 @@ export interface Reservation {
   created_at: IsoDateTime
 }
 
+export interface ReservationPayload {
+  room_type_id: number
+  room_id?: number | null
+  tariff_block_id?: number | null
+  scheduled_start: string
+  scheduled_end: string
+  guest_name?: string
+  guest_phone?: string
+  vehicle_plate?: string
+  occupants: number
+  deposit_amount?: string
+  notes?: string
+}
+
 export interface RentRoomPayload {
   room_id: number
   tariff_block_id: number

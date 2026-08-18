@@ -22,6 +22,7 @@ from apps.rooms.constants import StayStatus
 from apps.rooms.models import Stay
 from apps.settings.models import Motel
 from apps.users.constants import Role
+from common.tenancy import use_motel
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +40,21 @@ def _stays_to_process(queryset, limit: int = 200) -> list[Stay]:
     )
 
 
+@shared_task(name="apps.rooms.tasks.dispatch_stay_timer_sweeps", ignore_result=True)
+def dispatch_stay_timer_sweeps() -> int:
+    motel_ids = list(Motel.objects.values_list("pk", flat=True))
+    for motel_id in motel_ids:
+        sweep_stay_timers.apply_async(args=[motel_id], expires=25)
+    return len(motel_ids)
+
+
 @shared_task(name="apps.rooms.tasks.sweep_stay_timers", ignore_result=True)
-def sweep_stay_timers() -> dict[str, int]:
+def sweep_stay_timers(motel_id: int) -> dict[str, int]:
+    with use_motel(motel_id):
+        return _sweep_stay_timers()
+
+
+def _sweep_stay_timers() -> dict[str, int]:
     """Detecta cronómetros por vencer y vencidos, y emite sus eventos."""
     now = timezone.now()
     warning_limit = now + timedelta(minutes=Motel.current().expiration_warning_minutes)
@@ -62,7 +76,7 @@ def sweep_stay_timers() -> dict[str, int]:
             stay.save(update_fields=["warning_notified_at", "updated_at"])
 
             payload = stay_payload(stay)
-            broadcast(Event.STAY_EXPIRING, payload)
+            broadcast(Event.STAY_EXPIRING, payload, motel=stay.motel_id)
             notify(
                 category=NotificationCategory.STAY_EXPIRING,
                 level=NotificationLevel.WARNING,
@@ -91,7 +105,7 @@ def sweep_stay_timers() -> dict[str, int]:
             )
 
             payload = stay_payload(stay)
-            broadcast(Event.STAY_EXPIRED, payload)
+            broadcast(Event.STAY_EXPIRED, payload, motel=stay.motel_id)
             notify(
                 category=NotificationCategory.STAY_EXPIRED,
                 level=NotificationLevel.CRITICAL,
@@ -107,8 +121,24 @@ def sweep_stay_timers() -> dict[str, int]:
     return {"warned": warned, "expired": expired}
 
 
+@shared_task(name="apps.rooms.tasks.dispatch_reservation_expirations", ignore_result=True)
+def dispatch_reservation_expirations(grace_minutes: int = 60) -> int:
+    motel_ids = list(Motel.objects.values_list("pk", flat=True))
+    for motel_id in motel_ids:
+        expire_stale_reservations.apply_async(
+            args=[motel_id, grace_minutes],
+            expires=9 * 60,
+        )
+    return len(motel_ids)
+
+
 @shared_task(name="apps.rooms.tasks.expire_stale_reservations", ignore_result=True)
-def expire_stale_reservations(grace_minutes: int = 60) -> int:
+def expire_stale_reservations(motel_id: int, grace_minutes: int = 60) -> int:
+    with use_motel(motel_id):
+        return _expire_stale_reservations(grace_minutes)
+
+
+def _expire_stale_reservations(grace_minutes: int = 60) -> int:
     """Marca como NO_SHOW las reservaciones que nadie ocupo.
 
     Libera la habitación reservada para que recepción pueda volver a venderla.

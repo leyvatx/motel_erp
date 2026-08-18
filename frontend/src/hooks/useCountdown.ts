@@ -15,11 +15,12 @@ interface Options {
   intervalMs?: number
 }
 
-export function useCountdown(expiresAt: string | null | undefined, options: Options = {}): Countdown {
+export function useCountdown(
+  expiresAt: string | null | undefined,
+  options: Options = {},
+): Countdown {
   const { warningMinutes = 15, intervalMs = 1000 } = options
-  const [seconds, setSeconds] = useState<number>(() =>
-    expiresAt ? secondsUntil(expiresAt) : 0,
-  )
+  const [seconds, setSeconds] = useState<number>(() => (expiresAt ? secondsUntil(expiresAt) : 0))
 
   useEffect(() => {
     if (!expiresAt) {

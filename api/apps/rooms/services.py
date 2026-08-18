@@ -217,6 +217,11 @@ def create_reservation(
     room = None
     if room_id:
         room = Room.objects.select_for_update().get(pk=room_id, is_active=True)
+        if room.room_type_id != room_type_id:
+            raise DomainError(
+                "La habitación no corresponde al tipo seleccionado.",
+                code="reservation_room_type_mismatch",
+            )
         assert_no_reservation_conflict(room=room, start=scheduled_start, end=scheduled_end)
         _assert_no_active_stay_overlap(room=room, start=scheduled_start, end=scheduled_end)
 
@@ -224,6 +229,11 @@ def create_reservation(
     quoted = ZERO
     if tariff_block_id:
         tariff_block = TariffBlock.objects.get(pk=tariff_block_id, is_active=True)
+        if tariff_block.room_type_id != room_type_id:
+            raise DomainError(
+                "La tarifa no corresponde al tipo de habitación seleccionado.",
+                code="reservation_tariff_mismatch",
+            )
         quoted = resolve_tariff_price(tariff_block, scheduled_start)
 
     return Reservation.objects.create(
@@ -289,6 +299,20 @@ def cancel_reservation(*, reservation_id: int, reason: str, actor) -> Reservatio
 
 
 @transaction.atomic
+def mark_reservation_no_show(*, reservation_id: int, actor) -> Reservation:
+    reservation = Reservation.objects.select_for_update().get(pk=reservation_id, is_active=True)
+    if reservation.status not in BLOCKING_RESERVATION_STATUSES:
+        raise DomainError(
+            "La reservación no se puede marcar como no-show.",
+            code="invalid_reservation_status",
+        )
+    reservation.status = ReservationStatus.NO_SHOW
+    reservation.updated_by = actor
+    reservation.save(update_fields=["status", "updated_by", "updated_at"])
+    return reservation
+
+
+@transaction.atomic
 def rent_room(
     *,
     room_id: int,
@@ -345,6 +369,11 @@ def rent_room(
         if reservation.room_id and reservation.room_id != room.pk:
             raise DomainError(
                 "La reservación corresponde a otra habitación.", code="reservation_room_mismatch"
+            )
+        if reservation.room_type_id != room.room_type_id:
+            raise DomainError(
+                "La habitación no corresponde al tipo reservado.",
+                code="reservation_room_type_mismatch",
             )
 
     assert_no_reservation_conflict(

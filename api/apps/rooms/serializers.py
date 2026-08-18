@@ -65,6 +65,21 @@ class TariffRuleSerializer(serializers.ModelSerializer):
             "is_active",
         )
 
+    def validate(self, attrs):
+        rule_type = attrs.get("rule_type", getattr(self.instance, "rule_type", None))
+        weekdays = attrs.get("weekdays", getattr(self.instance, "weekdays", []))
+        start_date = attrs.get("start_date", getattr(self.instance, "start_date", None))
+        end_date = attrs.get("end_date", getattr(self.instance, "end_date", None))
+        start_time = attrs.get("start_time", getattr(self.instance, "start_time", None))
+        end_time = attrs.get("end_time", getattr(self.instance, "end_time", None))
+        if rule_type == "WEEKDAY" and not weekdays:
+            raise serializers.ValidationError({"weekdays": "Selecciona al menos un día."})
+        if start_date and end_date and start_date > end_date:
+            raise serializers.ValidationError({"end_date": "Debe ser posterior a la fecha inicial."})
+        if bool(start_time) != bool(end_time):
+            raise serializers.ValidationError("Captura ambas horas o deja ambas vacías.")
+        return attrs
+
 
 class TariffBlockSerializer(serializers.ModelSerializer):
     room_type_name = serializers.CharField(source="room_type.name", read_only=True)
@@ -390,6 +405,11 @@ class ReservationInputSerializer(serializers.Serializer):
         max_digits=10, decimal_places=2, required=False, min_value=Decimal("0")
     )
     notes = serializers.CharField(required=False, allow_blank=True, max_length=500)
+
+
+class ReservationCheckInSerializer(serializers.Serializer):
+    room_id = serializers.IntegerField()
+    tariff_block_id = serializers.IntegerField()
 
 
 class RoomServiceStatusSerializer(serializers.Serializer):

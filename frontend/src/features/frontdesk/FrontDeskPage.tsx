@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import {
   AlertTriangle,
   BedDouble,
+  CalendarDays,
   CreditCard,
   Eye,
   Plus,
@@ -35,6 +36,7 @@ import {
   useFinishCleaning,
   useRoomGrid,
   useRoomSummary,
+  useUpcomingReservations,
 } from '@/features/frontdesk/hooks'
 import { useExpirationAlerts } from '@/features/frontdesk/useExpirationAlerts'
 import type { RoomGridItem } from '@/features/frontdesk/types'
@@ -53,6 +55,7 @@ export default function FrontDeskPage() {
   const grid = useRoomGrid(statusFilter ? { status: statusFilter } : undefined)
   const summary = useRoomSummary()
   const expiring = useExpiringStays()
+  const upcomingReservations = useUpcomingReservations()
   const finishCleaning = useFinishCleaning()
   const openContextMenu = useRowContextMenu()
   const canConfigure = useAuthStore(
@@ -163,6 +166,12 @@ export default function FrontDeskPage() {
               <RefreshCw />
               Actualizar
             </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/reservations">
+                <CalendarDays />
+                Reservaciones
+              </Link>
+            </Button>
             {canConfigure ? (
               <Button variant="outline" size="sm" asChild>
                 <Link to="/config">
@@ -204,6 +213,28 @@ export default function FrontDeskPage() {
                 </button>
               ))}
             </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {(upcomingReservations.data?.count ?? 0) > 0 ? (
+        <Card className="border-primary/30">
+          <CardContent className="flex flex-wrap items-center gap-3 px-4 py-3">
+            <span className="flex items-center gap-2 text-sm font-medium">
+              <CalendarDays className="size-4 text-primary" />
+              {upcomingReservations.data?.count} próximas llegadas
+            </span>
+            <div className="flex flex-1 flex-wrap gap-1.5">
+              {(upcomingReservations.data?.results ?? []).slice(0, 5).map((item) => (
+                <span key={item.id} className="rounded-md border bg-background px-2 py-1 text-xs">
+                  {item.room_number ? `Hab. ${item.room_number}` : item.room_type_name} ·{' '}
+                  {item.guest_name || item.code}
+                </span>
+              ))}
+            </div>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/reservations">Ver todas</Link>
+            </Button>
           </CardContent>
         </Card>
       ) : null}
