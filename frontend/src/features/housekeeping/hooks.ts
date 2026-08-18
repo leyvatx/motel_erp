@@ -9,10 +9,11 @@ import type {
 import { apiErrorMessage } from '@/lib/axios'
 import { queryKeys } from '@/lib/queryClient'
 
-export function useCleaningBoard(mine = false) {
+export function useCleaningBoard(mine = false, enabled = true) {
   return useQuery({
     queryKey: queryKeys.housekeeping.board(mine),
     queryFn: () => housekeepingApi.board(mine),
+    enabled,
   })
 }
 
@@ -23,10 +24,19 @@ export function useCleaningPerformance(params?: { from?: string; to?: string }) 
   })
 }
 
-export function useMaintenanceReports(status?: string) {
+export function useMaintenanceReports(status?: string, enabled = true) {
   return useQuery({
     queryKey: queryKeys.housekeeping.maintenance({ status }),
     queryFn: () => housekeepingApi.maintenance({ status, page_size: 50 }),
+    enabled,
+  })
+}
+
+export function useOpenMaintenance(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.housekeeping.maintenance({ open: true }),
+    queryFn: housekeepingApi.openMaintenance,
+    enabled,
   })
 }
 
@@ -57,15 +67,19 @@ export function useFinishCleaningTask() {
   const invalidate = useHousekeepingInvalidation()
 
   return useMutation({
-    mutationFn: ({ taskId, notes, foundIssues }: { taskId: number; notes: string; foundIssues: boolean }) =>
-      housekeepingApi.finish(taskId, notes, foundIssues),
+    mutationFn: ({
+      taskId,
+      notes,
+      foundIssues,
+    }: {
+      taskId: number
+      notes: string
+      foundIssues: boolean
+    }) => housekeepingApi.finish(taskId, notes, foundIssues),
     onSuccess: (task) => {
       invalidate()
       const minutos = Math.round((task.duration_seconds ?? 0) / 60)
-      toast.success(
-        `Habitación ${task.room_number} lista`,
-        `Tiempo de limpieza: ${minutos} min.`,
-      )
+      toast.success(`Habitación ${task.room_number} lista`, `Tiempo de limpieza: ${minutos} min.`)
     },
     onError: (error) => toast.error('No se pudo cerrar la tarea', apiErrorMessage(error)),
   })

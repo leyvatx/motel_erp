@@ -3,15 +3,11 @@ import axios from 'axios'
 
 import { toast } from '@/components/ui/toast'
 import { financesApi } from '@/features/finances/api'
-import type {
-  CloseShiftPayload,
-  ExpensePayload,
-  OpenShiftPayload,
-} from '@/features/finances/types'
+import type { CloseShiftPayload, ExpensePayload, OpenShiftPayload } from '@/features/finances/types'
 import { apiErrorMessage } from '@/lib/axios'
 import { queryKeys } from '@/lib/queryClient'
 
-export function useCurrentShift() {
+export function useCurrentShift(enabled = true) {
   return useQuery({
     queryKey: queryKeys.finances.currentShift,
     queryFn: async () => {
@@ -22,6 +18,7 @@ export function useCurrentShift() {
         throw error
       }
     },
+    enabled,
   })
 }
 
@@ -39,10 +36,11 @@ export function useExpenses(status?: string) {
   })
 }
 
-export function usePendingExpenses() {
+export function usePendingExpenses(enabled = true) {
   return useQuery({
     queryKey: queryKeys.finances.pendingExpenses,
     queryFn: financesApi.pendingExpenses,
+    enabled,
   })
 }
 
@@ -129,8 +127,15 @@ export function useReviewExpense() {
   const invalidate = useFinancesInvalidation()
 
   return useMutation({
-    mutationFn: ({ expenseId, approve, notes }: { expenseId: number; approve: boolean; notes?: string }) =>
-      financesApi.reviewExpense(expenseId, approve, notes),
+    mutationFn: ({
+      expenseId,
+      approve,
+      notes,
+    }: {
+      expenseId: number
+      approve: boolean
+      notes?: string
+    }) => financesApi.reviewExpense(expenseId, approve, notes),
     onSuccess: (expense) => {
       invalidate()
       toast.success(

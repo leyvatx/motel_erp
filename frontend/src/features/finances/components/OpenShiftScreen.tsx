@@ -30,8 +30,8 @@ export function OpenShiftScreen() {
             <div>
               <h2 className="text-lg font-semibold tracking-tight">Tu caja está cerrada</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Para cobrar rentas, vender en mostrador o registrar gastos necesitas abrir tu
-                turno. Todo lo que cobres quedará ligado a este turno y a tu usuario.
+                Para cobrar rentas, vender en mostrador o registrar gastos necesitas abrir tu turno.
+                Todo lo que cobres quedará ligado a este turno y a tu usuario.
               </p>
             </div>
           </div>
@@ -82,9 +82,7 @@ export function OpenShiftScreen() {
                 size="lg"
                 disabled={total === 0}
                 loading={openShift.isPending}
-                onClick={() =>
-                  openShift.mutate({ opening_balance: total.toFixed(2), breakdown })
-                }
+                onClick={() => openShift.mutate({ opening_balance: total.toFixed(2), breakdown })}
               >
                 <Unlock />
                 Abrir turno con {formatMoney(total)}

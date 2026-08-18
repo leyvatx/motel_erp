@@ -243,9 +243,7 @@ function ExtendPanel({
         <Button
           disabled={!blockId}
           loading={extend.isPending}
-          onClick={() =>
-            extend.mutate({ tariff_block_id: Number(blockId) }, { onSuccess: onDone })
-          }
+          onClick={() => extend.mutate({ tariff_block_id: Number(blockId) }, { onSuccess: onDone })}
         >
           Extender
         </Button>

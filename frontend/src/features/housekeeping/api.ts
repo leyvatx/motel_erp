@@ -18,10 +18,9 @@ export const housekeepingApi = {
     get<PaginatedResponse<CleaningTask>>('/housekeeping/cleaning-tasks/', { params }),
 
   assign: (taskId: number, employeeId: number): Promise<CleaningTask> =>
-    post<CleaningTask, { employee_id: number }>(
-      `/housekeeping/cleaning-tasks/${taskId}/assign/`,
-      { employee_id: employeeId },
-    ),
+    post<CleaningTask, { employee_id: number }>(`/housekeeping/cleaning-tasks/${taskId}/assign/`, {
+      employee_id: employeeId,
+    }),
 
   start: (taskId: number): Promise<CleaningTask> =>
     post<CleaningTask>(`/housekeeping/cleaning-tasks/${taskId}/start/`),
@@ -38,7 +37,9 @@ export const housekeepingApi = {
   performance: (params?: { from?: string; to?: string }): Promise<CleaningPerformance[]> =>
     get<CleaningPerformance[]>('/housekeeping/cleaning-tasks/performance/', { params }),
 
-  maintenance: (params?: ListParams & { status?: string }): Promise<PaginatedResponse<MaintenanceReport>> =>
+  maintenance: (
+    params?: ListParams & { status?: string },
+  ): Promise<PaginatedResponse<MaintenanceReport>> =>
     get<PaginatedResponse<MaintenanceReport>>('/housekeeping/maintenance/', { params }),
 
   openMaintenance: (): Promise<PaginatedResponse<MaintenanceReport>> =>

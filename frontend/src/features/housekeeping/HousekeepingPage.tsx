@@ -327,13 +327,7 @@ export default function HousekeepingPage() {
   )
 }
 
-function MaintenanceRow({
-  report,
-  onDetail,
-}: {
-  report: MaintenanceReport
-  onDetail: () => void
-}) {
+function MaintenanceRow({ report, onDetail }: { report: MaintenanceReport; onDetail: () => void }) {
   const transition = useMaintenanceTransition(report.id)
   const openContextMenu = useRowContextMenu()
 

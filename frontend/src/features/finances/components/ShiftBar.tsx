@@ -1,12 +1,5 @@
 import { useState } from 'react'
-import {
-  ArrowDownToLine,
-  ArrowUpFromLine,
-  ChevronDown,
-  Lock,
-  Printer,
-  Receipt,
-} from 'lucide-react'
+import { ArrowDownToLine, ArrowUpFromLine, ChevronDown, Lock, Printer, Receipt } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -32,11 +25,7 @@ import {
   CashBreakdownInput,
   breakdownTotal,
 } from '@/features/finances/components/CashBreakdownInput'
-import {
-  useCashMovement,
-  useCloseShift,
-  usePrintShiftReport,
-} from '@/features/finances/hooks'
+import { useCashMovement, useCloseShift, usePrintShiftReport } from '@/features/finances/hooks'
 import type { CashBreakdown, Shift } from '@/features/finances/types'
 import { formatMoney, formatTime, toNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -65,9 +54,7 @@ export function ShiftBar({ shift, onRegisterExpense }: Props) {
             )}
             aria-hidden
           />
-          <span className="text-sm font-medium">
-            {open ? 'Turno abierto' : 'Turno cerrado'}
-          </span>
+          <span className="text-sm font-medium">{open ? 'Turno abierto' : 'Turno cerrado'}</span>
           <Badge variant="secondary" className="font-mono">
             {shift.code}
           </Badge>
@@ -145,11 +132,7 @@ export function ShiftBar({ shift, onRegisterExpense }: Props) {
 
       {closing ? <CloseShiftDialog shift={shift} onClose={() => setClosing(false)} /> : null}
       {movement ? (
-        <CashMovementDialog
-          shift={shift}
-          direction={movement}
-          onClose={() => setMovement(null)}
-        />
+        <CashMovementDialog shift={shift} direction={movement} onClose={() => setMovement(null)} />
       ) : null}
     </>
   )
@@ -166,8 +149,8 @@ function CloseShiftDialog({ shift, onClose }: { shift: Shift; onClose: () => voi
         <DialogHeader>
           <DialogTitle>Cerrar turno {shift.code}</DialogTitle>
           <DialogDescription>
-            Cuenta el efectivo del cajón y captúralo. El sistema calculará lo esperado hasta
-            después de que declares, para que el conteo sea a ciegas.
+            Cuenta el efectivo del cajón y captúralo. El sistema calculará lo esperado hasta después
+            de que declares, para que el conteo sea a ciegas.
           </DialogDescription>
         </DialogHeader>
 
@@ -224,7 +207,9 @@ function CashMovementDialog({
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isOut ? 'Retirar efectivo a bóveda' : 'Meter cambio a la caja'}</DialogTitle>
+          <DialogTitle>
+            {isOut ? 'Retirar efectivo a bóveda' : 'Meter cambio a la caja'}
+          </DialogTitle>
           <DialogDescription>
             {isOut
               ? 'Sacar dinero del cajón sin que sea un gasto. Se descuenta del efectivo esperado.'

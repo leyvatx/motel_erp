@@ -43,8 +43,8 @@ export const financesApi = {
     post<Expense, ExpensePayload>('/finances/expenses/', payload),
 
   reviewExpense: (expenseId: number, approve: boolean, notes?: string): Promise<Expense> =>
-    post<Expense, { approve: boolean; notes?: string }>(
-      `/finances/expenses/${expenseId}/review/`,
-      { approve, notes },
-    ),
+    post<Expense, { approve: boolean; notes?: string }>(`/finances/expenses/${expenseId}/review/`, {
+      approve,
+      notes,
+    }),
 }

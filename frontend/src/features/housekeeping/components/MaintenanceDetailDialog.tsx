@@ -49,10 +49,7 @@ export function MaintenanceDetailDialog({ report, onOpenChange }: Props) {
           <Field label="Reportó" value={report.reported_by_name} />
           <Field label="Asignado a" value={report.assigned_to_name ?? 'Sin asignar'} />
           <Field label="Levantado" value={formatDateTime(report.created_at)} />
-          <Field
-            label="Cuarto fuera de servicio"
-            value={report.blocks_room ? 'Sí' : 'No'}
-          />
+          <Field label="Cuarto fuera de servicio" value={report.blocks_room ? 'Sí' : 'No'} />
           {report.resolved_at ? (
             <>
               <Field label="Resuelto" value={formatDateTime(report.resolved_at)} />

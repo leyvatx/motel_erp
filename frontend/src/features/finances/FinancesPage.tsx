@@ -40,10 +40,7 @@ export default function FinancesPage() {
 
   if (!shift) {
     return (
-      <PageShell
-        title="Finanzas"
-        description="Abre tu turno para empezar a cobrar."
-      >
+      <PageShell title="Finanzas" description="Abre tu turno para empezar a cobrar.">
         <OpenShiftScreen />
       </PageShell>
     )

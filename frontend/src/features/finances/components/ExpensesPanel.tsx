@@ -54,7 +54,13 @@ const STATUS_VARIANT: Record<string, 'available' | 'cleaning' | 'occupied' | 'se
   CANCELLED: 'secondary',
 }
 
-function NewExpenseDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+function NewExpenseDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
   const create = useCreateExpense()
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState('')
@@ -67,8 +73,8 @@ function NewExpenseDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
         <DialogHeader>
           <DialogTitle>Registrar gasto</DialogTitle>
           <DialogDescription>
-            Arriba del umbral configurado, el gasto espera aprobación de gerencia antes de salir
-            de caja.
+            Arriba del umbral configurado, el gasto espera aprobación de gerencia antes de salir de
+            caja.
           </DialogDescription>
         </DialogHeader>
 
@@ -200,55 +206,55 @@ export function ExpensesPanel({ openIntent = 0 }: { openIntent?: number }) {
 
       <CardContent className="flex min-h-0 flex-1 flex-col p-0">
         <TableScroll>
-        <Table>
-          <TableHeader className="sticky top-0 z-10 bg-card">
-            <TableRow>
-              <TableHead>Folio</TableHead>
-              <TableHead>Concepto</TableHead>
-              <TableHead>Solicito</TableHead>
-              <TableHead className="text-right">Importe</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead className="w-[52px]" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableEmpty colSpan={6} message="Cargando..." />
-            ) : (data?.results ?? []).length === 0 ? (
-              <TableEmpty colSpan={6} message="Sin gastos registrados." />
-            ) : (
-              (data?.results ?? []).map((expense) => (
-                <TableRow
-                  key={expense.id}
-                  onContextMenu={openContextMenu(expense.description, actionsFor(expense))}
-                  className="cursor-context-menu"
-                >
-                  <TableCell className="font-mono text-xs">{expense.folio}</TableCell>
-                  <TableCell>
-                    <p className="font-medium">{expense.description}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {expense.category_display} - {formatDateTime(expense.created_at)}
-                    </p>
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {expense.requested_by_name}
-                  </TableCell>
-                  <TableCell className="text-right tabular font-semibold">
-                    {formatMoney(expense.amount)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={STATUS_VARIANT[expense.status] ?? 'secondary'}>
-                      {expense.status_display}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <RowActions items={actionsFor(expense)} label={expense.folio} />
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+          <Table>
+            <TableHeader className="sticky top-0 z-10 bg-card">
+              <TableRow>
+                <TableHead>Folio</TableHead>
+                <TableHead>Concepto</TableHead>
+                <TableHead>Solicito</TableHead>
+                <TableHead className="text-right">Importe</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead className="w-[52px]" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableEmpty colSpan={6} message="Cargando..." />
+              ) : (data?.results ?? []).length === 0 ? (
+                <TableEmpty colSpan={6} message="Sin gastos registrados." />
+              ) : (
+                (data?.results ?? []).map((expense) => (
+                  <TableRow
+                    key={expense.id}
+                    onContextMenu={openContextMenu(expense.description, actionsFor(expense))}
+                    className="cursor-context-menu"
+                  >
+                    <TableCell className="font-mono text-xs">{expense.folio}</TableCell>
+                    <TableCell>
+                      <p className="font-medium">{expense.description}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {expense.category_display} - {formatDateTime(expense.created_at)}
+                      </p>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {expense.requested_by_name}
+                    </TableCell>
+                    <TableCell className="text-right tabular font-semibold">
+                      {formatMoney(expense.amount)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={STATUS_VARIANT[expense.status] ?? 'secondary'}>
+                        {expense.status_display}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <RowActions items={actionsFor(expense)} label={expense.folio} />
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </TableScroll>
       </CardContent>
 

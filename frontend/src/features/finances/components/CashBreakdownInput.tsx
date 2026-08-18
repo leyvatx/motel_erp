@@ -56,9 +56,7 @@ export function CashBreakdownInput({ value, onChange, total, label = 'Total cont
       <div className="flex items-baseline justify-between rounded-lg bg-muted/60 px-3 py-2.5">
         <span className="text-sm text-muted-foreground">
           {label}
-          {filled > 0 ? (
-            <span className="ml-1 text-2xs">({filled} denominaciones)</span>
-          ) : null}
+          {filled > 0 ? <span className="ml-1 text-2xs">({filled} denominaciones)</span> : null}
         </span>
         <span className="text-xl font-semibold tabular">{formatMoney(total)}</span>
       </div>

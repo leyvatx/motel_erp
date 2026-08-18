@@ -370,8 +370,8 @@ export function PosTerminal() {
           {isRoomOrder ? (
             <>
               <div className="rounded-md border border-brand-accent/40 bg-brand-accent/5 px-3 py-2 text-xs">
-                Se cargará a la habitación <strong>{target?.number}</strong> y quedará en su
-                cuenta hasta el check-out.
+                Se cargará a la habitación <strong>{target?.number}</strong> y quedará en su cuenta
+                hasta el check-out.
               </div>
               <Button
                 className="h-11 w-full text-base"
@@ -384,76 +384,76 @@ export function PosTerminal() {
               </Button>
             </>
           ) : (
-          <div className="space-y-3">
-          <div className="space-y-2">
-            <Label htmlFor="pos-method">Método de pago</Label>
-            <Select value={method} onValueChange={(value) => setMethod(value as PaymentMethod)}>
-              <SelectTrigger id="pos-method">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {METHODS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {method === 'CASH' ? (
-            <div className="space-y-2">
-              <Label htmlFor="pos-tendered">Efectivo recibido</Label>
-              <Input
-                id="pos-tendered"
-                inputMode="decimal"
-                value={tendered}
-                onChange={(event) => setTendered(event.target.value)}
-                className="h-10 text-right text-lg tabular"
-              />
-
-              <div className="flex flex-wrap gap-1.5">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  disabled={total <= 0}
-                  onClick={() => setTendered(total.toFixed(2))}
-                >
-                  Exacto
-                </Button>
-                {QUICK_CASH.filter((amount) => amount >= total).map((amount) => (
-                  <Button
-                    key={amount}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setTendered(String(amount))}
-                  >
-                    {amount}
-                  </Button>
-                ))}
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="pos-method">Método de pago</Label>
+                <Select value={method} onValueChange={(value) => setMethod(value as PaymentMethod)}>
+                  <SelectTrigger id="pos-method">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {METHODS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              {change > 0 ? (
-                <div className="flex items-baseline justify-between rounded-md bg-status-available/10 px-3 py-2">
-                  <span className="text-sm text-muted-foreground">Cambio</span>
-                  <span className="text-xl font-semibold tabular text-status-available">
-                    {formatMoney(change)}
-                  </span>
+              {method === 'CASH' ? (
+                <div className="space-y-2">
+                  <Label htmlFor="pos-tendered">Efectivo recibido</Label>
+                  <Input
+                    id="pos-tendered"
+                    inputMode="decimal"
+                    value={tendered}
+                    onChange={(event) => setTendered(event.target.value)}
+                    className="h-10 text-right text-lg tabular"
+                  />
+
+                  <div className="flex flex-wrap gap-1.5">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      disabled={total <= 0}
+                      onClick={() => setTendered(total.toFixed(2))}
+                    >
+                      Exacto
+                    </Button>
+                    {QUICK_CASH.filter((amount) => amount >= total).map((amount) => (
+                      <Button
+                        key={amount}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setTendered(String(amount))}
+                      >
+                        {amount}
+                      </Button>
+                    ))}
+                  </div>
+
+                  {change > 0 ? (
+                    <div className="flex items-baseline justify-between rounded-md bg-status-available/10 px-3 py-2">
+                      <span className="text-sm text-muted-foreground">Cambio</span>
+                      <span className="text-xl font-semibold tabular text-status-available">
+                        {formatMoney(change)}
+                      </span>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
-            </div>
-          ) : null}
 
-          <Button
-            className="h-11 w-full text-base"
-            disabled={!canCharge}
-            loading={checkout.isPending}
-            onClick={() => checkout.mutate()}
-          >
-            <Receipt />
-            Cobrar {total > 0 ? formatMoney(total) : ''}
-          </Button>
-          </div>
+              <Button
+                className="h-11 w-full text-base"
+                disabled={!canCharge}
+                loading={checkout.isPending}
+                onClick={() => checkout.mutate()}
+              >
+                <Receipt />
+                Cobrar {total > 0 ? formatMoney(total) : ''}
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>

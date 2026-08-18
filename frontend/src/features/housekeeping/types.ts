@@ -1,19 +1,10 @@
 import type { IsoDateTime, Money } from '@/types/api'
 
 export type CleaningTaskStatus =
-  | 'PENDING'
-  | 'ASSIGNED'
-  | 'IN_PROGRESS'
-  | 'DONE'
-  | 'VERIFIED'
-  | 'CANCELLED'
+  'PENDING' | 'ASSIGNED' | 'IN_PROGRESS' | 'DONE' | 'VERIFIED' | 'CANCELLED'
 
 export type MaintenanceStatus =
-  | 'REPORTED'
-  | 'ACKNOWLEDGED'
-  | 'IN_PROGRESS'
-  | 'RESOLVED'
-  | 'CANCELLED'
+  'REPORTED' | 'ACKNOWLEDGED' | 'IN_PROGRESS' | 'RESOLVED' | 'CANCELLED'
 
 export type MaintenancePriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
 
