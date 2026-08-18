@@ -33,14 +33,14 @@ estado actual, más abajo.
 | Sección | Estado frontend | Backend disponible |
 | --- | --- | --- |
 | Auditoría | `PlaceholderPage` en `routes.tsx:105`, pero `features/audit/api.ts` ya tiene el hook y los tipos | ✅ `GET /audit/logs/` con filtros por acción, módulo, actor, rango de fechas, `target`+`object_id`, y `/audit/logs/summary/` |
-| Usuarios | `PlaceholderPage` en `routes.tsx:123` | ✅ `UserViewSet` completo, `/auth/roles/`, `/auth/users/{id}/activate/`, `force-password-change/` |
+| Usuarios | ✅ Pantalla terminada con altas, edición, roles, bajas, reactivación y contraseñas | ✅ `UserViewSet` completo, `/auth/roles/`, `restore/`, `force-password-change/` |
 | Reportes | `PlaceholderPage` en `routes.tsx:97` | ⚠️ Solo piezas sueltas: `rooms/summary` (foto del momento), `shifts/{id}/summary` (un turno), `expenses/totals`, `audit/summary`. **No existe nada histórico ni agregado** |
 
 **Funcionalidad de backend sin ninguna interfaz:**
 
 - **Reservaciones** — `Reservation` con folio, huésped, teléfono, placas, no-show automático por Celery. Hay endpoints y hasta `frontdesk/api.ts:73` los llama, pero no hay pantalla para crear ni gestionar reservas.
 - **Tarifas dinámicas** — `TariffRule` y `Holiday` (`rooms/models.py:173,195`) con sus ViewSets. Cero UI, cero tipos en el frontend. Hoy los recargos de fin de semana o día festivo solo se pueden tocar por el admin de Django.
-- **Perfil del usuario** — `POST /auth/change-password/` existe; ningún usuario puede cambiar su contraseña desde la app.
+- **Perfil del usuario** — ✅ cambio de contraseña disponible desde el menú y obligatorio cuando gerencia lo solicita.
 - **Reimpresión y tickets** — `print-ticket` y `print-report` existen; la UI los expone solo parcialmente.
 
 ### 1.3 Calidad e infraestructura
@@ -61,12 +61,14 @@ estado actual, más abajo.
 | 10 | Identidad del negocio en el servidor: título de pestaña, favicon, logotipo compartido, moneda y zona horaria configurables | **Terminada** |
 | — | Cero comentarios en todo el proyecto (175 archivos) | **Terminada** |
 | 11 | Multi-motel: un sistema, varios moteles con sus datos separados | **Terminada** |
-| 12 | Pantalla de Usuarios | Pendiente |
-| 13 | Pantalla de Auditoría | Pendiente |
-| 14 | Reportes (backend nuevo + pantalla) | Pendiente |
-| 15 | Dashboard por rol | Pendiente |
-| 16 | Reservaciones y tarifas dinámicas | Pendiente |
-| 17 | eslint, vitest, CI | Pendiente |
+| 12 | Pantalla de Auditoría | **Terminada** |
+| 13 | Pantalla de Usuarios | **Operativa** |
+| 14 | Reportes (backend nuevo + pantalla) | **Terminada** |
+| 15 | Dashboard por rol | **Operativo** |
+| 16 | Reservaciones y tarifas dinámicas | **Terminada** |
+| 17 | eslint, vitest, CI | **Operativa** |
+| 18 | Proveedores, compras, recepciones y catálogos | **Terminada** |
+| 19 | Personalización visual completa por motel | **Terminada** |
 
 ### Cómo quedó el multi-motel
 
@@ -91,7 +93,9 @@ sistema utilizable.
 
 ### Fase 12 — Pantalla de Auditoría
 
-La más barata: el `api.ts` ya existe y el backend está terminado.
+**Terminada.** Incluye resumen, tabla paginada, filtros por acción, módulo,
+usuario, búsqueda y fechas, detalle antes/después, contexto técnico,
+exportación CSV completa y enlaces desde el historial de una renta.
 
 1. `features/audit/AuditPage.tsx`: tabla paginada con filtros de acción, módulo, actor, búsqueda y rango de fechas.
 2. Panel de detalle con el diff `changes` (antes/después) legible, IP y user-agent.
@@ -102,6 +106,10 @@ La más barata: el `api.ts` ya existe y el backend está terminado.
 
 ### Fase 13 — Usuarios y perfil
 
+**Operativa.** Incluye listado paginado, filtros, alta, edición, roles, baja
+lógica, reactivación, contraseña inicial, cambio personal y cambio obligatorio.
+Quedan como mejoras la matriz visual de permisos y el historial de sesiones.
+
 1. `features/users/UsersPage.tsx`: alta, edición, cambio de rol, activar/desactivar, forzar cambio de contraseña. Solo SuperAdmin, como ya declara la matriz.
 2. Vista de la matriz rol → permisos en modo lectura, generada desde `/auth/roles/`, para que se entienda quién puede qué.
 3. Menú de perfil en el Topbar: cambiar mi contraseña, mis sesiones, cerrar sesión.
@@ -110,7 +118,9 @@ La más barata: el `api.ts` ya existe y el backend está terminado.
 
 ### Fase 14 — Reportes (backend nuevo + pantalla)
 
-Es la fase más grande porque el backend agregado **no existe**.
+**Terminada.** El backend agregado opera por motel, acepta periodos de hasta
+367 días, limita el acceso a gerencia y exporta a CSV. El frontend consulta
+cada reporte bajo demanda para evitar trabajo innecesario al servidor.
 
 **Backend — nueva app `apps.reports`** (solo lectura, agregaciones, sin modelos propios):
 
@@ -124,7 +134,7 @@ Es la fase más grande porque el backend agregado **no existe**.
 
 Todos con `?from=&to=`, exigiendo `REPORT_VIEW`, y con `?format=csv` para exportar.
 
-**Frontend**
+**Frontend terminado**
 
 1. `features/reports/ReportsPage.tsx` con selector de periodo y pestañas por reporte.
 2. Gráficas de líneas y barras (agregar `recharts`), más las tablas de respaldo.
@@ -133,7 +143,10 @@ Todos con `?from=&to=`, exigiendo `REPORT_VIEW`, y con `?format=csv` para export
 
 ### Fase 15 — Dashboard por rol
 
-Lo primero que se ve al entrar, y distinto según quién entra.
+**Operativo.** Es la nueva pantalla inicial y cambia según el rol. Consume los
+endpoints operativos existentes para mostrar ocupación, rentas por vencer,
+limpieza, mantenimiento, caja, gastos por aprobar y stock bajo. También incluye
+alertas priorizadas, estados vacíos y accesos rápidos.
 
 **Backend** — `GET /api/v1/reports/dashboard/` en la app nueva de reportes,
 devolviendo solo lo que el rol puede ver:
@@ -145,26 +158,79 @@ devolviendo solo lo que el rol puede ver:
 | Ama de llaves | Sus cuartos pendientes, tiempos de limpieza, reportes de mantenimiento abiertos |
 | Plataforma | Moteles activos, altas del mes, actividad por motel |
 
-**Frontend** — `features/dashboard/DashboardPage.tsx` como nueva ruta inicial
-(hoy `/` manda a recepción): tiras de indicadores, gráfica del día y accesos
-rápidos a lo que está pendiente. Cada bloque se arma desde la matriz de
-permisos, así que un empleado no ve tarjetas vacías de cosas que no le tocan.
+**Frontend terminado** — `features/dashboard/DashboardPage.tsx` es la ruta
+inicial para los usuarios de motel. Cada bloque respeta el rol, así que un
+empleado no consulta ni ve datos que no le corresponden.
+
+Queda como mejora posterior sustituir las consultas operativas por el endpoint
+agregado de reportes cuando exista, para añadir comparativos históricos sin
+cargar esa lógica en el navegador.
 
 ### Fase 16 — Reservaciones y tarifas dinámicas
 
-1. Pantalla de reservaciones: crear (huésped, teléfono, placas, llegada estimada), lista del día, convertir en renta, cancelar, marcar no-show.
-2. Aviso de reservas próximas en el tablero de recepción.
-3. Pestaña "Reglas de tarifa" en Configuración: recargos por día de la semana, franja horaria y días festivos (`TariffRule`), con vista previa de "cuánto costaría hoy a esta hora".
-4. Pestaña "Días festivos" (`Holiday`) con alta rápida y calendario del año.
+**Terminada.** Incluye alta y consulta por fechas, búsqueda, estados, asignación
+opcional de habitación y tarifa, llegada convertida directamente en renta,
+cancelación, no-show y avisos de próximas llegadas en Recepción y Dashboard.
+
+Configuración incorpora precios especiales por días de semana, rangos de
+fecha, horarios y festivos, junto con el precio base y vigente de cada bloque.
 
 ### Fase 17 — Calidad e infraestructura
 
-1. Instalar y configurar eslint + prettier para que `npm run lint` sirva (hoy truena).
-2. Vitest + Testing Library, con pruebas de las piezas que más duelen si se rompen: cálculo de cronómetros, `formatMoney`, arqueo ciego, guardas de permisos.
-3. `.github/workflows/ci.yml`: backend (`migrate --check` + `manage.py test`) y frontend (`typecheck`, `lint`, `build`).
-4. Versionar `api/.env.example` y `frontend/.env.example`.
-5. Actualizar el README: estado real de fases y la nota de que la identidad ya no se configura por `.env`.
-6. Verificar tiempo real: instalar Redis (o levantar el `docker-compose.yml` que ya existe) y probar Channels y Celery beat de punta a punta.
+**Operativa.** ESLint, Prettier y Vitest están configurados; CI valida backend
+y frontend con PostgreSQL y Redis reales. Se versionaron ambos `.env.example`,
+un comando `check_runtime` comprueba base de datos, Channels y broker, y el
+script `scripts/load_smoke.py` mide concurrencia usando uno o varios moteles.
+
+La ejecución local de la prueba integral sigue dependiendo de tener Docker
+disponible en la máquina donde se despliegue.
+
+### Fase 18 — Compras y abastecimiento
+
+**Terminada.** Inventarios ahora administra proveedores, productos, categorías
+y almacenes desde la interfaz. Las órdenes de compra tienen folio consecutivo
+por motel, estados de borrador, enviada, parcial, recibida y cancelada, además
+de fechas, referencia, impuestos y partidas.
+
+La recepción puede hacerse por cantidades parciales. Cada renglón recibido
+entra al almacén destino mediante el motor transaccional del Kardex, conserva
+la orden como documento origen, actualiza costos y solicita lote/caducidad para
+productos perecederos. Solo gerencia tiene `inventory.purchase`; recepción y
+ama de llaves conservan consulta sin ver acciones administrativas.
+
+### Fase 19 — Personalización por motel
+
+**Terminada.** La identidad visual dejó de depender de una computadora. Cada
+motel guarda paleta principal, menú lateral, colores de estados, tipografía,
+redondeo, tema/densidad predeterminados y mensaje de acceso. El editor incluye
+selectores libres de color y vista previa; el endpoint público entrega solo la
+marca necesaria para personalizar el login.
+
+Los cambios se propagan en tiempo real exclusivamente dentro del motel. Tema,
+densidad y alertas sonoras pueden sobrescribirse en una terminal sin modificar
+la marca compartida. Nombre, logo, moneda, zona horaria y datos de tickets
+continúan en la misma fuente de verdad del servidor.
+
+### Fase 20 — Administración corporativa
+
+**Terminada.** Se incorporó la jerarquía grupo → región → motel, usuarios sin
+propiedad fija con acceso explícito a varias regiones o moteles y selección
+segura de la propiedad activa. El cambio de motel limpia la caché del cliente,
+vuelve a acotar todas las consultas y reconecta WebSocket únicamente a los
+grupos de la propiedad elegida.
+
+El tablero corporativo con componentes shadcn consolida habitaciones,
+ocupación e ingresos de las últimas 24 horas. Desde la misma pantalla se crean
+grupos, regiones y usuarios corporativos, se asignan propiedades y se agregan
+accesos regionales. La configuración masiva admite únicamente una lista blanca
+de parámetros, valida todo el lote, muestra una vista previa y aplica el cambio
+en una sola transacción.
+
+Los permisos corporativos no convierten una cuenta en administradora global:
+consultas, asignaciones, tablero y cambios masivos se intersectan siempre con
+los moteles autorizados. También se corrigieron las claves únicas de tipos,
+números de habitación y festivos para que sean únicas por motel, no en toda la
+plataforma.
 
 ---
 

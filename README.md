@@ -130,6 +130,31 @@ host se crea `frontend/.env.local`, que tampoco se versiona:
 | `npm run dev` | Servidor de desarrollo con recarga en caliente |
 | `npm run build` | Verifica tipos (`tsc --noEmit`) y compila a `dist/` |
 | `npm run typecheck` | Solo verificacion de tipos |
+| `npm run lint` | Reglas estáticas de TypeScript y React |
+| `npm test` | Pruebas frontend con Vitest |
+| `npm run format` | Aplica formato con Prettier |
+
+## Verificación de infraestructura
+
+Con PostgreSQL y Redis levantados, este comando comprueba la base de datos,
+el channel layer de WebSockets y el broker de Celery:
+
+```bash
+python api/manage.py check_runtime
+```
+
+Para una prueba HTTP concurrente se pasan uno o varios JWT de moteles. Los
+tokens se reparten entre las peticiones para comprobar también el aislamiento:
+
+```bash
+MOTEL_ERP_TOKENS="token_motel_1,token_motel_2" python scripts/load_smoke.py
+```
+
+Se ajusta con `MOTEL_ERP_REQUESTS`, `MOTEL_ERP_CONCURRENCY`,
+`MOTEL_ERP_BASE_URL` y `MOTEL_ERP_TIMEOUT`.
+
+Cada push y pull request ejecuta automáticamente migraciones, pruebas Django,
+lint, typecheck, pruebas frontend y build mediante GitHub Actions.
 
 ## WebSockets
 
@@ -143,6 +168,10 @@ admite cabeceras. Una conexión sin token válido se cierra con código `4401`.
 Cada mensaje llega como `{"event": "...", "payload": {...}, "timestamp": "..."}`.
 
 ## Tareas periódicas (Celery beat)
+
+Beat solo coordina el calendario: en cada ejecución despacha un trabajo
+independiente por motel activo. Cada worker activa explícitamente ese motel,
+aplica sus parámetros y publica únicamente en sus canales de tiempo real.
 
 | Tarea | Frecuencia | Que hace |
 | --- | --- | --- |
@@ -172,10 +201,16 @@ Cada mensaje llega como `{"event": "...", "payload": {...}, "timestamp": "..."}`
 | 9 | Inventario, ama de llaves y finanzas en frontend | Completa |
 | 10 | Identidad del negocio en el servidor: título, favicon, logotipo, moneda y zona horaria | Completa |
 | 11 | Multi-motel: varios moteles en un sistema, con sus datos separados | Completa |
-| 12 | Auditoría, usuarios, reportes y dashboard en frontend | Pendiente |
+| 12 | Usuarios y perfil en frontend | Completa |
+| 13 | Dashboard por rol en frontend | Completa |
+| 14 | Auditoría en frontend | Completa |
+| 15 | Reportes gerenciales | Completa |
+| 16 | Reservaciones y tarifas dinámicas | Completa |
+| 17 | Calidad, pruebas y CI | Completa |
+| 18 | Proveedores, compras, recepciones y catálogos de inventario | Completa |
+| 19 | Identidad visual y experiencia personalizable por motel | Completa |
 
-Las secciones de Reportes, Auditoría y Usuarios todavía son pantallas vacías;
-el plan para cerrarlas está en `ROADMAP.md`.
+El plan de las siguientes mejoras está en `ROADMAP.md`.
 
 ## Moteles y permisos
 
@@ -183,6 +218,12 @@ Quien administra la plataforma no pertenece a ningún motel: es el único que da
 de alta moteles (`POST /api/v1/settings/motels/`, junto con su usuario dueño) y
 el único que los ve todos. Dentro de un motel, el dueño (SuperAdmin) puede
 todo salvo administrar la plataforma.
+
+La cuenta de plataforma entra en `/platform`, donde ve el padrón paginado de
+moteles. No puede abrir Recepción, Caja, Inventario ni ningún otro endpoint
+operativo: toda vista nueva falla cerrada si no declara explícitamente que es
+de alcance plataforma. Los procesos internos que realmente necesitan cruzar
+clientes deben usar `common.tenancy.without_motel()` de forma visible.
 
 La matriz rol -> permiso vive en `apps/users/constants.py` (`ROLE_PERMISSIONS`) y
 es la única fuente de verdad. Cada vista declara qué exige cada acción:
@@ -199,6 +240,46 @@ Resumen: recepción opera el día a día y su propia caja; ama de llaves solo su
 tablero; todo lo que implique perdonar dinero (descuentos), ajustar inventario,
 aprobar gastos, ver reportes o consultar la bitácora queda en gerencia; el alta
 de usuarios es exclusiva de SuperAdmin.
+
+## Compras e inventario
+
+Inventarios incorpora cuatro vistas: existencias, compras, proveedores y
+catálogos. Gerencia puede crear productos, categorías, almacenes y proveedores;
+generar una orden; enviarla; y recibirla total o parcialmente. Cada recepción
+crea automáticamente entradas en el Kardex, actualiza costo promedio y exige
+lote/caducidad cuando el producto lo necesita.
+
+Las órdenes nunca se eliminan. Un borrador puede enviarse o cancelarse, una
+orden enviada puede recibirse, y una recepción parcial permanece abierta hasta
+completar sus partidas. Todo el flujo pertenece al motel activo y requiere el
+permiso `inventory.purchase`.
+
+## Personalización por motel
+
+Cada propiedad conserva en el servidor su nombre, logotipo, paleta principal,
+color del menú, colores operativos, tipografía, redondeo, tema y densidad
+predeterminados, además del mensaje de bienvenida del acceso. La misma marca se
+aplica al login, navegación, botones, estados de habitaciones, alertas y tablas.
+
+Los cambios se publican por WebSocket únicamente a las terminales del motel
+modificado. Cada computadora puede respetar los valores del motel o elegir su
+propio tema y densidad; esas dos preferencias locales no alteran la identidad
+compartida. No existe ningún nivel de membresía ni campo bloqueado.
+
+## Administración corporativa
+
+La ruta `/corporate` concentra grupos, regiones, propiedades, usuarios
+multi-motel y un dashboard consolidado. Una cuenta corporativa inicia sin
+propiedad activa; al seleccionar un motel, el navegador envía `X-Motel-Id` en
+cada petición y el backend comprueba el acceso antes de construir el contexto
+del tenant. El mismo identificador viaja en el handshake de WebSocket para que
+las alertas sigan aisladas.
+
+La configuración masiva se ejecuta en dos pasos: vista previa y aplicación.
+Solo acepta campos operativos y de identidad previamente autorizados, rechaza
+moteles fuera del alcance del usuario y bloquea las propiedades dentro de una
+transacción. No hay membresías, planes ni campos de pago: las restricciones
+son exclusivamente de seguridad y rol.
 
 ## Convenciones no negociables
 
