@@ -3,6 +3,7 @@ import { Ban, Pencil, Plus } from 'lucide-react'
 
 import { PageShell, TableScroll } from '@/components/layout/PageShell'
 import { AppearanceSettings } from '@/features/config/components/AppearanceSettings'
+import { DynamicPricingSettings } from '@/features/config/components/DynamicPricingSettings'
 import { BusinessSettings } from '@/features/config/components/BusinessSettings'
 import { Badge } from '@/components/ui/badge'
 import { Pagination } from '@/components/ui/pagination'
@@ -132,6 +133,7 @@ export default function ConfigPage() {
           <TabsTrigger value="rooms">Habitaciones</TabsTrigger>
           <TabsTrigger value="types">Tipos</TabsTrigger>
           <TabsTrigger value="tariffs">Tarifas</TabsTrigger>
+          <TabsTrigger value="dynamic-pricing">Precios especiales</TabsTrigger>
           <TabsTrigger value="appearance">Apariencia</TabsTrigger>
         </TabsList>
 
@@ -155,55 +157,55 @@ export default function ConfigPage() {
             </CardHeader>
             <CardContent className="flex min-h-0 flex-1 flex-col p-0">
               <TableScroll>
-              <Table>
-                <TableHeader className="sticky top-0 z-10 bg-card">
-                  <TableRow>
-                    <TableHead>Número</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Piso / zona</TableHead>
-                    <TableHead>Cochera</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="w-[52px]" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(rooms.data?.results ?? []).length === 0 ? (
-                    <TableEmpty colSpan={6} message="Aún no hay habitaciones dadas de alta." />
-                  ) : (
-                    (rooms.data?.results ?? []).map((room) => (
-                      <TableRow
-                        key={room.id}
-                        onContextMenu={openContextMenu(
-                          `Habitación ${room.number}`,
-                          roomActions(room),
-                        )}
-                        className="cursor-context-menu"
-                      >
-                        <TableCell className="font-medium tabular">{room.number}</TableCell>
-                        <TableCell>{room.room_type_name}</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          Piso {room.floor}
-                          {room.zone ? ` · ${room.zone}` : ''}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {room.has_garage ? 'Sí' : 'No'}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={room.is_active ? 'available' : 'secondary'}>
-                            {room.is_active ? room.status_display : 'Dada de baja'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <RowActions
-                            items={roomActions(room)}
-                            label={`habitación ${room.number}`}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                <Table>
+                  <TableHeader className="sticky top-0 z-10 bg-card">
+                    <TableRow>
+                      <TableHead>Número</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Piso / zona</TableHead>
+                      <TableHead>Cochera</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead className="w-[52px]" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(rooms.data?.results ?? []).length === 0 ? (
+                      <TableEmpty colSpan={6} message="Aún no hay habitaciones dadas de alta." />
+                    ) : (
+                      (rooms.data?.results ?? []).map((room) => (
+                        <TableRow
+                          key={room.id}
+                          onContextMenu={openContextMenu(
+                            `Habitación ${room.number}`,
+                            roomActions(room),
+                          )}
+                          className="cursor-context-menu"
+                        >
+                          <TableCell className="font-medium tabular">{room.number}</TableCell>
+                          <TableCell>{room.room_type_name}</TableCell>
+                          <TableCell className="text-muted-foreground">
+                            Piso {room.floor}
+                            {room.zone ? ` · ${room.zone}` : ''}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {room.has_garage ? 'Sí' : 'No'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={room.is_active ? 'available' : 'secondary'}>
+                              {room.is_active ? room.status_display : 'Dada de baja'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <RowActions
+                              items={roomActions(room)}
+                              label={`habitación ${room.number}`}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
               </TableScroll>
 
               <Pagination
@@ -236,40 +238,40 @@ export default function ConfigPage() {
             </CardHeader>
             <CardContent className="flex min-h-0 flex-1 flex-col p-0">
               <TableScroll>
-              <Table>
-                <TableHeader className="sticky top-0 z-10 bg-card">
-                  <TableRow>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead>Clave</TableHead>
-                    <TableHead className="text-right">Ocupantes</TableHead>
-                    <TableHead className="text-right">Persona extra</TableHead>
-                    <TableHead className="w-[52px]" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(roomTypes.data?.results ?? []).length === 0 ? (
-                    <TableEmpty colSpan={5} message="Sin tipos registrados." />
-                  ) : (
-                    (roomTypes.data?.results ?? []).map((item) => (
-                      <TableRow
-                        key={item.id}
-                        onContextMenu={openContextMenu(item.name, typeActions(item))}
-                        className="cursor-context-menu"
-                      >
-                        <TableCell className="font-medium">{item.name}</TableCell>
-                        <TableCell className="font-mono text-xs">{item.code}</TableCell>
-                        <TableCell className="text-right tabular">{item.max_occupants}</TableCell>
-                        <TableCell className="text-right tabular">
-                          {formatMoney(item.extra_person_price)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <RowActions items={typeActions(item)} label={item.name} />
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                <Table>
+                  <TableHeader className="sticky top-0 z-10 bg-card">
+                    <TableRow>
+                      <TableHead>Nombre</TableHead>
+                      <TableHead>Clave</TableHead>
+                      <TableHead className="text-right">Ocupantes</TableHead>
+                      <TableHead className="text-right">Persona extra</TableHead>
+                      <TableHead className="w-[52px]" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(roomTypes.data?.results ?? []).length === 0 ? (
+                      <TableEmpty colSpan={5} message="Sin tipos registrados." />
+                    ) : (
+                      (roomTypes.data?.results ?? []).map((item) => (
+                        <TableRow
+                          key={item.id}
+                          onContextMenu={openContextMenu(item.name, typeActions(item))}
+                          className="cursor-context-menu"
+                        >
+                          <TableCell className="font-medium">{item.name}</TableCell>
+                          <TableCell className="font-mono text-xs">{item.code}</TableCell>
+                          <TableCell className="text-right tabular">{item.max_occupants}</TableCell>
+                          <TableCell className="text-right tabular">
+                            {formatMoney(item.extra_person_price)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <RowActions items={typeActions(item)} label={item.name} />
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
               </TableScroll>
             </CardContent>
           </Card>
@@ -291,55 +293,55 @@ export default function ConfigPage() {
             </CardHeader>
             <CardContent className="flex min-h-0 flex-1 flex-col p-0">
               <TableScroll>
-              <Table>
-                <TableHeader className="sticky top-0 z-10 bg-card">
-                  <TableRow>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Bloque</TableHead>
-                    <TableHead className="text-right">Duración</TableHead>
-                    <TableHead className="text-right">Precio</TableHead>
-                    <TableHead className="text-right">Hora extra</TableHead>
-                    <TableHead className="w-[52px]" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(tariffs.data?.results ?? []).length === 0 ? (
-                    <TableEmpty colSpan={6} message="Sin tarifas registradas." />
-                  ) : (
-                    (tariffs.data?.results ?? []).map((item) => (
-                      <TableRow
-                        key={item.id}
-                        onContextMenu={openContextMenu(item.name, tariffActions(item))}
-                        className="cursor-context-menu"
-                      >
-                        <TableCell className="text-muted-foreground">
-                          {item.room_type_name}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {item.name}
-                          {item.is_default ? (
-                            <Badge variant="outline" className="ml-2">
-                              Sugerido
-                            </Badge>
-                          ) : null}
-                        </TableCell>
-                        <TableCell className="text-right tabular">
-                          {item.duration_minutes / 60} h
-                        </TableCell>
-                        <TableCell className="text-right tabular font-medium">
-                          {formatMoney(item.base_price)}
-                        </TableCell>
-                        <TableCell className="text-right tabular text-muted-foreground">
-                          {formatMoney(item.overstay_hour_price)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <RowActions items={tariffActions(item)} label={item.name} />
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                <Table>
+                  <TableHeader className="sticky top-0 z-10 bg-card">
+                    <TableRow>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Bloque</TableHead>
+                      <TableHead className="text-right">Duración</TableHead>
+                      <TableHead className="text-right">Precio</TableHead>
+                      <TableHead className="text-right">Hora extra</TableHead>
+                      <TableHead className="w-[52px]" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(tariffs.data?.results ?? []).length === 0 ? (
+                      <TableEmpty colSpan={6} message="Sin tarifas registradas." />
+                    ) : (
+                      (tariffs.data?.results ?? []).map((item) => (
+                        <TableRow
+                          key={item.id}
+                          onContextMenu={openContextMenu(item.name, tariffActions(item))}
+                          className="cursor-context-menu"
+                        >
+                          <TableCell className="text-muted-foreground">
+                            {item.room_type_name}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {item.name}
+                            {item.is_default ? (
+                              <Badge variant="outline" className="ml-2">
+                                Sugerido
+                              </Badge>
+                            ) : null}
+                          </TableCell>
+                          <TableCell className="text-right tabular">
+                            {item.duration_minutes / 60} h
+                          </TableCell>
+                          <TableCell className="text-right tabular font-medium">
+                            {formatMoney(item.base_price)}
+                          </TableCell>
+                          <TableCell className="text-right tabular text-muted-foreground">
+                            {formatMoney(item.overstay_hour_price)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <RowActions items={tariffActions(item)} label={item.name} />
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
               </TableScroll>
             </CardContent>
           </Card>
@@ -347,6 +349,13 @@ export default function ConfigPage() {
 
         <TabsContent value="appearance" className="min-h-0 flex-1 overflow-auto scrollbar-thin">
           <AppearanceSettings />
+        </TabsContent>
+
+        <TabsContent
+          value="dynamic-pricing"
+          className="min-h-0 flex-1 overflow-auto scrollbar-thin"
+        >
+          <DynamicPricingSettings />
         </TabsContent>
       </Tabs>
 

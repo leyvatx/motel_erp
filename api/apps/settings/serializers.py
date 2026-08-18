@@ -60,7 +60,12 @@ class PublicMotelSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Motel
-        fields = ("slug", "name", "logo_url", "currency", "locale", "time_zone")
+        fields = (
+            "slug", "name", "logo_url", "currency", "locale", "time_zone",
+            "brand_primary_color", "brand_sidebar_color", "status_available_color",
+            "status_occupied_color", "status_cleaning_color", "status_maintenance_color",
+            "default_theme", "default_density", "border_radius", "font_family", "login_message",
+        )
         read_only_fields = fields
 
     def get_logo_url(self, motel: Motel) -> str | None:
@@ -89,6 +94,17 @@ class MotelSerializer(serializers.ModelSerializer):
             "email",
             "logo",
             "logo_url",
+            "brand_primary_color",
+            "brand_sidebar_color",
+            "status_available_color",
+            "status_occupied_color",
+            "status_cleaning_color",
+            "status_maintenance_color",
+            "default_theme",
+            "default_density",
+            "border_radius",
+            "font_family",
+            "login_message",
             "currency",
             "locale",
             "time_zone",
@@ -134,6 +150,17 @@ class MotelSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs: dict) -> dict:
+        color_fields = (
+            "brand_primary_color",
+            "brand_sidebar_color",
+            "status_available_color",
+            "status_occupied_color",
+            "status_cleaning_color",
+            "status_maintenance_color",
+        )
+        for field in color_fields:
+            if field in attrs:
+                attrs[field] = attrs[field].upper()
         backend = attrs.get("printer_backend", getattr(self.instance, "printer_backend", None))
         host = attrs.get("printer_host", getattr(self.instance, "printer_host", ""))
         if backend == "network" and not host:

@@ -12,10 +12,10 @@ export default {
         'brand-dark': '#0f172a',
         'brand-accent': 'hsl(var(--brand-accent))',
 
-        'status-available': '#10b981',
-        'status-occupied': '#ef4444',
-        'status-cleaning': '#f59e0b',
-        'status-maintenance': '#6b7280',
+        'status-available': 'hsl(var(--status-available))',
+        'status-occupied': 'hsl(var(--status-occupied))',
+        'status-cleaning': 'hsl(var(--status-cleaning))',
+        'status-maintenance': 'hsl(var(--status-maintenance))',
 
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
@@ -66,14 +66,7 @@ export default {
         sm: 'calc(var(--radius) - 4px)',
       },
       fontFamily: {
-        sans: [
-          'Inter var',
-          'Inter',
-          'ui-sans-serif',
-          'system-ui',
-          'Segoe UI',
-          'sans-serif',
-        ],
+        sans: ['var(--font-sans)'],
         mono: ['ui-monospace', 'SFMono-Regular', 'JetBrains Mono', 'monospace'],
       },
       fontSize: {

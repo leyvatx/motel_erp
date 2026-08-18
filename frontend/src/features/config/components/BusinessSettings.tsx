@@ -174,8 +174,8 @@ export function BusinessSettings() {
           <CardHeader>
             <CardTitle className="text-base">Identidad</CardTitle>
             <CardDescription>
-              El nombre sale en el menú, en la pantalla de acceso, en el título de la pestaña y
-              en el ticket.
+              El nombre sale en el menú, en la pantalla de acceso, en el título de la pestaña y en
+              el ticket.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -280,8 +280,8 @@ export function BusinessSettings() {
                 />
               </div>
               <p className="text-2xs text-muted-foreground">
-                PNG, JPG o WEBP de hasta {MAX_LOGO_KB} KB. Se guarda en el servidor y tambien se
-                usa como icono de la pestaña. El logotipo se aplica al momento, sin necesidad de
+                PNG, JPG o WEBP de hasta {MAX_LOGO_KB} KB. Se guarda en el servidor y tambien se usa
+                como icono de la pestaña. El logotipo se aplica al momento, sin necesidad de
                 guardar.
               </p>
             </div>
@@ -321,10 +321,7 @@ export function BusinessSettings() {
                 htmlFor="business-tz"
                 hint="El servidor guarda todo en UTC; esto solo define la hora local del negocio."
               >
-                <Select
-                  value={draft.time_zone}
-                  onValueChange={(value) => set('time_zone', value)}
-                >
+                <Select value={draft.time_zone} onValueChange={(value) => set('time_zone', value)}>
                   <SelectTrigger id="business-tz">
                     <SelectValue placeholder="Elige la zona" />
                   </SelectTrigger>

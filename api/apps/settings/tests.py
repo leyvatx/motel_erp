@@ -6,7 +6,7 @@ from decimal import Decimal
 
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import RequestFactory, TestCase
 from rest_framework.test import APIClient
 
 from apps.audit.constants import AuditAction, AuditModule
@@ -17,7 +17,8 @@ from apps.settings.models import Motel
 from apps.settings.services import create_motel
 from apps.users.constants import Role
 from apps.users.models import User
-from common.tenancy import use_motel
+from common.middleware import CurrentRequestMiddleware
+from common.tenancy import use_motel, without_motel
 from common.utils import business_tz
 
 BUSINESS_URL = "/api/v1/settings/business/"
@@ -109,11 +110,78 @@ class IsolationTests(MotelTestCase):
 
         self.assertEqual(response.status_code, 404)
 
+    def test_consulta_operativa_sin_motel_falla_cerrada(self) -> None:
+        request = RequestFactory().get("/")
+        request.user = self.plataforma
+
+        count = CurrentRequestMiddleware(lambda current: Room.objects.count())(request)
+
+        self.assertEqual(count, 0)
+
+    def test_acceso_global_interno_debe_ser_explicito(self) -> None:
+        request = RequestFactory().get("/")
+        request.user = self.plataforma
+
+        def count_all(current):
+            with without_motel():
+                return Room.objects.count()
+
+        count = CurrentRequestMiddleware(count_all)(request)
+
+        self.assertEqual(count, 2)
+
     def test_la_plantilla_de_un_motel_no_se_ve_desde_otro(self) -> None:
         with use_motel(self.palmas):
             usuarios = list(User.objects.values_list("username", flat=True))
 
         self.assertEqual(usuarios, ["gerente-palmas"])
+
+    def test_inactivos_y_restauracion_tambien_respetan_el_motel(self) -> None:
+        inactive = User.objects.create_user(
+            username="inactivo-arcos",
+            password="Demo.1234",
+            full_name="Inactivo Arcos",
+            role=Role.RECEPTION,
+            motel=self.arcos,
+        )
+        inactive.soft_delete(reason="Prueba")
+        client = self.auth(self.vecino)
+
+        listed = client.get("/api/v1/auth/users/", {"include_inactive": "true"})
+        restored = client.post(f"/api/v1/auth/users/{inactive.pk}/restore/")
+
+        usernames = [row["username"] for row in listed.data["results"]]
+        self.assertNotIn("inactivo-arcos", usernames)
+        self.assertEqual(restored.status_code, 404)
+
+    def test_usuario_nuevo_hereda_el_motel_del_dueno(self) -> None:
+        response = self.auth(self.vecino).post(
+            "/api/v1/auth/users/",
+            {
+                "username": "nuevo-palmas",
+                "full_name": "Nuevo Palmas",
+                "role": Role.RECEPTION,
+                "password": "Demo.1234",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(
+            User.all_objects.get(username="nuevo-palmas").motel_id,
+            self.palmas.pk,
+        )
+
+    def test_no_se_puede_quitar_el_ultimo_superadmin(self) -> None:
+        response = self.auth(self.vecino).patch(
+            f"/api/v1/auth/users/{self.vecino.pk}/",
+            {"role": Role.MANAGER},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.vecino.refresh_from_db()
+        self.assertEqual(self.vecino.role, Role.SUPERADMIN)
 
     def test_los_folios_se_numeran_por_separado_en_cada_motel(self) -> None:
         from common.models import DocumentSequence
@@ -133,6 +201,8 @@ class ProfileReadTests(MotelTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["name"], "Arcos Prueba")
+        self.assertIn("brand_primary_color", response.data)
+        self.assertIn("login_message", response.data)
 
     def test_el_endpoint_publico_no_expone_datos_sensibles(self) -> None:
         Motel.objects.filter(pk=self.arcos.pk).update(
@@ -199,6 +269,30 @@ class ProfileWriteTests(MotelTestCase):
 
         self.assertEqual(response.status_code, 400)
 
+    def test_la_paleta_se_guarda_por_motel_y_valida_hexadecimal(self) -> None:
+        response = self.auth(self.gerente).patch(
+            BUSINESS_URL,
+            {
+                "brand_primary_color": "#7C3AED",
+                "brand_sidebar_color": "#111827",
+                "default_theme": "dark",
+                "border_radius": "rounded",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.arcos.refresh_from_db()
+        self.palmas.refresh_from_db()
+        self.assertEqual(self.arcos.brand_primary_color, "#7C3AED")
+        self.assertEqual(self.arcos.default_theme, "dark")
+        self.assertEqual(self.palmas.brand_primary_color, "#3B82F6")
+
+        invalid = self.auth(self.gerente).patch(
+            BUSINESS_URL, {"brand_primary_color": "morado"}, format="json"
+        )
+        self.assertEqual(invalid.status_code, 400)
+
     def test_la_impresora_de_red_exige_direccion(self) -> None:
         response = self.auth(self.gerente).patch(
             BUSINESS_URL, {"printer_backend": PrinterBackend.NETWORK, "printer_host": ""}
@@ -248,6 +342,16 @@ class PlatformTests(MotelTestCase):
         nombres = {row["name"] for row in response.data["results"]}
         self.assertIn("Arcos Prueba", nombres)
         self.assertIn("Palmas Prueba", nombres)
+
+    def test_la_plataforma_no_puede_entrar_a_operacion(self) -> None:
+        self.assertEqual(self.auth(self.plataforma).get(ROOMS_URL).status_code, 403)
+        self.assertEqual(self.auth(self.plataforma).get(BUSINESS_URL).status_code, 403)
+
+    def test_la_plataforma_conserva_acceso_a_su_perfil(self) -> None:
+        response = self.auth(self.plataforma).get("/api/v1/auth/me/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["is_platform_admin"])
 
     def test_dar_de_alta_un_motel_crea_a_su_dueno(self) -> None:
         response = self.auth(self.plataforma).post(

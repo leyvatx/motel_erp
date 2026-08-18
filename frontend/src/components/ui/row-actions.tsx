@@ -67,8 +67,7 @@ function ActionItems({ items, onDone }: { items: RowAction[]; onDone?: () => voi
               onDone?.()
             }}
             className={cn(
-              item.danger &&
-                'text-destructive focus:bg-destructive/10 focus:text-destructive',
+              item.danger && 'text-destructive focus:bg-destructive/10 focus:text-destructive',
             )}
           >
             {item.icon}

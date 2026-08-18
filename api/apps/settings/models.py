@@ -18,7 +18,12 @@ from decimal import Decimal
 from django.conf import settings as django_settings
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
-from django.core.validators import FileExtensionValidator, MaxValueValidator, MinValueValidator
+from django.core.validators import (
+    FileExtensionValidator,
+    MaxValueValidator,
+    MinValueValidator,
+    RegexValidator,
+)
 from django.db import models
 from django.db.utils import Error as DatabaseError
 from django.utils.text import slugify
@@ -30,6 +35,10 @@ from common.tenancy import current_motel_id
 
 CACHE_PREFIX = "settings:motel"
 CACHE_TTL_SECONDS = 60
+HEX_COLOR = RegexValidator(
+    regex=r"^#[0-9A-Fa-f]{6}$",
+    message="Usa un color hexadecimal de seis dígitos, por ejemplo #2563EB.",
+)
 
 
 def validate_time_zone(value: str) -> None:
@@ -62,6 +71,54 @@ class Motel(TimeStampedModel, AuthorStampedModel, SoftDeleteModel):
         blank=True,
         validators=[FileExtensionValidator(LOGO_EXTENSIONS)],
         help_text="Se usa en el menú, en la pantalla de acceso y como icono de la pestaña.",
+    )
+    brand_primary_color = models.CharField(
+        "Color principal", max_length=7, default="#3B82F6", validators=[HEX_COLOR]
+    )
+    brand_sidebar_color = models.CharField(
+        "Color del menú", max_length=7, default="#0F172A", validators=[HEX_COLOR]
+    )
+    status_available_color = models.CharField(
+        "Color disponible", max_length=7, default="#10B981", validators=[HEX_COLOR]
+    )
+    status_occupied_color = models.CharField(
+        "Color ocupado", max_length=7, default="#EF4444", validators=[HEX_COLOR]
+    )
+    status_cleaning_color = models.CharField(
+        "Color limpieza", max_length=7, default="#F59E0B", validators=[HEX_COLOR]
+    )
+    status_maintenance_color = models.CharField(
+        "Color mantenimiento", max_length=7, default="#6B7280", validators=[HEX_COLOR]
+    )
+    default_theme = models.CharField(
+        "Tema predeterminado",
+        max_length=8,
+        choices=(("light", "Claro"), ("dark", "Oscuro"), ("system", "Del sistema")),
+        default="light",
+    )
+    default_density = models.CharField(
+        "Densidad predeterminada",
+        max_length=12,
+        choices=(("comfortable", "Cómoda"), ("compact", "Compacta")),
+        default="comfortable",
+    )
+    border_radius = models.CharField(
+        "Redondeo de controles",
+        max_length=8,
+        choices=(("square", "Recto"), ("medium", "Medio"), ("rounded", "Redondeado")),
+        default="medium",
+    )
+    font_family = models.CharField(
+        "Tipografía",
+        max_length=10,
+        choices=(("modern", "Moderna"), ("system", "Del sistema"), ("rounded", "Redondeada")),
+        default="modern",
+    )
+    login_message = models.CharField(
+        "Mensaje de acceso",
+        max_length=140,
+        default="Ingresa con tu clave de empleado para continuar.",
+        blank=True,
     )
 
     currency = models.CharField("Moneda", max_length=3, default="MXN")

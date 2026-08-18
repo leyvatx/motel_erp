@@ -1,11 +1,14 @@
+import type { MotelAppearance } from '@/store/appearance'
+
 export type PrinterBackend = 'dummy' | 'network' | 'usb' | 'file'
 
-export interface PublicBusinessProfile {
+export interface PublicBusinessProfile extends MotelAppearance {
   name: string
   logo_url: string | null
   currency: string
   locale: string
   time_zone: string
+  login_message: string
 }
 
 export interface BusinessProfile extends PublicBusinessProfile {

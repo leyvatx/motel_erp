@@ -37,6 +37,30 @@ export interface TariffPayload {
   sort_order?: number
 }
 
+export interface TariffRule {
+  id: number
+  tariff_block: number
+  name: string
+  rule_type: 'WEEKDAY' | 'DATE_RANGE' | 'HOLIDAY'
+  rule_type_display: string
+  weekdays: number[]
+  start_date: string | null
+  end_date: string | null
+  start_time: string | null
+  end_time: string | null
+  price_mode: 'FIXED' | 'MULTIPLIER' | 'DELTA'
+  value: string
+  priority: number
+  is_active: boolean
+}
+export type TariffRulePayload = Omit<TariffRule, 'id' | 'rule_type_display' | 'is_active'>
+export interface Holiday {
+  id: number
+  date: string
+  name: string
+  is_active: boolean
+}
+
 export const businessApi = {
   public: (slug: string | null): Promise<PublicBusinessProfile> =>
     get<PublicBusinessProfile>('/settings/business/public/', {
@@ -80,4 +104,15 @@ export const configApi = {
   updateTariff: (id: number, payload: Partial<TariffPayload>): Promise<TariffBlock> =>
     patch<TariffBlock, Partial<TariffPayload>>(`/frontdesk/tariff-blocks/${id}/`, payload),
   deactivateTariff: (id: number): Promise<void> => del(`/frontdesk/tariff-blocks/${id}/`),
+
+  tariffRules: (): Promise<import('@/types/api').PaginatedResponse<TariffRule>> =>
+    get('/frontdesk/tariff-rules/', { params: { page_size: 200 } }),
+  createTariffRule: (payload: TariffRulePayload): Promise<TariffRule> =>
+    post<TariffRule, TariffRulePayload>('/frontdesk/tariff-rules/', payload),
+  deactivateTariffRule: (id: number): Promise<void> => del(`/frontdesk/tariff-rules/${id}/`),
+  holidays: (): Promise<import('@/types/api').PaginatedResponse<Holiday>> =>
+    get('/frontdesk/holidays/', { params: { page_size: 200 } }),
+  createHoliday: (payload: { date: string; name: string }): Promise<Holiday> =>
+    post<Holiday, { date: string; name: string }>('/frontdesk/holidays/', payload),
+  deactivateHoliday: (id: number): Promise<void> => del(`/frontdesk/holidays/${id}/`),
 }

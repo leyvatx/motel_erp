@@ -49,9 +49,7 @@ export function StatStrip({ stats, isLoading }: { stats: Stat[]; isLoading?: boo
             >
               {stat.value}
             </p>
-            {stat.help ? (
-              <p className="mt-1 text-2xs text-muted-foreground">{stat.help}</p>
-            ) : null}
+            {stat.help ? <p className="mt-1 text-2xs text-muted-foreground">{stat.help}</p> : null}
           </div>
         )
 
@@ -74,7 +72,12 @@ export function StatStrip({ stats, isLoading }: { stats: Stat[]; isLoading?: boo
               stat.active && 'border-foreground/30 ring-1 ring-foreground/10',
             )}
           >
-            <button type="button" onClick={stat.onClick} aria-pressed={stat.active} className="text-left">
+            <button
+              type="button"
+              onClick={stat.onClick}
+              aria-pressed={stat.active}
+              className="text-left"
+            >
               {content}
             </button>
           </Card>

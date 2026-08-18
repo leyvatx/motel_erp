@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { authApi, type LoginPayload } from '@/features/auth/api'
 import { queryKeys } from '@/lib/queryClient'
 import { realtimeChannels } from '@/lib/websocket'
-import { useAuthStore } from '@/store/auth'
+import { defaultRouteFor, useAuthStore } from '@/store/auth'
 import type { LoginResponse, User } from '@/types/api'
 
 export function useLogin() {
@@ -15,9 +15,7 @@ export function useLogin() {
     mutationFn: authApi.login,
     onSuccess: (data) => {
       setSession(data)
-      navigate(data.user.role === 'HOUSEKEEPING' ? '/housekeeping' : '/frontdesk', {
-        replace: true,
-      })
+      navigate(defaultRouteFor(data.user), { replace: true })
     },
   })
 }

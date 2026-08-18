@@ -20,7 +20,7 @@ export function Sidebar() {
 
   const groups = NAV_GROUPS.map((group) => ({
     ...group,
-    items: group.items.filter((item) => canAccessSection(user?.role, item.section)),
+    items: group.items.filter((item) => canAccessSection(user, item.section)),
   })).filter((group) => group.items.length > 0)
 
   return (

@@ -9,10 +9,10 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useLogin } from '@/features/auth/hooks'
-import { useBrand } from '@/features/config/hooks'
+import { usePublicBusinessProfile, useBrand } from '@/features/config/hooks'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { apiErrorMessage } from '@/lib/axios'
-import { useAuthStore } from '@/store/auth'
+import { defaultRouteFor, useAuthStore } from '@/store/auth'
 
 const loginSchema = z.object({
   username: z.string().min(3, 'Escribe tu usuario.').toLowerCase(),
@@ -23,7 +23,9 @@ type LoginForm = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
   const access = useAuthStore((state) => state.access)
+  const user = useAuthStore((state) => state.user)
   const { name: businessName, logoUrl } = useBrand()
+  const publicProfile = usePublicBusinessProfile()
   const login = useLogin()
 
   useDocumentTitle('Acceso')
@@ -37,12 +39,12 @@ export default function LoginPage() {
     defaultValues: { username: '', password: '' },
   })
 
-  if (access) return <Navigate to="/frontdesk" replace />
+  if (access) return <Navigate to={defaultRouteFor(user)} replace />
 
   const onSubmit = handleSubmit((values) => login.mutate(values))
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-6">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/10 via-background to-muted p-6">
       <div className="w-full max-w-sm space-y-6">
         <div className="flex flex-col items-center gap-3 text-center">
           <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl bg-brand-dark">
@@ -53,11 +55,10 @@ export default function LoginPage() {
             )}
           </div>
           <div className="space-y-1">
-            <h1 className="text-xl font-semibold tracking-tight">
-              {businessName || 'Motel ERP'}
-            </h1>
+            <h1 className="text-xl font-semibold tracking-tight">{businessName || 'Motel ERP'}</h1>
             <p className="text-sm text-muted-foreground">
-              Ingresa con tu clave de empleado para continuar.
+              {publicProfile.data?.login_message ||
+                'Ingresa con tu clave de empleado para continuar.'}
             </p>
           </div>
         </div>

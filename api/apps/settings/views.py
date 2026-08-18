@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import zoneinfo
 
-from django.db.models import Count, Q
+from django.db.models import Count, IntegerField, OuterRef, Q, Subquery, Value
+from django.db.models.functions import Coalesce
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
@@ -23,6 +24,7 @@ from apps.settings.serializers import (
     TimeZoneOptionSerializer,
 )
 from apps.users.constants import PermissionCode
+from apps.notifications.events import Event, broadcast
 from common.tenancy import without_motel
 
 COMMON_TIME_ZONES: tuple[tuple[str, str], ...] = (
@@ -94,7 +96,8 @@ class BusinessProfileView(APIView):
         responses=MotelSerializer,
     )
     def patch(self, request) -> Response:
-        motel = Motel.all_objects.filter(pk=request.user.motel_id).first()
+        motel_id = getattr(request.user, "active_motel_id", None) or request.user.motel_id
+        motel = Motel.all_objects.filter(pk=motel_id).first()
         if motel is None:
             return Response(
                 {"error": {"code": "no_motel", "message": "Tu usuario no pertenece a un motel."}},
@@ -105,7 +108,12 @@ class BusinessProfileView(APIView):
             motel, data=request.data, partial=True, context={"request": request}
         )
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        motel = serializer.save()
+        broadcast(
+            Event.SETTINGS_CHANGED,
+            {"motel_id": motel.pk, "updated_at": motel.updated_at.isoformat()},
+            motel=motel,
+        )
         return Response(serializer.data)
 
 
@@ -119,15 +127,28 @@ class MotelViewSet(
     """Alta y administración de moteles. Exclusivo de la plataforma."""
 
     serializer_class = MotelListSerializer
+    allow_platform_scope = True
     required_permissions = {"*": [PermissionCode.MOTEL_MANAGE]}
     search_fields = ["name", "legal_name", "tax_id"]
     ordering_fields = ["name", "created_at"]
 
     def get_queryset(self):
+        from apps.rooms.models import Room
+
+        room_count = (
+            Room.all_objects.filter(motel_id=OuterRef("pk"), is_active=True)
+            .values("motel_id")
+            .annotate(total=Count("pk"))
+            .values("total")
+        )
         return (
             Motel.all_objects.all()
             .annotate(
                 user_count=Count("users", filter=Q(users__is_active=True), distinct=True),
+                room_count=Coalesce(
+                    Subquery(room_count, output_field=IntegerField()),
+                    Value(0),
+                ),
             )
             .order_by("name")
         )

@@ -54,7 +54,7 @@ export function formatQuantity(value: string | number | null | undefined): strin
 
 export function formatDateTime(iso: string | null | undefined): string {
   if (!iso) return '-'
-  return format(parseISO(iso), "dd/MM/yyyy HH:mm", { locale: es })
+  return format(parseISO(iso), 'dd/MM/yyyy HH:mm', { locale: es })
 }
 
 export function formatTime(iso: string | null | undefined): string {

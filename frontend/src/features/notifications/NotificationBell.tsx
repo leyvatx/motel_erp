@@ -7,11 +7,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  useMarkAllRead,
-  useNotifications,
-  useUnreadCount,
-} from '@/features/notifications/hooks'
+import { useMarkAllRead, useNotifications, useUnreadCount } from '@/features/notifications/hooks'
 import type { Notification } from '@/features/notifications/api'
 import { formatRelative } from '@/lib/format'
 import { cn } from '@/lib/utils'

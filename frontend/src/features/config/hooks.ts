@@ -10,11 +10,15 @@ import { useAuthStore } from '@/store/auth'
 
 export function useBusinessProfile() {
   const authenticated = useAuthStore((state) => Boolean(state.access))
+  const platform = useAuthStore((state) => Boolean(state.user?.is_platform_admin))
+  const corporateWithoutMotel = useAuthStore(
+    (state) => Boolean(state.user?.is_corporate_user && !state.activeMotelId),
+  )
 
   return useQuery({
     queryKey: queryKeys.settings.business,
     queryFn: businessApi.profile,
-    enabled: authenticated,
+    enabled: authenticated && !platform && !corporateWithoutMotel,
     staleTime: 10 * 60_000,
   })
 }
@@ -113,8 +117,7 @@ function useConfigMutation<TArgs, TResult>(
   })
 }
 
-export const useCreateRoom = () =>
-  useConfigMutation(configApi.createRoom, 'Habitación creada')
+export const useCreateRoom = () => useConfigMutation(configApi.createRoom, 'Habitación creada')
 
 export const useUpdateRoom = () =>
   useConfigMutation(
@@ -139,8 +142,7 @@ export const useUpdateRoomType = () =>
 export const useDeactivateRoomType = () =>
   useConfigMutation(configApi.deactivateRoomType, 'Tipo dado de baja')
 
-export const useCreateTariff = () =>
-  useConfigMutation(configApi.createTariff, 'Tarifa creada')
+export const useCreateTariff = () => useConfigMutation(configApi.createTariff, 'Tarifa creada')
 
 export const useUpdateTariff = () =>
   useConfigMutation(
@@ -151,3 +153,16 @@ export const useUpdateTariff = () =>
 
 export const useDeactivateTariff = () =>
   useConfigMutation(configApi.deactivateTariff, 'Tarifa dada de baja')
+
+export const useTariffRules = () =>
+  useQuery({ queryKey: ['frontdesk', 'tariff-rules'], queryFn: configApi.tariffRules })
+export const useCreateTariffRule = () =>
+  useConfigMutation(configApi.createTariffRule, 'Regla tarifaria creada')
+export const useDeactivateTariffRule = () =>
+  useConfigMutation(configApi.deactivateTariffRule, 'Regla tarifaria desactivada')
+export const useHolidays = () =>
+  useQuery({ queryKey: ['frontdesk', 'holidays'], queryFn: configApi.holidays })
+export const useCreateHoliday = () =>
+  useConfigMutation(configApi.createHoliday, 'Día festivo agregado')
+export const useDeactivateHoliday = () =>
+  useConfigMutation(configApi.deactivateHoliday, 'Día festivo eliminado')

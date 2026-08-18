@@ -29,7 +29,15 @@ import {
 import { useRoomTypes } from '@/features/frontdesk/hooks'
 import type { Room, RoomType, TariffBlock } from '@/features/frontdesk/types'
 
-function Field({ label, htmlFor, children }: { label: string; htmlFor: string; children: ReactNode }) {
+function Field({
+  label,
+  htmlFor,
+  children,
+}: {
+  label: string
+  htmlFor: string
+  children: ReactNode
+}) {
   return (
     <div className="space-y-2">
       <Label htmlFor={htmlFor}>{label}</Label>

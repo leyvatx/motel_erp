@@ -1,185 +1,360 @@
-import { Check, Monitor, Moon, Rows2, Rows3, Sun, Volume2, VolumeX } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Monitor, Moon, Rows2, Rows3, Save, Sun, Volume2, VolumeX } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ACCENTS, useAppearanceStore, type Density, type ThemeMode } from '@/store/appearance'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { useBusinessProfile, useUpdateBusinessProfile } from '@/features/config/hooks'
+import type { BusinessProfilePayload } from '@/features/config/types'
+import {
+  useAppearanceStore,
+  type DensityPreference,
+  type ThemePreference,
+} from '@/store/appearance'
 import { useUiStore } from '@/store/ui'
 import { cn } from '@/lib/utils'
 
-const THEMES: { value: ThemeMode; label: string; icon: typeof Sun }[] = [
-  { value: 'light', label: 'Claro', icon: Sun },
-  { value: 'dark', label: 'Oscuro', icon: Moon },
-  { value: 'system', label: 'Del sistema', icon: Monitor },
-]
+const COLOR_FIELDS = [
+  ['brand_primary_color', 'Color principal', 'Botones, enlaces y selección'],
+  ['brand_sidebar_color', 'Menú lateral', 'Fondo del menú principal'],
+  ['status_available_color', 'Disponible', 'Habitaciones libres y resultados positivos'],
+  ['status_occupied_color', 'Ocupado', 'Rentas activas, vencimientos y errores'],
+  ['status_cleaning_color', 'Limpieza', 'Cuartos pendientes y advertencias'],
+  ['status_maintenance_color', 'Mantenimiento', 'Bloqueos y trabajos técnicos'],
+] as const
 
-const DENSITIES: { value: Density; label: string; hint: string; icon: typeof Rows2 }[] = [
-  { value: 'comfortable', label: 'Cómoda', hint: 'Renglones altos', icon: Rows2 },
-  { value: 'compact', label: 'Compacta', hint: 'Más filas visibles', icon: Rows3 },
-]
+type BrandForm = Pick<
+  BusinessProfilePayload,
+  | 'brand_primary_color'
+  | 'brand_sidebar_color'
+  | 'status_available_color'
+  | 'status_occupied_color'
+  | 'status_cleaning_color'
+  | 'status_maintenance_color'
+  | 'default_theme'
+  | 'default_density'
+  | 'border_radius'
+  | 'font_family'
+  | 'login_message'
+>
 
-function OptionCard({
-  selected,
-  onSelect,
-  icon: Icon,
-  label,
-  hint,
-}: {
-  selected: boolean
-  onSelect: () => void
-  icon: typeof Sun
-  label: string
-  hint?: string
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-pressed={selected}
-      className={cn(
-        'flex flex-col items-center gap-1.5 rounded-lg border p-3 text-xs transition-all',
-        'hover:border-foreground/20 hover:shadow-xs',
-        selected ? 'border-foreground/30 bg-accent ring-1 ring-foreground/10' : 'bg-card',
-      )}
-    >
-      <Icon className="h-4 w-4" aria-hidden />
-      {label}
-      {hint ? <span className="text-2xs text-muted-foreground">{hint}</span> : null}
-    </button>
-  )
+const EMPTY: BrandForm = {
+  brand_primary_color: '#3B82F6',
+  brand_sidebar_color: '#0F172A',
+  status_available_color: '#10B981',
+  status_occupied_color: '#EF4444',
+  status_cleaning_color: '#F59E0B',
+  status_maintenance_color: '#6B7280',
+  default_theme: 'light',
+  default_density: 'comfortable',
+  border_radius: 'medium',
+  font_family: 'modern',
+  login_message: '',
 }
 
 export function AppearanceSettings() {
-  const { theme, accentId, density, setTheme, setAccent, setDensity } = useAppearanceStore()
+  const profile = useBusinessProfile()
+  const update = useUpdateBusinessProfile()
+  const [form, setForm] = useState<BrandForm>(EMPTY)
+  const theme = useAppearanceStore((state) => state.theme)
+  const density = useAppearanceStore((state) => state.density)
+  const setTheme = useAppearanceStore((state) => state.setTheme)
+  const setDensity = useAppearanceStore((state) => state.setDensity)
   const soundAlerts = useUiStore((state) => state.soundAlerts)
   const setSoundAlerts = useUiStore((state) => state.setSoundAlerts)
 
+  useEffect(() => {
+    if (!profile.data) return
+    setForm({
+      brand_primary_color: profile.data.brand_primary_color,
+      brand_sidebar_color: profile.data.brand_sidebar_color,
+      status_available_color: profile.data.status_available_color,
+      status_occupied_color: profile.data.status_occupied_color,
+      status_cleaning_color: profile.data.status_cleaning_color,
+      status_maintenance_color: profile.data.status_maintenance_color,
+      default_theme: profile.data.default_theme,
+      default_density: profile.data.default_density,
+      border_radius: profile.data.border_radius,
+      font_family: profile.data.font_family,
+      login_message: profile.data.login_message,
+    })
+  }, [profile.data])
+
+  const set = <K extends keyof BrandForm>(key: K, value: BrandForm[K]) =>
+    setForm((current) => ({ ...current, [key]: value }))
+
   return (
     <div className="space-y-4 pb-4">
-      <p className="text-xs text-muted-foreground">
-        Estas preferencias se guardan solo en esta computadora.
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card p-4">
+        <div>
+          <p className="font-medium">Identidad compartida del motel</p>
+          <p className="text-xs text-muted-foreground">
+            Estos cambios se aplican a todos los usuarios y terminales de esta propiedad.
+          </p>
+        </div>
+        <Button size="sm" loading={update.isPending} onClick={() => update.mutate(form)}>
+          <Save /> Guardar identidad
+        </Button>
+      </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 xl:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Tema y color</CardTitle>
-            <CardDescription>
-              El acento se aplica a botones principales, menú activo y enfoques.
-            </CardDescription>
+            <CardTitle className="text-base">Paleta del motel</CardTitle>
+            <CardDescription>Colores libres en formato hexadecimal.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="space-y-2">
-              <Label>Tema</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {THEMES.map((option) => (
-                  <OptionCard
-                    key={option.value}
-                    selected={theme === option.value}
-                    onSelect={() => setTheme(option.value)}
-                    icon={option.icon}
-                    label={option.label}
-                  />
-                ))}
-              </div>
-            </div>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            {COLOR_FIELDS.map(([key, label, hint]) => (
+              <ColorField
+                key={key}
+                label={label}
+                hint={hint}
+                value={String(form[key] ?? '')}
+                onChange={(value) => set(key, value)}
+              />
+            ))}
+          </CardContent>
+        </Card>
 
-            <div className="space-y-2">
-              <Label>Color de acento</Label>
-              <div className="flex flex-wrap gap-2">
-                {ACCENTS.map((accent) => (
-                  <button
-                    key={accent.id}
-                    type="button"
-                    onClick={() => setAccent(accent.id)}
-                    title={accent.label}
-                    aria-label={accent.label}
-                    aria-pressed={accentId === accent.id}
-                    className={cn(
-                      'flex h-9 w-9 items-center justify-center rounded-full transition-transform',
-                      'hover:scale-110 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40',
-                      accentId === accent.id && 'ring-2 ring-foreground/30 ring-offset-2',
-                    )}
-                    style={{ backgroundColor: `hsl(${accent.hsl})` }}
-                  >
-                    {accentId === accent.id ? (
-                      <Check className="h-4 w-4 text-white" aria-hidden />
-                    ) : null}
-                  </button>
-                ))}
-              </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Estilo de la interfaz</CardTitle>
+            <CardDescription>Valores iniciales para nuevos equipos y usuarios.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <SelectField
+                label="Tema predeterminado"
+                value={String(form.default_theme)}
+                onChange={(value) => set('default_theme', value as BrandForm['default_theme'])}
+                options={[
+                  ['light', 'Claro'],
+                  ['dark', 'Oscuro'],
+                  ['system', 'Seguir el sistema'],
+                ]}
+              />
+              <SelectField
+                label="Densidad predeterminada"
+                value={String(form.default_density)}
+                onChange={(value) => set('default_density', value as BrandForm['default_density'])}
+                options={[
+                  ['comfortable', 'Cómoda'],
+                  ['compact', 'Compacta'],
+                ]}
+              />
+              <SelectField
+                label="Bordes y controles"
+                value={String(form.border_radius)}
+                onChange={(value) => set('border_radius', value as BrandForm['border_radius'])}
+                options={[
+                  ['square', 'Rectos'],
+                  ['medium', 'Equilibrados'],
+                  ['rounded', 'Redondeados'],
+                ]}
+              />
+              <SelectField
+                label="Tipografía"
+                value={String(form.font_family)}
+                onChange={(value) => set('font_family', value as BrandForm['font_family'])}
+                options={[
+                  ['modern', 'Moderna'],
+                  ['system', 'Del sistema'],
+                  ['rounded', 'Redondeada'],
+                ]}
+              />
             </div>
-
-            <div className="rounded-lg border p-3">
-              <p className="mb-2 text-2xs uppercase tracking-wide text-muted-foreground">
-                Vista previa
+            <div className="space-y-2">
+              <Label htmlFor="login-message">Mensaje de la pantalla de acceso</Label>
+              <Input
+                id="login-message"
+                maxLength={140}
+                value={String(form.login_message ?? '')}
+                onChange={(event) => set('login_message', event.target.value)}
+                placeholder="Bienvenido. Ingresa tus datos para continuar."
+              />
+              <p className="text-2xs text-muted-foreground">
+                Se muestra antes de iniciar sesión, sin exponer información operativa.
               </p>
-              <div className="flex flex-wrap items-center gap-2">
-                <Button size="sm">Acción principal</Button>
-                <Button size="sm" variant="outline">
-                  Secundaria
-                </Button>
-                <span className="rounded-md bg-brand-accent px-2 py-1 text-xs font-medium text-white">
-                  Sección activa
-                </span>
-              </div>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Pantalla y avisos</CardTitle>
-            <CardDescription>
-              Cómo se ven las tablas y si esta terminal suena al vencer una renta.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="space-y-2">
-              <Label>Densidad de las tablas</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {DENSITIES.map((option) => (
-                  <OptionCard
-                    key={option.value}
-                    selected={density === option.value}
-                    onSelect={() => setDensity(option.value)}
-                    icon={option.icon}
-                    label={option.label}
-                    hint={option.hint}
-                  />
+            <div
+              className="rounded-lg border p-4"
+              style={{
+                borderRadius:
+                  form.border_radius === 'rounded'
+                    ? '1rem'
+                    : form.border_radius === 'square'
+                      ? '0.125rem'
+                      : '0.625rem',
+              }}
+            >
+              <p className="mb-3 text-xs font-medium">Vista previa</p>
+              <div className="flex flex-wrap gap-2">
+                <span
+                  className="rounded-md px-3 py-1.5 text-xs font-medium text-white"
+                  style={{ backgroundColor: form.brand_primary_color }}
+                >
+                  Acción principal
+                </span>
+                {COLOR_FIELDS.slice(2).map(([key, label]) => (
+                  <span
+                    key={key}
+                    className="rounded-full px-2 py-1 text-2xs font-medium text-white"
+                    style={{ backgroundColor: form[key] }}
+                  >
+                    {label}
+                  </span>
                 ))}
               </div>
             </div>
-
-            <div className="space-y-2">
-              <Label>Alertas sonoras</Label>
-              <button
-                type="button"
-                onClick={() => setSoundAlerts(!soundAlerts)}
-                aria-pressed={soundAlerts}
-                className={cn(
-                  'flex w-full items-center gap-3 rounded-lg border p-3 text-left text-sm transition-all',
-                  'hover:border-foreground/20 hover:shadow-xs',
-                  soundAlerts ? 'border-foreground/30 bg-accent' : 'bg-card',
-                )}
-              >
-                {soundAlerts ? (
-                  <Volume2 className="h-4 w-4 shrink-0" aria-hidden />
-                ) : (
-                  <VolumeX className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-                )}
-                <span className="min-w-0">
-                  <span className="block font-medium">
-                    {soundAlerts ? 'Activadas' : 'Silenciadas'}
-                  </span>
-                  <span className="block text-2xs text-muted-foreground">
-                    Tono al avisar que una renta está por vencer o ya vencio.
-                  </span>
-                </span>
-              </button>
-            </div>
           </CardContent>
         </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Mis preferencias en esta computadora</CardTitle>
+          <CardDescription>
+            Puedes respetar el estilo del motel o sobrescribir solo tu pantalla.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-5 lg:grid-cols-3">
+          <PreferenceGroup
+            label="Tema"
+            value={theme}
+            onChange={(value) => setTheme(value as ThemePreference)}
+            options={[
+              ['motel', 'Del motel', Monitor],
+              ['light', 'Claro', Sun],
+              ['dark', 'Oscuro', Moon],
+            ]}
+          />
+          <PreferenceGroup
+            label="Densidad"
+            value={density}
+            onChange={(value) => setDensity(value as DensityPreference)}
+            options={[
+              ['motel', 'Del motel', Monitor],
+              ['comfortable', 'Cómoda', Rows2],
+              ['compact', 'Compacta', Rows3],
+            ]}
+          />
+          <div className="space-y-2">
+            <Label>Alertas sonoras</Label>
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => setSoundAlerts(!soundAlerts)}
+            >
+              {soundAlerts ? <Volume2 /> : <VolumeX />}
+              {soundAlerts ? 'Activadas' : 'Silenciadas'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+function ColorField({
+  label,
+  hint,
+  value,
+  onChange,
+}: {
+  label: string
+  hint: string
+  value: string
+  onChange: (value: string) => void
+}) {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <div className="flex gap-2">
+        <input
+          type="color"
+          value={value}
+          onChange={(event) => onChange(event.target.value.toUpperCase())}
+          className="h-9 w-12 cursor-pointer rounded-md border bg-background p-1"
+        />
+        <Input
+          value={value}
+          maxLength={7}
+          onChange={(event) => onChange(event.target.value.toUpperCase())}
+          className="font-mono uppercase"
+        />
+      </div>
+      <p className="text-2xs text-muted-foreground">{hint}</p>
+    </div>
+  )
+}
+
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  options: string[][]
+}) {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map(([key, text]) => (
+            <SelectItem key={key} value={key!}>
+              {text}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  )
+}
+
+function PreferenceGroup({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  options: Array<[string, string, typeof Sun]>
+}) {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <div className="grid grid-cols-3 gap-2">
+        {options.map(([key, text, Icon]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => onChange(key)}
+            className={cn(
+              'flex flex-col items-center gap-1 rounded-lg border p-2 text-xs',
+              value === key && 'border-primary bg-primary/10',
+            )}
+          >
+            <Icon className="h-4 w-4" />
+            {text}
+          </button>
+        ))}
       </div>
     </div>
   )
