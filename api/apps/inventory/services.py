@@ -14,15 +14,18 @@ from decimal import Decimal
 from typing import Iterable
 
 from django.db import transaction
+from django.db.models import F
 from django.utils import timezone
 
 from common.exceptions import DomainError, InsufficientStock
 from common.utils import ZERO, quantity as q
 
 from apps.inventory import signals
-from apps.inventory.constants import MOVEMENT_SIGN, MovementType
+from apps.inventory.constants import MOVEMENT_SIGN, MovementType, PurchaseStatus
 from apps.inventory.models import (
     Product,
+    PurchaseOrder,
+    PurchaseOrderItem,
     StockLot,
     StockMovement,
     Warehouse,
@@ -399,3 +402,64 @@ def movements_for(source_document) -> list[StockMovement]:
             content_type=content_type, object_id=source_document.pk, reversal__isnull=True
         )
     )
+
+
+@transaction.atomic
+def receive_purchase(*, order: PurchaseOrder, receipts: list[dict], actor) -> PurchaseOrder:
+    """Recibe partidas y genera una entrada trazable por cada una."""
+    order = PurchaseOrder.objects.select_for_update().get(pk=order.pk)
+    if order.status not in {PurchaseStatus.ORDERED, PurchaseStatus.PARTIAL}:
+        raise DomainError(
+            "Solo se puede recibir una compra enviada o parcialmente recibida.",
+            code="purchase_not_receivable",
+        )
+    if not receipts:
+        raise DomainError("Indica al menos una partida para recibir.", code="empty_receipt")
+
+    seen: set[int] = set()
+    for receipt in receipts:
+        item_id = receipt["item_id"]
+        if item_id in seen:
+            raise DomainError("Una partida aparece más de una vez.", code="duplicate_receipt_item")
+        seen.add(item_id)
+        try:
+            item = PurchaseOrderItem.objects.select_for_update().select_related("product").get(
+                pk=item_id, order=order
+            )
+        except PurchaseOrderItem.DoesNotExist as exc:
+            raise DomainError("La partida no pertenece a esta compra.", code="invalid_purchase_item") from exc
+
+        amount = q(receipt["quantity"])
+        if amount <= ZERO or amount > item.pending_quantity:
+            raise DomainError(
+                f"La recepción de {item.product.name} excede lo pendiente.",
+                code="purchase_quantity_exceeded",
+            )
+        if item.product.track_expiration and not receipt.get("expiration_date"):
+            raise DomainError(
+                f"{item.product.name} requiere fecha de caducidad.",
+                code="expiration_required",
+            )
+
+        register_entry(
+            product=item.product,
+            warehouse=order.warehouse,
+            quantity=amount,
+            actor=actor,
+            movement_type=MovementType.PURCHASE,
+            unit_cost=item.unit_cost,
+            lot_code=receipt.get("lot_code", ""),
+            expiration_date=receipt.get("expiration_date"),
+            reason=f"Recepción de {order.folio}",
+            source_document=order,
+        )
+        item.received_quantity += amount
+        item.save(update_fields=["received_quantity"])
+
+    pending = PurchaseOrderItem.objects.filter(order=order, received_quantity__lt=F("quantity")).exists()
+    order.status = PurchaseStatus.PARTIAL if pending else PurchaseStatus.RECEIVED
+    if not pending:
+        order.received_at = timezone.now()
+    order.updated_by = actor
+    order.save(update_fields=["status", "received_at", "updated_by", "updated_at"])
+    return order

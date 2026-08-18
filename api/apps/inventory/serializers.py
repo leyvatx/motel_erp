@@ -5,16 +5,21 @@ from __future__ import annotations
 from decimal import Decimal
 
 from rest_framework import serializers
+from django.db import transaction
 
-from apps.inventory.constants import MovementType
+from apps.inventory.constants import MovementType, PurchaseStatus
 from apps.inventory.models import (
     Product,
     ProductCategory,
+    PurchaseOrder,
+    PurchaseOrderItem,
     StockLot,
     StockMovement,
     Warehouse,
     WarehouseStock,
+    Supplier,
 )
+from common.models import DocumentSequence
 
 
 class WarehouseSerializer(serializers.ModelSerializer):
@@ -77,6 +82,118 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_total_stock(self, product: Product) -> Decimal | None:
         """Existencia total anotada en la vista (``total_stock``)."""
         return getattr(product, "total_stock", None)
+
+
+class SupplierSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Supplier
+        fields = (
+            "id", "code", "business_name", "tax_id", "contact_name", "phone", "email",
+            "address", "payment_terms_days", "notes", "is_active", "created_at",
+        )
+        read_only_fields = ("id", "created_at")
+
+
+class PurchaseOrderItemSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source="product.name", read_only=True)
+    product_sku = serializers.CharField(source="product.sku", read_only=True)
+    pending_quantity = serializers.DecimalField(max_digits=14, decimal_places=3, read_only=True)
+    line_subtotal = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
+    line_total = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
+
+    class Meta:
+        model = PurchaseOrderItem
+        fields = (
+            "id", "product", "product_name", "product_sku", "quantity", "received_quantity",
+            "pending_quantity", "unit_cost", "tax_rate", "line_subtotal", "line_total",
+        )
+        read_only_fields = ("id", "received_quantity")
+
+
+class PurchaseOrderSerializer(serializers.ModelSerializer):
+    items = PurchaseOrderItemSerializer(many=True)
+    supplier_name = serializers.CharField(source="supplier.business_name", read_only=True)
+    warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    created_by_name = serializers.CharField(source="created_by.full_name", read_only=True, default=None)
+
+    class Meta:
+        model = PurchaseOrder
+        fields = (
+            "id", "folio", "supplier", "supplier_name", "warehouse", "warehouse_name",
+            "status", "status_display", "order_date", "expected_date", "supplier_reference",
+            "notes", "subtotal", "tax_total", "total", "received_at", "created_by_name",
+            "created_at", "updated_at", "items",
+        )
+        read_only_fields = (
+            "id", "folio", "status", "subtotal", "tax_total", "total", "received_at",
+            "created_at", "updated_at",
+        )
+
+    def validate_items(self, items):
+        if not items:
+            raise serializers.ValidationError("Agrega al menos un producto.")
+        products = [item["product"].pk for item in items]
+        if len(products) != len(set(products)):
+            raise serializers.ValidationError("No repitas productos en la misma compra.")
+        return items
+
+    @staticmethod
+    def _totals(items):
+        subtotal = sum((item["quantity"] * item["unit_cost"] for item in items), Decimal("0"))
+        tax = sum(
+            (item["quantity"] * item["unit_cost"] * item.get("tax_rate", Decimal("0")) for item in items),
+            Decimal("0"),
+        )
+        return subtotal, tax, subtotal + tax
+
+    @transaction.atomic
+    def create(self, validated_data):
+        items = validated_data.pop("items")
+        request = self.context["request"]
+        subtotal, tax, total = self._totals(items)
+        validated_data.update(
+            folio=DocumentSequence.next_value("purchase", "OC"),
+            subtotal=subtotal,
+            tax_total=tax,
+            total=total,
+            created_by=request.user,
+            updated_by=request.user,
+        )
+        order = PurchaseOrder.objects.create(**validated_data)
+        PurchaseOrderItem.objects.bulk_create(
+            [PurchaseOrderItem(order=order, **item) for item in items]
+        )
+        return order
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        instance = PurchaseOrder.objects.select_for_update().get(pk=instance.pk)
+        if instance.status != PurchaseStatus.DRAFT:
+            raise serializers.ValidationError("Solo se puede editar una compra en borrador.")
+        items = validated_data.pop("items", None)
+        if items is not None:
+            instance.items.all().delete()
+            PurchaseOrderItem.objects.bulk_create(
+                [PurchaseOrderItem(order=instance, **item) for item in items]
+            )
+            instance.subtotal, instance.tax_total, instance.total = self._totals(items)
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+        instance.updated_by = self.context["request"].user
+        instance.save()
+        return instance
+
+
+class PurchaseReceiptItemSerializer(serializers.Serializer):
+    item_id = serializers.IntegerField()
+    quantity = serializers.DecimalField(max_digits=14, decimal_places=3, min_value=Decimal("0.001"))
+    lot_code = serializers.CharField(required=False, allow_blank=True, max_length=40)
+    expiration_date = serializers.DateField(required=False, allow_null=True)
+
+
+class PurchaseReceiptSerializer(serializers.Serializer):
+    items = PurchaseReceiptItemSerializer(many=True, allow_empty=False)
 
 
 class WarehouseStockSerializer(serializers.ModelSerializer):

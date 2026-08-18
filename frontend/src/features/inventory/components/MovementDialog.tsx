@@ -32,8 +32,14 @@ export type MovementMode = 'entry' | 'waste' | 'transfer' | 'adjust'
 const TITLES: Record<MovementMode, { title: string; description: string }> = {
   entry: { title: 'Entrada de mercancia', description: 'Compra, devolución o inventario inicial.' },
   waste: { title: 'Merma o caducidad', description: 'Requiere motivo; queda en el Kardex.' },
-  transfer: { title: 'Traspaso entre almacenes', description: 'Salida y entrada en una sola operación.' },
-  adjust: { title: 'Ajuste por conteo físico', description: 'Se asienta la diferencia contra el sistema.' },
+  transfer: {
+    title: 'Traspaso entre almacenes',
+    description: 'Salida y entrada en una sola operación.',
+  },
+  adjust: {
+    title: 'Ajuste por conteo físico',
+    description: 'Se asienta la diferencia contra el sistema.',
+  },
 }
 
 interface Props {
@@ -153,7 +159,9 @@ export function MovementDialog({ mode, onOpenChange }: Props) {
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label htmlFor="warehouse">{mode === 'transfer' ? 'Almacén origen' : 'Almacén'}</Label>
+              <Label htmlFor="warehouse">
+                {mode === 'transfer' ? 'Almacén origen' : 'Almacén'}
+              </Label>
               <Select value={warehouseId} onValueChange={setWarehouseId}>
                 <SelectTrigger id="warehouse">
                   <SelectValue placeholder="Elige" />
@@ -262,9 +270,7 @@ export function MovementDialog({ mode, onOpenChange }: Props) {
           ) : null}
 
           <div className="space-y-2">
-            <Label htmlFor="reason">
-              Motivo {requiresReason ? '' : '(opcional)'}
-            </Label>
+            <Label htmlFor="reason">Motivo {requiresReason ? '' : '(opcional)'}</Label>
             <Input
               id="reason"
               value={reason}

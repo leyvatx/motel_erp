@@ -14,7 +14,9 @@ from apps.inventory.models import StockLot, WarehouseStock
 from apps.notifications.events import Event, broadcast, role_group
 from apps.notifications.models import NotificationCategory, NotificationLevel
 from apps.notifications.services import notify
+from apps.settings.models import Motel
 from apps.users.constants import Role
+from common.tenancy import use_motel
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +24,21 @@ LOW_STOCK_COOLDOWN_HOURS = 6
 EXPIRY_WARNING_DAYS = 7
 
 
+@shared_task(name="apps.inventory.tasks.dispatch_low_stock_checks", ignore_result=True)
+def dispatch_low_stock_checks() -> int:
+    motel_ids = list(Motel.objects.values_list("pk", flat=True))
+    for motel_id in motel_ids:
+        check_low_stock.apply_async(args=[motel_id], expires=14 * 60)
+    return len(motel_ids)
+
+
 @shared_task(name="apps.inventory.tasks.check_low_stock", ignore_result=True)
-def check_low_stock() -> int:
+def check_low_stock(motel_id: int) -> int:
+    with use_motel(motel_id):
+        return _check_low_stock()
+
+
+def _check_low_stock() -> int:
     """Avisa a gerencia y almacén de los productos en o bajo su mínimo."""
     now = timezone.now()
     cooldown = now - timedelta(hours=LOW_STOCK_COOLDOWN_HOURS)
@@ -59,7 +74,11 @@ def check_low_stock() -> int:
             broadcast(
                 Event.STOCK_LOW,
                 payload,
-                groups=[role_group(Role.MANAGER), role_group(Role.SUPERADMIN)],
+                motel=stock.motel_id,
+                groups=[
+                    role_group(Role.MANAGER, stock.motel_id),
+                    role_group(Role.SUPERADMIN, stock.motel_id),
+                ],
             )
             notify(
                 category=NotificationCategory.LOW_STOCK,
@@ -79,8 +98,21 @@ def check_low_stock() -> int:
     return alerted
 
 
+@shared_task(name="apps.inventory.tasks.dispatch_expiring_lot_checks", ignore_result=True)
+def dispatch_expiring_lot_checks(days: int = EXPIRY_WARNING_DAYS) -> int:
+    motel_ids = list(Motel.objects.values_list("pk", flat=True))
+    for motel_id in motel_ids:
+        check_expiring_lots.apply_async(args=[motel_id, days], expires=60 * 60)
+    return len(motel_ids)
+
+
 @shared_task(name="apps.inventory.tasks.check_expiring_lots", ignore_result=True)
-def check_expiring_lots(days: int = EXPIRY_WARNING_DAYS) -> int:
+def check_expiring_lots(motel_id: int, days: int = EXPIRY_WARNING_DAYS) -> int:
+    with use_motel(motel_id):
+        return _check_expiring_lots(days)
+
+
+def _check_expiring_lots(days: int = EXPIRY_WARNING_DAYS) -> int:
     """Avisa de lotes por caducar o ya caducados con existencia."""
     today = timezone.localdate()
     limit = today + timedelta(days=days)
@@ -116,7 +148,11 @@ def check_expiring_lots(days: int = EXPIRY_WARNING_DAYS) -> int:
             broadcast(
                 Event.STOCK_EXPIRING,
                 payload,
-                groups=[role_group(Role.MANAGER), role_group(Role.SUPERADMIN)],
+                motel=lot.motel_id,
+                groups=[
+                    role_group(Role.MANAGER, lot.motel_id),
+                    role_group(Role.SUPERADMIN, lot.motel_id),
+                ],
             )
             notify(
                 category=NotificationCategory.EXPIRING_LOT,

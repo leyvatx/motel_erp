@@ -3,6 +3,14 @@
 from django.db import models
 
 
+class PurchaseStatus(models.TextChoices):
+    DRAFT = "DRAFT", "Borrador"
+    ORDERED = "ORDERED", "Enviada"
+    PARTIAL = "PARTIAL", "Recibida parcialmente"
+    RECEIVED = "RECEIVED", "Recibida"
+    CANCELLED = "CANCELLED", "Cancelada"
+
+
 class WarehouseType(models.TextChoices):
     GENERAL = "GENERAL", "Almacén general"
     KITCHEN = "KITCHEN", "Cocina"

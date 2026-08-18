@@ -1,8 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { toast } from '@/components/ui/toast'
-import { inventoryApi, type KardexParams, type StockParams } from '@/features/inventory/api'
+import {
+  inventoryApi,
+  type KardexParams,
+  type PurchaseParams,
+  type StockParams,
+} from '@/features/inventory/api'
 import type {
+  PurchasePayload,
+  PurchaseReceiptPayload,
+  Supplier,
   StockAdjustmentPayload,
   StockEntryPayload,
   StockTransferPayload,
@@ -27,6 +35,14 @@ export function useProducts(params?: ListParams) {
   })
 }
 
+export function useCategories() {
+  return useQuery({
+    queryKey: queryKeys.inventory.categories,
+    queryFn: inventoryApi.categories,
+    staleTime: 10 * 60_000,
+  })
+}
+
 export function useSellableProducts(search?: string) {
   return useQuery({
     queryKey: [...queryKeys.inventory.sellable, search ?? ''],
@@ -42,10 +58,11 @@ export function useStocks(params?: StockParams) {
   })
 }
 
-export function useLowStock() {
+export function useLowStock(enabled = true) {
   return useQuery({
     queryKey: queryKeys.inventory.lowStock,
     queryFn: inventoryApi.lowStock,
+    enabled,
   })
 }
 
@@ -127,12 +144,122 @@ export function useSetStockLevels() {
   const invalidate = useInventoryInvalidation()
 
   return useMutation({
-    mutationFn: ({ stockId, minStock, maxStock }: { stockId: number; minStock: string; maxStock?: string }) =>
-      inventoryApi.setLevels(stockId, minStock, maxStock),
+    mutationFn: ({
+      stockId,
+      minStock,
+      maxStock,
+    }: {
+      stockId: number
+      minStock: string
+      maxStock?: string
+    }) => inventoryApi.setLevels(stockId, minStock, maxStock),
     onSuccess: () => {
       invalidate()
       toast.success('Mínimos actualizados')
     },
     onError: (error) => toast.error('No se pudo guardar', apiErrorMessage(error)),
   })
+}
+
+export function useSuppliers(params?: ListParams) {
+  return useQuery({
+    queryKey: queryKeys.inventory.suppliers(params),
+    queryFn: () => inventoryApi.suppliers(params),
+  })
+}
+
+export function usePurchases(params?: PurchaseParams) {
+  return useQuery({
+    queryKey: queryKeys.inventory.purchases(params),
+    queryFn: () => inventoryApi.purchases(params),
+  })
+}
+
+export function useCreateSupplier() {
+  const invalidate = useInventoryInvalidation()
+  return useMutation({
+    mutationFn: (payload: Omit<Supplier, 'id' | 'created_at' | 'is_active'>) =>
+      inventoryApi.createSupplier(payload),
+    onSuccess: () => {
+      invalidate()
+      toast.success('Proveedor creado')
+    },
+    onError: (error) => toast.error('No se pudo crear el proveedor', apiErrorMessage(error)),
+  })
+}
+
+export function useCreatePurchase() {
+  const invalidate = useInventoryInvalidation()
+  return useMutation({
+    mutationFn: (payload: PurchasePayload) => inventoryApi.createPurchase(payload),
+    onSuccess: (purchase) => {
+      invalidate()
+      toast.success('Compra creada', purchase.folio)
+    },
+    onError: (error) => toast.error('No se pudo crear la compra', apiErrorMessage(error)),
+  })
+}
+
+export function useSubmitPurchase() {
+  const invalidate = useInventoryInvalidation()
+  return useMutation({
+    mutationFn: inventoryApi.submitPurchase,
+    onSuccess: () => {
+      invalidate()
+      toast.success('Orden enviada al proveedor')
+    },
+    onError: (error) => toast.error('No se pudo enviar la orden', apiErrorMessage(error)),
+  })
+}
+
+export function useReceivePurchase() {
+  const invalidate = useInventoryInvalidation()
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: PurchaseReceiptPayload }) =>
+      inventoryApi.receivePurchase(id, payload),
+    onSuccess: (purchase) => {
+      invalidate()
+      toast.success('Mercancía recibida', `${purchase.folio} actualizó el inventario.`)
+    },
+    onError: (error) => toast.error('No se pudo recibir la mercancía', apiErrorMessage(error)),
+  })
+}
+
+export function useCancelPurchase() {
+  const invalidate = useInventoryInvalidation()
+  return useMutation({
+    mutationFn: inventoryApi.cancelPurchase,
+    onSuccess: () => {
+      invalidate()
+      toast.warning('Compra cancelada')
+    },
+    onError: (error) => toast.error('No se pudo cancelar', apiErrorMessage(error)),
+  })
+}
+
+function useCatalogCreate(
+  mutationFn: (payload: Record<string, unknown>) => Promise<unknown>,
+  successMessage: string,
+) {
+  const invalidate = useInventoryInvalidation()
+  return useMutation({
+    mutationFn,
+    onSuccess: () => {
+      invalidate()
+      toast.success(successMessage)
+    },
+    onError: (error) => toast.error('No se pudo guardar', apiErrorMessage(error)),
+  })
+}
+
+export function useCreateProduct() {
+  return useCatalogCreate(inventoryApi.createProduct, 'Producto creado')
+}
+
+export function useCreateCategory() {
+  return useCatalogCreate(inventoryApi.createCategory, 'Categoría creada')
+}
+
+export function useCreateWarehouse() {
+  return useCatalogCreate(inventoryApi.createWarehouse, 'Almacén creado')
 }

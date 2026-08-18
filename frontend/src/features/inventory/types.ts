@@ -144,3 +144,76 @@ export interface StockAdjustmentPayload {
   counted_quantity: string
   reason: string
 }
+
+export interface Supplier {
+  id: number
+  code: string
+  business_name: string
+  tax_id: string
+  contact_name: string
+  phone: string
+  email: string
+  address: string
+  payment_terms_days: number
+  notes: string
+  is_active: boolean
+  created_at: IsoDateTime
+}
+
+export type PurchaseStatus = 'DRAFT' | 'ORDERED' | 'PARTIAL' | 'RECEIVED' | 'CANCELLED'
+
+export interface PurchaseItem {
+  id: number
+  product: number
+  product_name: string
+  product_sku: string
+  quantity: string
+  received_quantity: string
+  pending_quantity: string
+  unit_cost: Money
+  tax_rate: string
+  line_subtotal: Money
+  line_total: Money
+}
+
+export interface PurchaseOrder {
+  id: number
+  folio: string
+  supplier: number
+  supplier_name: string
+  warehouse: number
+  warehouse_name: string
+  status: PurchaseStatus
+  status_display: string
+  order_date: string
+  expected_date: string | null
+  supplier_reference: string
+  notes: string
+  subtotal: Money
+  tax_total: Money
+  total: Money
+  received_at: IsoDateTime | null
+  created_by_name: string | null
+  created_at: IsoDateTime
+  updated_at: IsoDateTime
+  items: PurchaseItem[]
+}
+
+export interface PurchasePayload {
+  supplier: number
+  warehouse: number
+  order_date: string
+  expected_date?: string | null
+  supplier_reference?: string
+  notes?: string
+  items: Array<{ product: number; quantity: string; unit_cost: string; tax_rate: string }>
+}
+
+export interface PurchaseReceiptPayload {
+  items: Array<{
+    item_id: number
+    quantity: string
+    lot_code?: string
+    expiration_date?: string | null
+  }>
+}

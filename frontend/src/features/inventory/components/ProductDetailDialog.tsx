@@ -31,14 +31,17 @@ export function ProductDetailDialog({ stock, onOpenChange }: Props) {
   return <Detail stock={stock} onOpenChange={onOpenChange} />
 }
 
-function Detail({ stock, onOpenChange }: { stock: WarehouseStock; onOpenChange: (open: boolean) => void }) {
+function Detail({
+  stock,
+  onOpenChange,
+}: {
+  stock: WarehouseStock
+  onOpenChange: (open: boolean) => void
+}) {
   const stocks = useStocks({ product: stock.product, page_size: 20 })
   const kardex = useKardex({ product: stock.product, page_size: 25 })
 
-  const total = (stocks.data?.results ?? []).reduce(
-    (sum, row) => sum + toNumber(row.quantity),
-    0,
-  )
+  const total = (stocks.data?.results ?? []).reduce((sum, row) => sum + toNumber(row.quantity), 0)
 
   return (
     <Dialog open onOpenChange={onOpenChange}>
@@ -153,8 +156,8 @@ function Detail({ stock, onOpenChange }: { stock: WarehouseStock; onOpenChange: 
         </div>
 
         <p className="text-2xs text-muted-foreground">
-          El Kardex es inmutable: una corrección se registra con un movimiento en sentido
-          contrario, nunca borrando el original.
+          El Kardex es inmutable: una corrección se registra con un movimiento en sentido contrario,
+          nunca borrando el original.
         </p>
       </DialogContent>
     </Dialog>

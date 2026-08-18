@@ -11,6 +11,10 @@ import type {
   StockWastePayload,
   Warehouse,
   WarehouseStock,
+  Supplier,
+  PurchaseOrder,
+  PurchasePayload,
+  PurchaseReceiptPayload,
 } from '@/features/inventory/types'
 
 export interface StockParams extends ListParams {
@@ -24,6 +28,12 @@ export interface KardexParams extends ListParams {
   movement_type?: string
 }
 
+export interface PurchaseParams extends ListParams {
+  status?: string
+  supplier?: number
+  warehouse?: number
+}
+
 export const inventoryApi = {
   warehouses: (): Promise<PaginatedResponse<Warehouse>> =>
     get<PaginatedResponse<Warehouse>>('/inventory/warehouses/', { params: { page_size: 100 } }),
@@ -35,6 +45,15 @@ export const inventoryApi = {
 
   products: (params?: ListParams): Promise<PaginatedResponse<Product>> =>
     get<PaginatedResponse<Product>>('/inventory/products/', { params }),
+
+  createProduct: (payload: Record<string, unknown>): Promise<Product> =>
+    post<Product, Record<string, unknown>>('/inventory/products/', payload),
+
+  createCategory: (payload: Record<string, unknown>): Promise<ProductCategory> =>
+    post<ProductCategory, Record<string, unknown>>('/inventory/categories/', payload),
+
+  createWarehouse: (payload: Record<string, unknown>): Promise<Warehouse> =>
+    post<Warehouse, Record<string, unknown>>('/inventory/warehouses/', payload),
 
   sellable: (search?: string): Promise<PaginatedResponse<Product>> =>
     get<PaginatedResponse<Product>>('/inventory/products/sellable/', {
@@ -73,4 +92,25 @@ export const inventoryApi = {
 
   adjust: (payload: StockAdjustmentPayload): Promise<StockMovement> =>
     post<StockMovement, StockAdjustmentPayload>('/inventory/kardex/adjust/', payload),
+
+  suppliers: (params?: ListParams): Promise<PaginatedResponse<Supplier>> =>
+    get<PaginatedResponse<Supplier>>('/inventory/suppliers/', { params }),
+
+  createSupplier: (payload: Omit<Supplier, 'id' | 'created_at' | 'is_active'>): Promise<Supplier> =>
+    post<Supplier, typeof payload>('/inventory/suppliers/', payload),
+
+  purchases: (params?: PurchaseParams): Promise<PaginatedResponse<PurchaseOrder>> =>
+    get<PaginatedResponse<PurchaseOrder>>('/inventory/purchases/', { params }),
+
+  createPurchase: (payload: PurchasePayload): Promise<PurchaseOrder> =>
+    post<PurchaseOrder, PurchasePayload>('/inventory/purchases/', payload),
+
+  submitPurchase: (id: number): Promise<PurchaseOrder> =>
+    post<PurchaseOrder>(`/inventory/purchases/${id}/submit/`),
+
+  receivePurchase: (id: number, payload: PurchaseReceiptPayload): Promise<PurchaseOrder> =>
+    post<PurchaseOrder, PurchaseReceiptPayload>(`/inventory/purchases/${id}/receive/`, payload),
+
+  cancelPurchase: (id: number): Promise<PurchaseOrder> =>
+    post<PurchaseOrder>(`/inventory/purchases/${id}/cancel/`),
 }

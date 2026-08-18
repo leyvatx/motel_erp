@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from django.db import transaction
 from django.db.models import F, Sum
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, status, viewsets
@@ -9,6 +10,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from common.pagination import LargePagination
+from common.exceptions import DomainError
 
 from apps.inventory import services
 from apps.users.constants import PermissionCode
@@ -18,17 +20,22 @@ CATALOG_PERMISSIONS = {
     "write": [PermissionCode.CONFIG_MANAGE],
 }
 from apps.inventory.constants import MovementType
+from apps.inventory.constants import PurchaseStatus
 from apps.inventory.models import (
     Product,
     ProductCategory,
+    PurchaseOrder,
     StockLot,
     StockMovement,
     Warehouse,
     WarehouseStock,
+    Supplier,
 )
 from apps.inventory.serializers import (
     ProductCategorySerializer,
     ProductSerializer,
+    PurchaseOrderSerializer,
+    PurchaseReceiptSerializer,
     StockAdjustmentSerializer,
     StockConsumptionSerializer,
     StockEntrySerializer,
@@ -39,6 +46,7 @@ from apps.inventory.serializers import (
     StockWasteSerializer,
     WarehouseSerializer,
     WarehouseStockSerializer,
+    SupplierSerializer,
 )
 
 
@@ -88,6 +96,80 @@ class ProductViewSet(viewsets.ModelViewSet):
         )
         page = self.paginate_queryset(queryset)
         return self.get_paginated_response(ProductSerializer(page, many=True).data)
+
+
+class SupplierViewSet(viewsets.ModelViewSet):
+    queryset = Supplier.objects.all()
+    serializer_class = SupplierSerializer
+    required_permissions = {
+        "read": [PermissionCode.INVENTORY_VIEW],
+        "write": [PermissionCode.INVENTORY_PURCHASE],
+    }
+    filterset_fields = ["is_active"]
+    search_fields = ["code", "business_name", "tax_id", "contact_name"]
+    ordering_fields = ["business_name", "code", "created_at"]
+
+    def perform_create(self, serializer) -> None:
+        serializer.save(created_by=self.request.user, updated_by=self.request.user)
+
+    def perform_update(self, serializer) -> None:
+        serializer.save(updated_by=self.request.user)
+
+    def perform_destroy(self, instance: Supplier) -> None:
+        instance.soft_delete(user=self.request.user, reason="Baja de proveedor")
+
+
+class PurchaseOrderViewSet(viewsets.ModelViewSet):
+    queryset = PurchaseOrder.objects.select_related(
+        "supplier", "warehouse", "created_by"
+    ).prefetch_related("items__product")
+    serializer_class = PurchaseOrderSerializer
+    required_permissions = {
+        "read": [PermissionCode.INVENTORY_VIEW],
+        "write": [PermissionCode.INVENTORY_PURCHASE],
+        "submit": [PermissionCode.INVENTORY_PURCHASE],
+        "receive": [PermissionCode.INVENTORY_PURCHASE],
+        "cancel": [PermissionCode.INVENTORY_PURCHASE],
+    }
+    filterset_fields = ["status", "supplier", "warehouse", "order_date"]
+    search_fields = ["folio", "supplier__business_name", "supplier_reference"]
+    ordering_fields = ["order_date", "expected_date", "total", "created_at"]
+
+    def perform_destroy(self, instance: PurchaseOrder) -> None:
+        raise DomainError("Las compras no se eliminan; cancela el documento.")
+
+    @action(detail=True, methods=["post"])
+    def submit(self, request, pk=None) -> Response:
+        with transaction.atomic():
+            order = self.get_queryset().select_for_update().get(pk=pk)
+            if order.status != PurchaseStatus.DRAFT:
+                raise DomainError("Solo se puede enviar una compra en borrador.")
+            order.status = PurchaseStatus.ORDERED
+            order.updated_by = request.user
+            order.save(update_fields=["status", "updated_by", "updated_at"])
+        return Response(self.get_serializer(order).data)
+
+    @extend_schema(request=PurchaseReceiptSerializer, responses=PurchaseOrderSerializer)
+    @action(detail=True, methods=["post"])
+    def receive(self, request, pk=None) -> Response:
+        payload = PurchaseReceiptSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        order = services.receive_purchase(
+            order=self.get_object(), receipts=payload.validated_data["items"], actor=request.user
+        )
+        order = self.get_queryset().get(pk=order.pk)
+        return Response(self.get_serializer(order).data)
+
+    @action(detail=True, methods=["post"])
+    def cancel(self, request, pk=None) -> Response:
+        with transaction.atomic():
+            order = self.get_queryset().select_for_update().get(pk=pk)
+            if order.status not in {PurchaseStatus.DRAFT, PurchaseStatus.ORDERED}:
+                raise DomainError("Una compra recibida total o parcialmente no se puede cancelar.")
+            order.status = PurchaseStatus.CANCELLED
+            order.updated_by = request.user
+            order.save(update_fields=["status", "updated_by", "updated_at"])
+        return Response(self.get_serializer(order).data)
 
 
 class WarehouseStockViewSet(

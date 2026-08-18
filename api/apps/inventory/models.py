@@ -9,6 +9,8 @@ Modelo de datos:
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.validators import MinValueValidator
@@ -24,6 +26,7 @@ from apps.inventory.constants import (
     ProductKind,
     UnitOfMeasure,
     WarehouseType,
+    PurchaseStatus,
 )
 
 
@@ -56,9 +59,9 @@ class Warehouse(BaseModel):
         ordering = ["name"]
         constraints = [
             models.UniqueConstraint(
-                fields=["code"],
+                fields=["motel", "code"],
                 condition=models.Q(is_active=True),
-                name="uniq_active_warehouse_code",
+                name="uniq_active_warehouse_code_motel",
             )
         ]
 
@@ -82,9 +85,9 @@ class ProductCategory(BaseModel):
         ordering = ["kind", "sort_order", "name"]
         constraints = [
             models.UniqueConstraint(
-                fields=["name", "kind"],
+                fields=["motel", "name", "kind"],
                 condition=models.Q(is_active=True),
-                name="uniq_active_product_category",
+                name="uniq_active_product_category_motel",
             )
         ]
 
@@ -139,9 +142,9 @@ class Product(BaseModel):
         ordering = ["name"]
         constraints = [
             models.UniqueConstraint(
-                fields=["sku"],
+                fields=["motel", "sku"],
                 condition=models.Q(is_active=True),
-                name="uniq_active_product_sku",
+                name="uniq_active_product_sku_motel",
             ),
             models.CheckConstraint(
                 condition=models.Q(sale_price__gte=0), name="product_sale_price_non_negative"
@@ -154,6 +157,116 @@ class Product(BaseModel):
 
     def __str__(self) -> str:
         return f"{self.sku} - {self.name}"
+
+
+class Supplier(BaseModel):
+    """Proveedor propio de cada motel."""
+
+    code = models.CharField("Clave", max_length=20)
+    business_name = models.CharField("Razón social", max_length=150, db_index=True)
+    tax_id = models.CharField("RFC / identificación fiscal", max_length=30, blank=True)
+    contact_name = models.CharField("Contacto", max_length=100, blank=True)
+    phone = models.CharField("Teléfono", max_length=30, blank=True)
+    email = models.EmailField("Correo", blank=True)
+    address = models.CharField("Dirección", max_length=255, blank=True)
+    payment_terms_days = models.PositiveSmallIntegerField("Días de crédito", default=0)
+    notes = models.TextField("Notas", blank=True)
+
+    class Meta(BaseModel.Meta):
+        verbose_name = "Proveedor"
+        verbose_name_plural = "Proveedores"
+        ordering = ["business_name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["motel", "code"],
+                condition=models.Q(is_active=True),
+                name="uniq_active_supplier_code_motel",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.code} - {self.business_name}"
+
+
+class PurchaseOrder(BaseModel):
+    """Orden de compra con recepciones parciales ligadas al Kardex."""
+
+    folio = models.CharField("Folio", max_length=30, db_index=True, editable=False)
+    supplier = models.ForeignKey(
+        Supplier, verbose_name="Proveedor", on_delete=models.PROTECT, related_name="purchase_orders"
+    )
+    warehouse = models.ForeignKey(
+        Warehouse, verbose_name="Almacén destino", on_delete=models.PROTECT,
+        related_name="purchase_orders",
+    )
+    status = models.CharField(
+        "Estado", max_length=12, choices=PurchaseStatus.choices, default=PurchaseStatus.DRAFT,
+        db_index=True,
+    )
+    order_date = models.DateField("Fecha de orden", default=timezone.localdate)
+    expected_date = models.DateField("Entrega esperada", null=True, blank=True)
+    supplier_reference = models.CharField("Referencia del proveedor", max_length=60, blank=True)
+    notes = models.TextField("Notas", blank=True)
+    subtotal = models.DecimalField("Subtotal", max_digits=14, decimal_places=2, default=ZERO)
+    tax_total = models.DecimalField("Impuestos", max_digits=14, decimal_places=2, default=ZERO)
+    total = models.DecimalField("Total", max_digits=14, decimal_places=2, default=ZERO)
+    received_at = models.DateTimeField("Recepción completa", null=True, blank=True, editable=False)
+
+    class Meta(BaseModel.Meta):
+        verbose_name = "Orden de compra"
+        verbose_name_plural = "Órdenes de compra"
+        ordering = ["-order_date", "-id"]
+        constraints = [
+            models.UniqueConstraint(fields=["motel", "folio"], name="uniq_purchase_folio_motel")
+        ]
+        indexes = [models.Index(fields=["status", "-order_date"], name="purchase_status_date_idx")]
+
+    def __str__(self) -> str:
+        return self.folio
+
+
+class PurchaseOrderItem(models.Model):
+    order = models.ForeignKey(PurchaseOrder, on_delete=models.CASCADE, related_name="items")
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name="purchase_items")
+    quantity = models.DecimalField(
+        "Cantidad solicitada", max_digits=14, decimal_places=3,
+        validators=[MinValueValidator(Decimal("0.001"))],
+    )
+    received_quantity = models.DecimalField(
+        "Cantidad recibida", max_digits=14, decimal_places=3, default=ZERO, editable=False,
+    )
+    unit_cost = models.DecimalField(
+        "Costo unitario", max_digits=10, decimal_places=4,
+        validators=[MinValueValidator(ZERO)],
+    )
+    tax_rate = models.DecimalField("Tasa de impuesto", max_digits=5, decimal_places=4, default=ZERO)
+
+    class Meta:
+        verbose_name = "Partida de compra"
+        verbose_name_plural = "Partidas de compra"
+        ordering = ["id"]
+        constraints = [
+            models.UniqueConstraint(fields=["order", "product"], name="uniq_purchase_product"),
+            models.CheckConstraint(
+                condition=models.Q(received_quantity__gte=0), name="purchase_received_non_negative"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(received_quantity__lte=models.F("quantity")),
+                name="purchase_received_not_exceeded",
+            ),
+        ]
+
+    @property
+    def pending_quantity(self):
+        return self.quantity - self.received_quantity
+
+    @property
+    def line_subtotal(self):
+        return self.quantity * self.unit_cost
+
+    @property
+    def line_total(self):
+        return self.line_subtotal * (1 + self.tax_rate)
 
 
 class WarehouseStock(TenantModel):
@@ -278,7 +391,7 @@ class StockMovement(ImmutableModel):
         "Cantidad",
         max_digits=14,
         decimal_places=3,
-        validators=[MinValueValidator(0.001)],
+        validators=[MinValueValidator(Decimal("0.001"))],
         help_text="Siempre positiva; el signo lo determina el tipo de movimiento.",
     )
     signed_quantity = models.DecimalField(

@@ -11,14 +11,17 @@ from django.utils import timezone
 from common.exceptions import DomainError, ImmutableRecordError, InsufficientStock
 
 from apps.inventory import services
-from apps.inventory.constants import MovementType, ProductKind, WarehouseType
+from apps.inventory.constants import MovementType, ProductKind, PurchaseStatus, WarehouseType
 from apps.inventory.models import (
     Product,
     ProductCategory,
+    PurchaseOrder,
+    PurchaseOrderItem,
     StockLot,
     StockMovement,
     Warehouse,
     WarehouseStock,
+    Supplier,
 )
 from apps.users.constants import Role
 from apps.users.models import User
@@ -243,5 +246,73 @@ class LotTests(InventoryTestCase):
                 product=self.perecedero,
                 warehouse=self.almacen,
                 quantity=Decimal("10"),
+                actor=self.user,
+            )
+
+
+class PurchaseTests(InventoryTestCase):
+    def setUp(self) -> None:
+        self.supplier = Supplier.objects.create(code="PROV-01", business_name="Proveedor Uno")
+        self.order = PurchaseOrder.objects.create(
+            folio="OC-00001",
+            supplier=self.supplier,
+            warehouse=self.almacen,
+            status=PurchaseStatus.ORDERED,
+            subtotal=Decimal("100.00"),
+            total=Decimal("116.00"),
+        )
+        self.item = PurchaseOrderItem.objects.create(
+            order=self.order,
+            product=self.producto,
+            quantity=Decimal("10"),
+            unit_cost=Decimal("10"),
+            tax_rate=Decimal("0.16"),
+        )
+
+    def test_recepcion_parcial_y_total_actualiza_kardex(self) -> None:
+        services.receive_purchase(
+            order=self.order,
+            receipts=[{"item_id": self.item.id, "quantity": Decimal("4")}],
+            actor=self.user,
+        )
+        self.order.refresh_from_db()
+        self.item.refresh_from_db()
+        self.assertEqual(self.order.status, PurchaseStatus.PARTIAL)
+        self.assertEqual(self.item.received_quantity, Decimal("4.000"))
+
+        services.receive_purchase(
+            order=self.order,
+            receipts=[{"item_id": self.item.id, "quantity": Decimal("6")}],
+            actor=self.user,
+        )
+        self.order.refresh_from_db()
+        stock = WarehouseStock.objects.get(product=self.producto, warehouse=self.almacen)
+        self.assertEqual(self.order.status, PurchaseStatus.RECEIVED)
+        self.assertIsNotNone(self.order.received_at)
+        self.assertEqual(stock.quantity, Decimal("10.000"))
+        self.assertEqual(len(services.movements_for(self.order)), 2)
+
+    def test_no_permite_recibir_mas_de_lo_solicitado(self) -> None:
+        with self.assertRaises(DomainError):
+            services.receive_purchase(
+                order=self.order,
+                receipts=[{"item_id": self.item.id, "quantity": Decimal("11")}],
+                actor=self.user,
+            )
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.received_quantity, Decimal("0.000"))
+        self.assertFalse(WarehouseStock.objects.filter(product=self.producto).exists())
+
+    def test_producto_perecedero_exige_caducidad(self) -> None:
+        perishable_item = PurchaseOrderItem.objects.create(
+            order=self.order,
+            product=self.perecedero,
+            quantity=Decimal("2"),
+            unit_cost=Decimal("15"),
+        )
+        with self.assertRaises(DomainError):
+            services.receive_purchase(
+                order=self.order,
+                receipts=[{"item_id": perishable_item.id, "quantity": Decimal("1")}],
                 actor=self.user,
             )
