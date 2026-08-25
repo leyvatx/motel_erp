@@ -1,11 +1,14 @@
+/**
+ * Menu fijo de escritorio. En celular y tableta no se monta: ahi navega
+ * MobileNav, que reusa la misma lista desde SidebarNav.
+ */
 import { useState } from 'react'
-import { NavLink } from 'react-router-dom'
 import { BedDouble, PanelLeftClose } from 'lucide-react'
 
-import { NAV_GROUPS } from '@/components/layout/navigation'
+import { SidebarNav } from '@/components/layout/SidebarNav'
 import { useBrand } from '@/features/config/hooks'
 import { cn } from '@/lib/utils'
-import { canAccessSection, useAuthStore } from '@/store/auth'
+import { useAuthStore } from '@/store/auth'
 import { useUiStore } from '@/store/ui'
 
 export function Sidebar() {
@@ -17,11 +20,6 @@ export function Sidebar() {
 
   const expanded = !pinnedCollapsed || hovered
   const floating = pinnedCollapsed && hovered
-
-  const groups = NAV_GROUPS.map((group) => ({
-    ...group,
-    items: group.items.filter((item) => canAccessSection(user, item.section)),
-  })).filter((group) => group.items.length > 0)
 
   return (
     <div
@@ -67,67 +65,7 @@ export function Sidebar() {
           </div>
         </div>
 
-        <nav className="flex-1 space-y-4 overflow-y-auto overflow-x-hidden scrollbar-thin px-2 py-3">
-          {groups.map((group) => (
-            <div key={group.label}>
-              {expanded ? (
-                <p className="px-3 pb-1.5 text-2xs font-medium uppercase tracking-wider text-sidebar-foreground/50">
-                  {group.label}
-                </p>
-              ) : (
-                <div className="mx-2.5 mb-2 border-t border-sidebar-border" />
-              )}
-
-              <ul className="space-y-0.5">
-                {group.items.map((item) => (
-                  <li key={item.to}>
-                    <NavLink
-                      to={item.to}
-                      className={({ isActive }) =>
-                        cn(
-                          'group relative flex h-9 items-center gap-2.5 rounded-md text-sm outline-none',
-                          'transition-colors duration-150',
-                          'focus-visible:ring-[3px] focus-visible:ring-sidebar-ring/40',
-                          isActive
-                            ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground'
-                            : 'text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground active:scale-[0.98]',
-                          expanded ? 'px-3' : 'justify-center px-0',
-                        )
-                      }
-                    >
-                      {({ isActive }) => (
-                        <>
-                          <span
-                            className={cn(
-                              'absolute left-0 h-5 w-[3px] rounded-r-full bg-brand-accent transition-all duration-200',
-                              isActive ? 'opacity-100' : 'opacity-0',
-                            )}
-                            aria-hidden
-                          />
-                          <item.icon
-                            className={cn(
-                              'h-4 w-4 shrink-0 transition-transform duration-150',
-                              !isActive && 'group-hover:scale-110',
-                            )}
-                            aria-hidden
-                          />
-                          <span
-                            className={cn(
-                              'truncate transition-opacity duration-150',
-                              expanded ? 'opacity-100' : 'w-0 opacity-0',
-                            )}
-                          >
-                            {item.label}
-                          </span>
-                        </>
-                      )}
-                    </NavLink>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </nav>
+        <SidebarNav expanded={expanded} />
 
         <div className="shrink-0 border-t border-sidebar-border p-2">
           <div

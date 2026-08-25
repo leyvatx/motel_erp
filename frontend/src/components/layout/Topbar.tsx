@@ -28,11 +28,11 @@ import type { ConnectionState } from '@/types/realtime'
 
 interface Props {
   connection: ConnectionState
+  onOpenMenu: () => void
 }
 
-export function Topbar({ connection }: Props) {
+export function Topbar({ connection, onOpenMenu }: Props) {
   const user = useAuthStore((state) => state.user)
-  const toggleSidebar = useUiStore((state) => state.toggleSidebar)
   const soundAlerts = useUiStore((state) => state.soundAlerts)
   const setSoundAlerts = useUiStore((state) => state.setSoundAlerts)
   const theme = useAppearanceStore((state) => state.theme)
@@ -56,15 +56,15 @@ export function Topbar({ connection }: Props) {
   }, [user?.must_change_password])
 
   return (
-    <header className="z-30 flex h-14 shrink-0 items-center gap-2 border-b bg-background px-3 lg:px-5">
+    <header className="z-30 flex h-14 shrink-0 items-center gap-1 border-b bg-background px-2 sm:gap-2 sm:px-3 lg:px-5">
       <Button
         variant="ghost"
-        size="icon-sm"
-        className="lg:hidden"
-        onClick={toggleSidebar}
+        size="icon"
+        className="h-11 w-11 shrink-0 lg:hidden"
+        onClick={onOpenMenu}
         aria-label="Abrir menú"
       >
-        <Menu />
+        <Menu className="h-5 w-5" />
       </Button>
 
       <div className="hidden lg:block">
@@ -105,6 +105,7 @@ export function Topbar({ connection }: Props) {
             <Button
               variant="ghost"
               size="icon-sm"
+              className="h-11 w-11 lg:h-8 lg:w-8"
               onClick={() => setSoundAlerts(!soundAlerts)}
               aria-label={soundAlerts ? 'Silenciar alertas' : 'Activar alertas sonoras'}
               title={soundAlerts ? 'Alertas sonoras activas' : 'Alertas sonoras silenciadas'}
@@ -117,6 +118,7 @@ export function Topbar({ connection }: Props) {
         <Button
           variant="ghost"
           size="icon-sm"
+          className="h-11 w-11 lg:h-8 lg:w-8"
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           aria-label="Cambiar tema"
         >
@@ -134,7 +136,7 @@ export function Topbar({ connection }: Props) {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-9 gap-2 px-1.5">
+            <Button variant="ghost" className="h-11 gap-2 px-1.5 lg:h-9">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary text-2xs font-semibold text-secondary-foreground">
                 {user?.full_name.slice(0, 2).toUpperCase()}
               </span>

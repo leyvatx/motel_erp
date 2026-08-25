@@ -1,9 +1,30 @@
+/**
+ * Canal de tiempo real.
+ *
+ * El handshake de WebSocket del navegador no admite cabeceras, asi que la
+ * credencial va en el query string. Antes iba el JWT de acceso y acababa
+ * escrito en el access_log de nginx con media hora de vida por delante; ahora
+ * va un boleto de un solo uso que se pide por HTTP y muere a los treinta
+ * segundos.
+ *
+ * El boleto se pide con la instancia compartida de axios, no con fetch: asi
+ * hereda la cabecera Authorization, el X-Motel-Id del motel activo y el
+ * reintento con refresh ante un 401. Eso ultimo cura de paso las reconexiones
+ * que antes fallaban en seco cuando el token de acceso vencia con la pestana
+ * abierta.
+ */
+import { api } from '@/lib/axios'
 import { syncServerTime } from '@/lib/serverTime'
 import { authSnapshot } from '@/store/auth'
 import type { ConnectionState, RealtimeMessage } from '@/types/realtime'
 
 type MessageHandler = (message: RealtimeMessage) => void
 type StateHandler = (state: ConnectionState) => void
+
+interface WsTicket {
+  ticket: string
+  expires_in: number
+}
 
 const PING_INTERVAL_MS = 25_000
 const MAX_BACKOFF_MS = 30_000
@@ -16,6 +37,11 @@ function resolveWsUrl(path: string): string {
   return `${protocol}//${window.location.host}${path}`
 }
 
+async function requestTicket(): Promise<string> {
+  const { data } = await api.post<WsTicket>('/auth/ws-ticket/')
+  return data.ticket
+}
+
 export class RealtimeChannel {
   private socket: WebSocket | null = null
   private readonly messageHandlers = new Set<MessageHandler>()
@@ -24,11 +50,14 @@ export class RealtimeChannel {
   private pingTimer: number | null = null
   private reconnectTimer: number | null = null
   private manuallyClosed = false
+  private connectPending = false
+  private generation = 0
   private state: ConnectionState = 'idle'
 
   constructor(private readonly path: string) {}
 
   connect(): void {
+    if (this.connectPending) return
     if (
       this.socket &&
       (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING)
@@ -36,18 +65,35 @@ export class RealtimeChannel {
       return
     }
 
-    const token = authSnapshot.access()
-    if (!token) {
+    if (!authSnapshot.access()) {
       this.setState('closed')
       return
     }
 
     this.manuallyClosed = false
+    this.connectPending = true
     this.setState('connecting')
 
-    const motelId = authSnapshot.activeMotelId()
-    const context = motelId ? `&motel_id=${motelId}` : ''
-    const socket = new WebSocket(`${resolveWsUrl(this.path)}?token=${encodeURIComponent(token)}${context}`)
+    const generation = ++this.generation
+    void this.openSocket(generation).finally(() => {
+      if (generation === this.generation) this.connectPending = false
+    })
+  }
+
+  private async openSocket(generation: number): Promise<void> {
+    let ticket: string
+    try {
+      ticket = await requestTicket()
+    } catch {
+      if (generation !== this.generation) return
+      this.setState('error')
+      if (!this.manuallyClosed) this.scheduleReconnect()
+      return
+    }
+
+    if (this.manuallyClosed || generation !== this.generation) return
+
+    const socket = new WebSocket(`${resolveWsUrl(this.path)}?ticket=${encodeURIComponent(ticket)}`)
     this.socket = socket
 
     socket.onopen = () => {
@@ -70,17 +116,19 @@ export class RealtimeChannel {
       this.setState('error')
     }
 
-    socket.onclose = (event: CloseEvent) => {
+    socket.onclose = () => {
       this.stopPing()
       this.setState('closed')
 
-      if (this.manuallyClosed || event.code === 4401) return
+      if (this.manuallyClosed || generation !== this.generation) return
       this.scheduleReconnect()
     }
   }
 
   disconnect(): void {
     this.manuallyClosed = true
+    this.connectPending = false
+    this.generation += 1
     this.stopPing()
     if (this.reconnectTimer !== null) {
       window.clearTimeout(this.reconnectTimer)
