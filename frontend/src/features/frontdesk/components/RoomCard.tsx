@@ -48,11 +48,11 @@ export function RoomCard({ room, onSelect, warningMinutes = 15 }: Props) {
       onClick={() => onSelect(room)}
       aria-label={`Habitación ${room.number}, ${room.status_display}`}
       className={cn(
-        'group relative flex min-h-[8rem] w-full flex-col overflow-hidden rounded-xl border bg-card p-4 text-left shadow-xs',
-        'transition-all duration-150 hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-lg',
-        'active:translate-y-0 active:scale-[0.99] active:shadow-sm',
-        'focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40',
-        isOccupied && countdown.level === 'expired' && 'border-status-occupied/40',
+        'group relative flex min-h-[8.5rem] w-full flex-col overflow-hidden rounded-lg border bg-card p-4 text-left',
+        'transition-colors duration-150 hover:border-foreground/25 hover:bg-accent/40',
+        'active:bg-accent/60',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        isOccupied && countdown.level === 'expired' && 'border-status-occupied/50',
       )}
     >
       <span
@@ -66,14 +66,23 @@ export function RoomCard({ room, onSelect, warningMinutes = 15 }: Props) {
 
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-2xl font-semibold leading-none tracking-tight tabular">
+          <p className="font-mono text-2xl font-medium leading-none tracking-tightest">
             {room.number}
           </p>
-          <p className="mt-1.5 truncate text-xs text-muted-foreground">{room.room_type_name}</p>
+          <p className="mt-2 truncate text-xs text-muted-foreground">{room.room_type_name}</p>
         </div>
 
         {!isOccupied ? (
-          <span className={cn('text-2xs font-medium', STATUS_TEXT[room.status])}>
+          <span
+            className={cn(
+              'inline-flex items-center gap-1.5 text-2xs font-medium uppercase tracking-wide',
+              STATUS_TEXT[room.status],
+            )}
+          >
+            <span
+              className={cn('h-1.5 w-1.5 rounded-full', STATUS_BAR[room.status])}
+              aria-hidden
+            />
             {room.status_display}
           </span>
         ) : null}
@@ -83,7 +92,7 @@ export function RoomCard({ room, onSelect, warningMinutes = 15 }: Props) {
         <div className="mt-auto space-y-2 pt-3">
           <div className={cn('flex items-baseline gap-1.5', timerTone)}>
             <Clock className="h-3.5 w-3.5 shrink-0 self-center" aria-hidden />
-            <span className="font-mono text-lg font-semibold leading-none tabular">
+            <span className="font-mono text-lg font-medium leading-none tracking-tight">
               {formatCountdown(countdown.seconds)}
             </span>
           </div>
@@ -105,7 +114,7 @@ export function RoomCard({ room, onSelect, warningMinutes = 15 }: Props) {
           </div>
 
           {stay.folio_total ? (
-            <p className="border-t pt-2 text-xs font-medium tabular">
+            <p className="border-t pt-2 font-mono text-xs font-medium">
               {formatMoney(stay.folio_total)}
             </p>
           ) : null}

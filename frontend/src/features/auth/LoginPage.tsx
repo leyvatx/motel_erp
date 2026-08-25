@@ -5,7 +5,6 @@ import { z } from 'zod'
 import { BedDouble } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useLogin } from '@/features/auth/hooks'
@@ -46,84 +45,93 @@ export default function LoginPage() {
   const onSubmit = handleSubmit((values) => login.mutate(values))
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/10 via-background to-muted p-6">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl bg-brand-dark">
+    <div className="relative flex min-h-[100svh] items-center justify-center overflow-hidden bg-background p-4 sm:p-6">
+      <div className="grid-surface grid-fade pointer-events-none absolute inset-0" aria-hidden />
+
+      <div className="relative w-full max-w-[22rem] space-y-8">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border bg-card">
             {logoUrl ? (
               <img src={logoUrl} alt="" className="h-full w-full object-contain" />
             ) : (
-              <BedDouble className="h-5 w-5 text-white" aria-hidden />
+              <BedDouble className="h-5 w-5" aria-hidden />
             )}
           </div>
-          <div className="space-y-1">
-            <h1 className="text-xl font-semibold tracking-tight">{businessName || 'Motel ERP'}</h1>
-            <p className="text-sm text-muted-foreground">
+          <div className="space-y-1.5">
+            <h1 className="text-2xl font-semibold tracking-tightest">
+              {businessName || 'Motel ERP'}
+            </h1>
+            <p className="text-sm leading-relaxed text-muted-foreground">
               {publicProfile.data?.login_message ||
                 'Ingresa con tu clave de empleado para continuar.'}
             </p>
           </div>
         </div>
 
-        <Card>
-          <CardContent className="pt-6">
-            <form onSubmit={onSubmit} className="space-y-4" noValidate>
-              <div className="space-y-2">
-                <Label htmlFor="username">Usuario</Label>
-                <Input
-                  id="username"
-                  autoComplete="username"
-                  autoFocus
-                  placeholder="recepcion"
-                  aria-invalid={Boolean(errors.username)}
-                  {...register('username')}
-                />
-                {errors.username ? (
-                  <p className="text-xs text-destructive">{errors.username.message}</p>
-                ) : null}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Contraseña</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  autoComplete="current-password"
-                  aria-invalid={Boolean(errors.password)}
-                  {...register('password')}
-                />
-                {errors.password ? (
-                  <p className="text-xs text-destructive">{errors.password.message}</p>
-                ) : null}
-              </div>
-
-              {askForMotel ? (
-                <div className="space-y-2">
-                  <Label htmlFor="motel">Motel</Label>
-                  <Input id="motel" placeholder="arcos-del-sur" {...register('motel')} />
-                  <p className="text-xs text-muted-foreground">
-                    Solo si trabajas en otro motel: escribe su identificador.
-                  </p>
-                </div>
+        <div className="rounded-lg border bg-card p-6">
+          <form onSubmit={onSubmit} className="space-y-5" noValidate>
+            <div className="space-y-2">
+              <Label htmlFor="username">Usuario</Label>
+              <Input
+                id="username"
+                autoComplete="username"
+                autoFocus
+                placeholder="recepcion"
+                className="h-11 font-mono lg:h-10"
+                aria-invalid={Boolean(errors.username)}
+                {...register('username')}
+              />
+              {errors.username ? (
+                <p className="text-xs text-destructive">{errors.username.message}</p>
               ) : null}
+            </div>
 
-              {login.isError ? (
-                <p
-                  role="alert"
-                  className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
-                >
-                  {apiErrorMessage(login.error, 'Usuario o contraseña incorrectos.')}
+            <div className="space-y-2">
+              <Label htmlFor="password">Contraseña</Label>
+              <Input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                className="h-11 lg:h-10"
+                aria-invalid={Boolean(errors.password)}
+                {...register('password')}
+              />
+              {errors.password ? (
+                <p className="text-xs text-destructive">{errors.password.message}</p>
+              ) : null}
+            </div>
+
+            {askForMotel ? (
+              <div className="space-y-2">
+                <Label htmlFor="motel">Motel</Label>
+                <Input
+                  id="motel"
+                  placeholder="arcos-del-sur"
+                  className="h-11 font-mono lg:h-10"
+                  {...register('motel')}
+                />
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  Solo si trabajas en otro motel: escribe su identificador.
                 </p>
-              ) : null}
+              </div>
+            ) : null}
 
-              <Button type="submit" className="w-full" loading={login.isPending}>
-                Entrar
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+            {login.isError ? (
+              <p
+                role="alert"
+                className="rounded-md border border-destructive/25 bg-destructive/5 px-3 py-2.5 text-sm leading-relaxed text-destructive"
+              >
+                {apiErrorMessage(login.error, 'Usuario o contraseña incorrectos.')}
+              </p>
+            ) : null}
 
-        <p className="text-center text-xs text-muted-foreground">
+            <Button type="submit" className="h-11 w-full lg:h-10" loading={login.isPending}>
+              Entrar
+            </Button>
+          </form>
+        </div>
+
+        <p className="text-center text-xs leading-relaxed text-muted-foreground">
           Si olvidaste tu contraseña, pídele a gerencia que la restablezca.
         </p>
       </div>

@@ -83,32 +83,16 @@ export function applyAppearance(
   root.classList.toggle('dark', theme === 'dark' || (theme === 'system' && prefersDark))
 
   const primary = hexToHsl(motel.brand_primary_color)
-  const sidebar = hexToHsl(motel.brand_sidebar_color)
   root.style.setProperty('--primary', primary)
   root.style.setProperty('--primary-foreground', readableForeground(motel.brand_primary_color))
-  root.style.setProperty('--ring', primary)
   root.style.setProperty('--brand-accent', primary)
-  root.style.setProperty('--sidebar', sidebar)
-  root.style.setProperty('--sidebar-foreground', readableForeground(motel.brand_sidebar_color))
-  root.style.setProperty('--sidebar-accent', sidebar)
-  root.style.setProperty(
-    '--sidebar-accent-foreground',
-    readableForeground(motel.brand_sidebar_color),
-  )
-  root.style.setProperty('--sidebar-border', sidebar)
-  root.style.setProperty('--sidebar-ring', primary)
+  root.style.setProperty('--ring', primary)
   root.style.setProperty('--status-available', hexToHsl(motel.status_available_color))
   root.style.setProperty('--status-occupied', hexToHsl(motel.status_occupied_color))
   root.style.setProperty('--status-cleaning', hexToHsl(motel.status_cleaning_color))
   root.style.setProperty('--status-maintenance', hexToHsl(motel.status_maintenance_color))
 
-  const radii = { square: '0.125rem', medium: '0.625rem', rounded: '1rem' }
-  const fonts = {
-    modern: 'Inter var, Inter, ui-sans-serif, system-ui, sans-serif',
-    system: 'ui-sans-serif, system-ui, Segoe UI, sans-serif',
-    rounded: 'Nunito, Inter var, ui-rounded, system-ui, sans-serif',
-  }
+  const radii = { square: '0.125rem', medium: '0.375rem', rounded: '0.75rem' }
   root.style.setProperty('--radius', radii[motel.border_radius])
-  root.style.setProperty('--font-sans', fonts[motel.font_family])
   root.dataset.density = density
 }

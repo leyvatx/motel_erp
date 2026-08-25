@@ -31,7 +31,17 @@ describe('personalización por motel', () => {
     expect(document.documentElement).toHaveClass('dark')
     expect(document.documentElement.dataset.density).toBe('compact')
     expect(document.documentElement.style.getPropertyValue('--primary')).toBe('262 83% 58%')
-    expect(document.documentElement.style.getPropertyValue('--radius')).toBe('1rem')
+    expect(document.documentElement.style.getPropertyValue('--radius')).toBe('0.75rem')
+  })
+
+  it('no repinta el chasis con el color del motel', () => {
+    applyAppearance('motel', 'motel', motel)
+
+    const estilo = document.documentElement.style
+    expect(estilo.getPropertyValue('--sidebar')).toBe('')
+    expect(estilo.getPropertyValue('--sidebar-foreground')).toBe('')
+    expect(estilo.getPropertyValue('--sidebar-border')).toBe('')
+    expect(estilo.getPropertyValue('--font-sans')).toBe('')
   })
 
   it('respeta las preferencias locales sin cambiar la paleta', () => {

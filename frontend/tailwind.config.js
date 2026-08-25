@@ -67,7 +67,10 @@ export default {
       },
       fontFamily: {
         sans: ['var(--font-sans)'],
-        mono: ['ui-monospace', 'SFMono-Regular', 'JetBrains Mono', 'monospace'],
+        mono: ['var(--font-mono)'],
+      },
+      letterSpacing: {
+        tightest: '-0.03em',
       },
       fontSize: {
         '2xs': ['0.6875rem', { lineHeight: '1rem' }],
