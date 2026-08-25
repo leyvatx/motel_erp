@@ -6,6 +6,7 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { Topbar } from '@/components/layout/Topbar'
 import { sectionTitle } from '@/components/layout/navigation'
 import { useCurrentUser } from '@/features/auth/hooks'
+import { OpenShiftDialog } from '@/features/finances/components/OpenShiftDialog'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useRealtime } from '@/hooks/useRealtime'
 import { unlockAudio } from '@/lib/sound'
@@ -42,6 +43,8 @@ export function AppLayout() {
           </div>
         </main>
       </div>
+
+      <OpenShiftDialog />
     </div>
   )
 }

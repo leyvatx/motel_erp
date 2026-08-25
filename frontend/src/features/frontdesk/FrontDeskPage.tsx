@@ -8,6 +8,7 @@ import {
   PiEye,
   PiGear,
   PiPlus,
+  PiSignIn,
   PiSparkle,
   PiWarning,
   PiWrench,
@@ -88,6 +89,16 @@ export default function FrontDeskPage() {
     [allRooms, floorFilter, typeFilter],
   )
 
+  const arrivingByRoom = useMemo(
+    () =>
+      new Map(
+        (upcomingReservations.data?.results ?? [])
+          .filter((item) => item.room !== null)
+          .map((item) => [item.room as number, item]),
+      ),
+    [upcomingReservations.data],
+  )
+
   const roomActions = (room: RoomGridItem): RowAction[] => {
     const stay = room.current_stay
     if (stay) {
@@ -109,12 +120,25 @@ export default function FrontDeskPage() {
       ]
     }
 
+    const rentable = room.status === 'AVAILABLE' || room.status === 'RESERVED'
+    const arriving = arrivingByRoom.get(room.id)
+
     return [
+      ...(arriving && rentable
+        ? [
+            {
+              key: 'check-in',
+              label: `Registrar llegada de ${arriving.guest_name || arriving.code}`,
+              icon: <PiSignIn />,
+              onSelect: () => setActionsRoom(room),
+            },
+          ]
+        : []),
       {
         key: 'rent',
-        label: 'Rentar',
+        label: arriving && rentable ? 'Rentar a otra persona' : 'Rentar',
         icon: <PiBed />,
-        disabled: room.status !== 'AVAILABLE' && room.status !== 'RESERVED',
+        disabled: !rentable,
         onSelect: () => setRentRoom(room),
       },
       {

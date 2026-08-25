@@ -3,6 +3,7 @@ import axios from 'axios'
 
 import { toast } from '@/components/ui/toast'
 import { financesApi } from '@/features/finances/api'
+import { toastApiError } from '@/features/finances/shiftGuard'
 import type { CloseShiftPayload, ExpensePayload, OpenShiftPayload } from '@/features/finances/types'
 import { apiErrorMessage } from '@/lib/axios'
 import { queryKeys } from '@/lib/queryClient'
@@ -119,7 +120,7 @@ export function useCreateExpense() {
         toast.success(`Gasto ${expense.folio} registrado`)
       }
     },
-    onError: (error) => toast.error('No se pudo registrar el gasto', apiErrorMessage(error)),
+    onError: (error) => toastApiError('No se pudo registrar el gasto', error),
   })
 }
 

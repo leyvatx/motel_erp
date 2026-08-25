@@ -9,6 +9,7 @@ import type {
   ReservationPayload,
 } from '@/features/frontdesk/types'
 import { toast } from '@/components/ui/toast'
+import { toastApiError } from '@/features/finances/shiftGuard'
 import { apiErrorMessage } from '@/lib/axios'
 import { queryKeys } from '@/lib/queryClient'
 import { playSuccessTone } from '@/lib/sound'
@@ -67,6 +68,26 @@ export function useReservations(params?: ReservationParams) {
     queryKey: queryKeys.frontdesk.reservations(params),
     queryFn: () => frontdeskApi.reservations(params),
     placeholderData: (previous) => previous,
+  })
+}
+
+/**
+ * Reservación vigente de una habitación. Reservar no cambia el estado del
+ * cuarto, así que la cuadrícula no puede deducirla: hay que preguntarla.
+ */
+export function useRoomReservation(roomId: number | null) {
+  const params: ReservationParams = {
+    room: roomId ?? 0,
+    active: true,
+    ordering: 'scheduled_start',
+    page_size: 1,
+  }
+
+  return useQuery({
+    queryKey: queryKeys.frontdesk.reservations(params),
+    queryFn: () => frontdeskApi.reservations(params),
+    enabled: roomId !== null,
+    select: (page) => page.results[0] ?? null,
   })
 }
 
@@ -171,7 +192,7 @@ export function useCheckoutStay(stayId: number) {
       playSuccessTone()
       toast.success(`Cuenta cerrada - habitación ${stay.room_number}`, 'El cuarto paso a limpieza.')
     },
-    onError: (error) => toast.error('No se pudo cerrar la cuenta', apiErrorMessage(error)),
+    onError: (error) => toastApiError('No se pudo cerrar la cuenta', error),
   })
 }
 

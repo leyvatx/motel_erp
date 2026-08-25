@@ -23,6 +23,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
 import { GlobalSearch } from '@/components/layout/GlobalSearch'
+import { ShiftChip } from '@/features/finances/components/ShiftChip'
 import { NotificationBell } from '@/features/notifications/NotificationBell'
 import { TeamPresence } from '@/features/users/TeamPresence'
 import { StayDetailDialog } from '@/features/frontdesk/components/StayDetailDialog'
@@ -101,8 +102,10 @@ export function Topbar({ connection, onOpenMenu }: Props) {
       <div className="ml-auto flex items-center gap-0.5">
         {operational ? (
           <>
+            <ShiftChip />
+
             <span
-              className="mr-1.5 hidden items-center gap-1.5 rounded-full border px-2 py-1 text-2xs font-medium text-muted-foreground sm:flex"
+              className="mx-1.5 hidden items-center gap-1.5 rounded-full border px-2 py-1 text-2xs font-medium text-muted-foreground sm:flex"
               title={online ? 'Conectado en tiempo real' : 'Reconectando al servidor'}
             >
               <span

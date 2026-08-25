@@ -6,12 +6,18 @@ import { cn } from '@/lib/utils'
 
 export type ToastVariant = 'info' | 'success' | 'warning' | 'error'
 
+export interface ToastAction {
+  label: string
+  onSelect: () => void
+}
+
 export interface Toast {
   id: number
   title: string
   description?: string
   variant: ToastVariant
   durationMs: number
+  action?: ToastAction
 }
 
 interface ToastState {
@@ -39,8 +45,10 @@ export const toast = {
     useToastStore.getState().push({ title, description, variant: 'success' }),
   warning: (title: string, description?: string) =>
     useToastStore.getState().push({ title, description, variant: 'warning' }),
-  error: (title: string, description?: string) =>
-    useToastStore.getState().push({ title, description, variant: 'error', durationMs: 8000 }),
+  error: (title: string, description?: string, action?: ToastAction) =>
+    useToastStore
+      .getState()
+      .push({ title, description, action, variant: 'error', durationMs: action ? 15000 : 8000 }),
 }
 
 const ICONS = {
@@ -86,6 +94,18 @@ function ToastCard({ item }: { item: Toast }) {
         <p className="text-sm font-medium">{item.title}</p>
         {item.description ? (
           <p className="mt-0.5 text-xs text-muted-foreground">{item.description}</p>
+        ) : null}
+        {item.action ? (
+          <button
+            type="button"
+            onClick={() => {
+              item.action?.onSelect()
+              dismiss(item.id)
+            }}
+            className="mt-2 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors hover:bg-accent"
+          >
+            {item.action.label}
+          </button>
         ) : null}
       </div>
       <button

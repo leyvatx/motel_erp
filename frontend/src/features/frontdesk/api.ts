@@ -22,6 +22,7 @@ export interface GridParams extends ListParams {
 
 export interface ReservationParams extends ListParams {
   status?: string
+  room?: number
   room_type?: number
   from?: string
   to?: string

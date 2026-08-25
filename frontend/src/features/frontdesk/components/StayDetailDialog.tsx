@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { PiClock, PiCreditCard, PiPlus, PiProhibit } from 'react-icons/pi'
+import { PiBasket, PiBed, PiClock, PiCreditCard, PiPlus, PiProhibit } from 'react-icons/pi'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -29,12 +29,16 @@ import {
   useTariffBlocks,
 } from '@/features/frontdesk/hooks'
 import { StayTimeline } from '@/features/audit/StayTimeline'
+import { useSellableProducts } from '@/features/inventory/hooks'
+import { CartLines, ProductPicker, useCart } from '@/features/sales/ProductCart'
+import { useChargeToRoom, useFolio } from '@/features/sales/hooks'
+import type { FolioCharge } from '@/features/sales/types'
 import { useCountdown } from '@/hooks/useCountdown'
 import { formatCountdown, formatDateTime, formatMoney, toNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import type { PaymentMethod } from '@/types/api'
 
-type Panel = 'detail' | 'extend' | 'checkout' | 'cancel'
+type Panel = 'detail' | 'extend' | 'checkout' | 'cancel' | 'charge'
 
 interface Props {
   stayId: number | null
@@ -51,6 +55,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
 export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
   const { data: stay, isLoading } = useStay(open ? stayId : null)
   const [panel, setPanel] = useState<Panel>('detail')
+  const folio = useFolio(open && stay?.folio_id ? stay.folio_id : null)
 
   useEffect(() => {
     if (open) setPanel('detail')
@@ -89,15 +94,12 @@ export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
 
             <Separator />
 
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Cuenta</span>
-              <div className="text-right">
-                <p className="text-xl font-bold tabular">{formatMoney(stay.folio_total)}</p>
-                <p className="text-xs text-muted-foreground">
-                  Por cobrar {formatMoney(stay.folio_balance)}
-                </p>
-              </div>
-            </div>
+            <FolioBreakdown
+              charges={folio.data?.charges ?? []}
+              isLoading={folio.isLoading}
+              total={stay.folio_total}
+              balance={stay.folio_balance}
+            />
 
             {panel === 'detail' ? (
               <div className="rounded-lg border p-3">
@@ -110,22 +112,12 @@ export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
               </div>
             ) : null}
 
-            {stay.extensions.length > 0 ? (
-              <div className="rounded-md border p-3">
-                <p className="mb-2 text-xs font-medium text-muted-foreground">Extensiones</p>
-                <ul className="space-y-1 text-xs">
-                  {stay.extensions.map((extension) => (
-                    <li key={extension.id} className="flex justify-between">
-                      <span>+{extension.minutes} min</span>
-                      <span className="tabular">{formatMoney(extension.price)}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-
             {panel === 'detail' ? (
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <Button variant="outline" onClick={() => setPanel('charge')}>
+                  <PiBasket className="h-4 w-4" />
+                  Consumo
+                </Button>
                 <Button variant="outline" onClick={() => setPanel('extend')}>
                   <PiPlus className="h-4 w-4" />
                   Extender
@@ -139,6 +131,14 @@ export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
                   Cancelar
                 </Button>
               </div>
+            ) : null}
+
+            {panel === 'charge' ? (
+              <ChargePanel
+                folioId={stay.folio_id}
+                roomNumber={stay.room_number}
+                onDone={() => setPanel('detail')}
+              />
             ) : null}
 
             {panel === 'extend' ? (
@@ -175,6 +175,137 @@ export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
         )}
       </DialogContent>
     </Dialog>
+  )
+}
+
+function FolioBreakdown({
+  charges,
+  isLoading,
+  total,
+  balance,
+}: {
+  charges: FolioCharge[]
+  isLoading: boolean
+  total: string | null
+  balance: string | null
+}) {
+  return (
+    <div className="rounded-lg border">
+      <div className="flex items-baseline justify-between border-b px-3 py-2">
+        <span className="text-xs font-medium text-muted-foreground">Cuenta</span>
+        <div className="text-right">
+          <p className="text-xl font-bold tabular">{formatMoney(total)}</p>
+          <p className="text-xs text-muted-foreground">Por cobrar {formatMoney(balance)}</p>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-2 p-3">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-2/3" />
+        </div>
+      ) : charges.length === 0 ? (
+        <p className="px-3 py-4 text-center text-xs text-muted-foreground">
+          Sin cargos registrados todavía.
+        </p>
+      ) : (
+        <ul className="max-h-44 divide-y overflow-y-auto scrollbar-thin">
+          {charges.map((charge) => (
+            <li key={charge.id} className="flex items-baseline justify-between gap-3 px-3 py-2">
+              <div className="min-w-0">
+                <p className="truncate text-sm">{charge.description}</p>
+                <p className="text-2xs text-muted-foreground">
+                  {charge.charge_type_display}
+                  {toNumber(charge.quantity) !== 1
+                    ? ` · ${charge.quantity} × ${formatMoney(charge.unit_price)}`
+                    : ''}
+                </p>
+              </div>
+              <span className="shrink-0 text-sm font-medium tabular">
+                {formatMoney(charge.amount)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+function ChargePanel({
+  folioId,
+  roomNumber,
+  onDone,
+}: {
+  folioId: number | null
+  roomNumber: string
+  onDone: () => void
+}) {
+  const { data: products, isLoading } = useSellableProducts()
+  const cart = useCart()
+  const charge = useChargeToRoom({ folioId, roomNumber })
+
+  if (!folioId) {
+    return (
+      <div className="rounded-md border p-4">
+        <p className="text-sm text-muted-foreground">
+          Esta renta no tiene una cuenta abierta, así que no se le puede cargar consumo.
+        </p>
+        <div className="mt-3 flex justify-end">
+          <Button variant="outline" onClick={onDone}>
+            Volver
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-3 rounded-md border p-4">
+      <ProductPicker
+        catalog={products?.results ?? []}
+        isLoading={isLoading}
+        cart={cart}
+        gridClassName="grid-cols-2 sm:grid-cols-3"
+        listClassName="max-h-52"
+      />
+
+      <Separator />
+
+      <CartLines cart={cart} className="max-h-40" />
+
+      <div className="flex items-baseline justify-between">
+        <span className="text-sm text-muted-foreground">Total</span>
+        <span className="text-2xl font-semibold tracking-tight tabular">
+          {formatMoney(cart.total)}
+        </span>
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        Se carga a la cuenta de la habitación {roomNumber} y se cobra al hacer el check-out.
+      </p>
+
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={onDone}>
+          Volver
+        </Button>
+        <Button
+          disabled={cart.lines.length === 0}
+          loading={charge.isPending}
+          onClick={() =>
+            charge.mutate(cart.items, {
+              onSuccess: () => {
+                cart.clear()
+                onDone()
+              },
+            })
+          }
+        >
+          <PiBed className="h-4 w-4" />
+          Cargar a la habitación {roomNumber}
+        </Button>
+      </div>
+    </div>
   )
 }
 

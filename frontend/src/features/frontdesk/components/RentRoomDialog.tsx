@@ -1,6 +1,7 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Controller, useForm } from 'react-hook-form'
+import { PiCaretDown } from 'react-icons/pi'
 import { z } from 'zod'
 
 import { Button } from '@/components/ui/button'
@@ -24,6 +25,7 @@ import {
 import { useRentRoom, useTariffBlocks } from '@/features/frontdesk/hooks'
 import type { RoomGridItem } from '@/features/frontdesk/types'
 import { formatMoney } from '@/lib/format'
+import { cn } from '@/lib/utils'
 
 const rentSchema = z.object({
   tariff_block_id: z.coerce.number().int().positive('Elige el bloque de tiempo.'),
@@ -45,12 +47,14 @@ interface Props {
 export function RentRoomDialog({ room, open, onOpenChange }: Props) {
   const { data: blocks, isLoading } = useTariffBlocks(room?.room_type)
   const rent = useRentRoom()
+  const [showOptional, setShowOptional] = useState(false)
 
   const {
     register,
     handleSubmit,
     control,
     reset,
+    setValue,
     watch,
     formState: { errors },
   } = useForm<RentForm>({
@@ -59,7 +63,10 @@ export function RentRoomDialog({ room, open, onOpenChange }: Props) {
   })
 
   useEffect(() => {
-    if (open) reset({ occupants: 2 })
+    if (open) {
+      reset({ occupants: 2 })
+      setShowOptional(false)
+    }
   }, [open, reset])
 
   const options = useMemo(
@@ -68,6 +75,12 @@ export function RentRoomDialog({ room, open, onOpenChange }: Props) {
   )
   const selectedId = Number(watch('tariff_block_id'))
   const selected = options.find((block) => block.id === selectedId)
+
+  useEffect(() => {
+    if (!open || selectedId || options.length === 0) return
+    const suggested = options.find((block) => block.is_default) ?? options[0]
+    if (suggested) setValue('tariff_block_id', suggested.id, { shouldValidate: true })
+  }, [open, options, selectedId, setValue])
 
   if (!room) return null
 
@@ -142,21 +155,42 @@ export function RentRoomDialog({ room, open, onOpenChange }: Props) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="guest">Nombre (opcional)</Label>
-              <Input id="guest" {...register('guest_name')} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="vehicle">Vehículo (opcional)</Label>
-              <Input id="vehicle" placeholder="Sedan gris" {...register('vehicle_description')} />
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={() => setShowOptional((value) => !value)}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+            aria-expanded={showOptional}
+          >
+            <PiCaretDown
+              className={cn('h-3.5 w-3.5 transition-transform', showOptional && 'rotate-180')}
+              aria-hidden
+            />
+            Datos del huésped (opcional)
+          </button>
 
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notas</Label>
-            <Input id="notes" {...register('notes')} />
-          </div>
+          {showOptional ? (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="guest">Nombre</Label>
+                  <Input id="guest" {...register('guest_name')} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="vehicle">Vehículo</Label>
+                  <Input
+                    id="vehicle"
+                    placeholder="Sedan gris"
+                    {...register('vehicle_description')}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes">Notas</Label>
+                <Input id="notes" {...register('notes')} />
+              </div>
+            </div>
+          ) : null}
 
           {selected ? (
             <div className="rounded-md bg-accent/60 px-3 py-2 text-sm">
