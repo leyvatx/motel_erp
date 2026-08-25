@@ -33,6 +33,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import environ
+from corsheaders.defaults import default_headers as cors_default_headers
 from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -307,6 +308,7 @@ SPECTACULAR_SETTINGS = {
 
 CORS_ALLOWED_ORIGINS = [_como_origen(o) for o in env("CORS_ALLOWED_ORIGINS")]
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = (*cors_default_headers, "x-motel-id")
 
 REDIS_URL = env("REDIS_URL", default="redis://localhost:6379/0")
 
