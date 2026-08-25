@@ -4,9 +4,10 @@ Dos canales:
 * ``/ws/frontdesk/`` - grid de habitaciones, cronómetros y ordenes.
 * ``/ws/notifications/`` - campana del topbar.
 
-Ambos exigen un JWT válido (``?token=<access>``); una conexión anonima se
-cierra con código 4401. Los consumers son de solo lectura: el cliente no puede
-mutar estado por WebSocket, para eso esta la API REST.
+Ambos exigen un boleto de un solo uso (``?ticket=<boleto>``) que se pide antes
+por HTTP a ``/api/v1/auth/ws-ticket/``; una conexión anonima se cierra con
+código 4401. Los consumers son de solo lectura: el cliente no puede mutar
+estado por WebSocket, para eso esta la API REST.
 """
 
 from __future__ import annotations

@@ -1,3 +1,12 @@
+"""Celery: calendario de tareas periódicas y reparto en colas.
+
+La impresión va en su propia cola y la atiende su propio worker. Una térmica
+apagada tarda diez segundos en fallar y reintenta tres veces; si eso viviera en
+la cola general, cincuenta moteles imprimiendo contra impresoras muertas se
+comerían la concurrencia y retrasarían ``sweep_stay_timers``, que corre cada
+treinta segundos y es de donde recepción saca los cronómetros. Un ticket que no
+sale es una molestia; un cronómetro detenido es la pantalla principal mintiendo.
+"""
 
 import os
 
@@ -9,6 +18,11 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
 app = Celery("motel_erp")
 app.config_from_object("django.conf:settings", namespace="CELERY")
 app.autodiscover_tasks()
+
+app.conf.task_default_queue = "celery"
+app.conf.task_routes = {
+    "apps.sales.tasks.print_receipt": {"queue": "printing"},
+}
 
 app.conf.beat_schedule = {
     "sweep-expiring-stays": {
@@ -27,6 +41,10 @@ app.conf.beat_schedule = {
     "check-expiring-lots": {
         "task": "apps.inventory.tasks.dispatch_expiring_lot_checks",
         "schedule": crontab(hour=7, minute=0),
+    },
+    "flush-expired-tokens": {
+        "task": "apps.users.tasks.flush_expired_tokens",
+        "schedule": crontab(hour=3, minute=30),
     },
 }
 

@@ -1,0 +1,110 @@
+# Frente HTTP/HTTPS: sirve la interfaz y los archivos, y pasa la API al backend.
+#
+# TLS termina aqui. El puerto 80 existe para dos cosas y nada mas: contestar el
+# reto de ACME que renueva el certificado, y mandar todo lo demas a HTTPS.
+# Django ya redirige por su cuenta con DJANGO_DEBUG=False; hacerlo tambien aqui
+# evita que la primera peticion del navegador llegue en claro hasta la
+# aplicacion, que es justo la que lleva la cookie de sesion.
+#
+# ${CERT_DOMAIN} lo sustituye el propio arranque de la imagen de nginx. En
+# compose va NGINX_ENVSUBST_FILTER=CERT_ para que solo se toquen las variables
+# con ese prefijo: sin ese filtro, envsubst se comeria $host, $scheme y $uri.
+#
+# Si algun dia pones otro proxy adelante que ya termina TLS: borra el bloque
+# 443, sirve en 80, cambia $scheme por $http_x_forwarded_proto y apaga
+# DJANGO_SECURE_SSL_REDIRECT en api/.env.
+
+upstream motel_api {
+    server api:8000;
+}
+
+# El handshake del WebSocket lleva un boleto de un solo uso en el query string.
+# Dura treinta segundos y muere al canjearse, pero no hay razon para escribirlo
+# en disco: este formato registra $uri, que es la ruta ya normalizada y sin
+# argumentos. Se conserva la visibilidad de quien se conecta y se pierde el
+# secreto, que es exactamente el reparto que se quiere.
+log_format sin_argumentos '$remote_addr - $remote_user [$time_local] '
+                          '"$request_method $uri $server_protocol" '
+                          '$status $body_bytes_sent "$http_referer" "$http_user_agent"';
+
+server {
+    listen 80 default_server;
+    server_name _;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl default_server;
+    http2 on;
+    server_name _;
+
+    ssl_certificate     /etc/letsencrypt/live/${CERT_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${CERT_DOMAIN}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+
+    client_max_body_size 5m;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+    gzip_min_length 1024;
+
+    # X-Forwarded-For se reescribe, no se acumula: el limite de intentos de
+    # acceso y la bitacora leen el primer valor de esa cabecera, y si se
+    # concatenara la que manda el cliente cualquiera podria inventarse una IP.
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    location /static/ {
+        alias /srv/static/;
+        expires 1h;
+        access_log off;
+    }
+
+    location /media/ {
+        alias /srv/media/;
+        expires 1h;
+        access_log off;
+    }
+
+    # Los sockets del tablero de recepcion pasan minutos sin trafico cuando no
+    # vence ninguna renta. Con el tiempo de lectura por omision nginx los
+    # cerraria y el grid dejaria de moverse solo.
+    location /ws/ {
+        access_log /var/log/nginx/access.log sin_argumentos;
+        proxy_pass http://motel_api;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+    }
+
+    location /api/ {
+        proxy_pass http://motel_api;
+        proxy_http_version 1.1;
+        proxy_read_timeout 60s;
+    }
+
+    location /admin/ {
+        proxy_pass http://motel_api;
+        proxy_http_version 1.1;
+    }
+
+    location / {
+        root /usr/share/nginx/html;
+        try_files $uri /index.html;
+    }
+}

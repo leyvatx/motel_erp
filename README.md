@@ -174,9 +174,17 @@ lint, typecheck, pruebas frontend y build mediante GitHub Actions.
 
 ## Despliegue en producción
 
-`docker-compose.prod.yml` levanta los siete servicios que hacen falta:
-PostgreSQL, Redis, la API bajo ASGI, el worker y el beat de Celery, nginx con
-la interfaz compilada, y el respaldo periódico de la base.
+`docker-compose.prod.yml` levanta los nueve servicios que hacen falta:
+PostgreSQL, Redis, la API bajo ASGI, el worker general y el worker de
+impresión, el beat de Celery, nginx con la interfaz compilada, la renovación
+del certificado y el respaldo periódico de la base.
+
+La impresión corre en su propia cola (`printing`) y con su propio worker. Una
+térmica apagada tarda diez segundos en fallar y reintenta tres veces; en la
+cola general eso retrasaría el barrido de cronómetros, que corre cada treinta
+segundos y es de donde recepción saca las cuentas regresivas. **Si actualizas
+un despliegue anterior, el servicio `printer` tiene que quedar arriba o los
+tickets se encolan y nadie los imprime.**
 
 1. Copiar `api/.env.example` a `api/.env` y ajustarlo. Para producción cambian:
 
@@ -207,11 +215,36 @@ Las migraciones y los archivos estáticos corren solos al arrancar el contenedor
 de la API. El worker y el beat usan la misma imagen y se saltan ese paso para
 no competir por la misma migración.
 
-**TLS es obligatorio.** Con `DJANGO_DEBUG=False` el backend redirige todo a
-HTTPS, así que servir esto en HTTP pelón deja el navegador dando vueltas.
-Termina el certificado en el nginx de `deploy/nginx.conf` o pon adelante algo
-que lo haga (Caddy, Traefik, el balanceador de tu proveedor) y ajusta la línea
-de `X-Forwarded-Proto` como dice el archivo.
+### TLS
+
+nginx termina TLS. El puerto 80 solo contesta el reto de ACME y manda todo lo
+demás a HTTPS. Hace falta que `CERT_DOMAIN` y `CERT_EMAIL` estén en `api/.env`
+y que `CERT_DOMAIN` aparezca también en `DJANGO_ALLOWED_HOSTS`.
+
+Al arrancar sin certificado, `deploy/bootstrap-cert.sh` genera uno autofirmado
+para que nginx pueda levantar: sin él nginx no arranca, y sin nginx arriba
+certbot no puede contestar el reto. El navegador va a rechazar ese provisional
+—se espera— y dura lo que tardes en emitir el bueno, que se pide una sola vez
+con el dominio ya apuntando al servidor:
+
+```bash
+docker compose --env-file api/.env -f docker-compose.prod.yml run --rm certbot-init
+```
+
+Después, recargar nginx para que tome el certificado nuevo:
+
+```bash
+docker compose -f docker-compose.prod.yml exec web nginx -s reload
+```
+
+De ahí en adelante el servicio `certbot` renueva cada doce horas y nginx se
+recarga solo cada seis, así que la renovación entra en servicio sin reiniciar
+nada. `deploy/certs/` guarda las llaves privadas y está en `.gitignore`.
+
+Si prefieres terminar TLS en un balanceador de enfrente (Caddy, Traefik, el de
+tu proveedor): borra el bloque `443` de `deploy/nginx.conf.template`, cambia
+`$scheme` por `$http_x_forwarded_proto` y pon `DJANGO_SECURE_SSL_REDIRECT=False`
+en `api/.env`.
 
 ### Respaldos
 
@@ -245,12 +278,20 @@ docker compose -f docker-compose.prod.yml exec -T db psql -U motel -d motel_erp 
 
 | Canal | Uso |
 | --- | --- |
-| `ws://host/ws/frontdesk/?token=<access>` | Grid de habitaciones, cronómetros, ordenes |
-| `ws://host/ws/notifications/?token=<access>` | Campana del topbar |
+| `wss://host/ws/frontdesk/?ticket=<boleto>` | Grid de habitaciones, cronómetros, ordenes |
+| `wss://host/ws/notifications/?ticket=<boleto>` | Campana del topbar |
 
-El token JWT viaja en el query string porque el handshake de WebSocket no
-admite cabeceras. Una conexión sin token válido se cierra con código `4401`.
-Cada mensaje llega como `{"event": "...", "payload": {...}, "timestamp": "..."}`.
+El handshake de WebSocket no admite cabeceras, así que algo tiene que viajar en
+el query string. Va un boleto de un solo uso, no el JWT: se pide con
+`POST /api/v1/auth/ws-ticket/` usando la sesión normal, vive treinta segundos,
+muere al canjearse y no sirve para hablarle a la API REST. El JWT por query
+string ya no se acepta —acababa escrito en el `access_log` de nginx con media
+hora de vida por delante— y nginx registra `/ws/` con un formato que omite los
+argumentos. Los clientes que sí pueden mandar cabeceras (pruebas, scripts, el
+futuro agente de impresión) siguen usando `Authorization: Bearer`.
+
+Una conexión sin credencial válida se cierra con código `4401`. Cada mensaje
+llega como `{"event": "...", "payload": {...}, "timestamp": "..."}`.
 
 ## Tareas periódicas (Celery beat)
 

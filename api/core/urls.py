@@ -14,7 +14,10 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+from common.health import health
+
 api_v1_patterns = [
+    path("health/", health, name="health"),
     path("auth/", include("apps.users.urls")),
     path("settings/", include("apps.settings.urls")),
     path("frontdesk/", include("apps.rooms.urls")),

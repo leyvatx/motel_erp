@@ -328,19 +328,28 @@ class ConsumerAuthTests(TransactionTestCase):
         self.assertEqual(code, 4401)
         await communicator.disconnect()
 
-    async def test_conexion_con_token_valido_recibe_handshake(self) -> None:
+    async def _usuario_con_motel(self, username: str):
         from channels.db import database_sync_to_async
-        from rest_framework_simplejwt.tokens import AccessToken
 
-        motel = await database_sync_to_async(Motel.objects.create)(name="Motel WebSocket")
+        motel = await database_sync_to_async(Motel.objects.create)(name=f"Motel {username}")
         user = await database_sync_to_async(User.objects.create_user)(
-            username="ws.user", password="Demo.1234", full_name="Usuario WS",
+            username=username, password="Demo.1234", full_name="Usuario WS",
             role=Role.RECEPTION, motel=motel,
         )
-        token = await database_sync_to_async(lambda: str(AccessToken.for_user(user)))()
+        return motel, user
+
+    async def test_conexion_con_boleto_valido_recibe_handshake(self) -> None:
+        from channels.db import database_sync_to_async
+
+        from common.ws_tickets import issue
+
+        motel, user = await self._usuario_con_motel("ws.user")
+        boleto = await database_sync_to_async(issue)(
+            user_id=user.pk, motel_id=motel.pk, role=Role.RECEPTION
+        )
 
         communicator = WebsocketCommunicator(
-            self._application(), f"/ws/frontdesk/?token={token}"
+            self._application(), f"/ws/frontdesk/?ticket={boleto}"
         )
         connected, _ = await communicator.connect()
         self.assertTrue(connected)
@@ -349,4 +358,42 @@ class ConsumerAuthTests(TransactionTestCase):
         self.assertEqual(mensaje["event"], "connection.ready")
         self.assertEqual(mensaje["payload"]["role"], Role.RECEPTION)
         self.assertIn(frontdesk_group(motel.pk), mensaje["payload"]["groups"])
+        await communicator.disconnect()
+
+    async def test_el_boleto_no_sirve_dos_veces(self) -> None:
+        """Si se pudiera reusar, leerlo en una bitacora bastaria para entrar."""
+        from channels.db import database_sync_to_async
+
+        from common.ws_tickets import issue
+
+        motel, user = await self._usuario_con_motel("ws.repetido")
+        boleto = await database_sync_to_async(issue)(
+            user_id=user.pk, motel_id=motel.pk, role=Role.RECEPTION
+        )
+
+        primera = WebsocketCommunicator(self._application(), f"/ws/frontdesk/?ticket={boleto}")
+        conectada, _ = await primera.connect()
+        self.assertTrue(conectada)
+        await primera.disconnect()
+
+        segunda = WebsocketCommunicator(self._application(), f"/ws/frontdesk/?ticket={boleto}")
+        conectada, code = await segunda.connect()
+        self.assertFalse(conectada)
+        self.assertEqual(code, 4401)
+        await segunda.disconnect()
+
+    async def test_el_jwt_en_el_query_string_ya_no_se_acepta(self) -> None:
+        """Es el punto del cambio: ese token acababa en el access_log de nginx."""
+        from channels.db import database_sync_to_async
+        from rest_framework_simplejwt.tokens import AccessToken
+
+        _, user = await self._usuario_con_motel("ws.legacy")
+        token = await database_sync_to_async(lambda: str(AccessToken.for_user(user)))()
+
+        communicator = WebsocketCommunicator(
+            self._application(), f"/ws/frontdesk/?token={token}"
+        )
+        connected, code = await communicator.connect()
+        self.assertFalse(connected)
+        self.assertEqual(code, 4401)
         await communicator.disconnect()

@@ -11,6 +11,22 @@ motel, no en toda la plataforma. Lo que esa verificación protege -- que
 La caché va a Redis y no al proceso: con varios workers una caché local
 significa que el límite de intentos de acceso se multiplica por el número de
 procesos y que un cambio de configuración tarda en verse en unos y no en otros.
+
+``127.0.0.1`` y ``localhost`` se agregan siempre a ``ALLOWED_HOSTS``: el sondeo
+de salud entra por loopback desde el propio contenedor y sin ellos Docker
+recibiría un 400 y reiniciaría en ciclo un servicio perfectamente sano.
+
+``SECURE_SSL_REDIRECT`` se puede apagar por separado de ``DEBUG``. Lo necesitan
+dos casos legítimos: las pruebas, que hablan HTTP en claro contra el cliente de
+Django, y los despliegues donde TLS termina en un balanceador de enfrente y el
+redirect aquí solo produciría un bucle.
+
+``DB_CONNECT_TIMEOUT`` acota lo que tarda en rendirse una conexión nueva. Sin
+él, una base inalcanzable -- caída, o detrás de un cortafuegos que descarta en
+vez de rechazar -- deja cada petición esperando el tiempo de espera de TCP del
+sistema, del orden de veinte segundos. Con cuatro workers eso es el servicio
+entero colgado en lugar de errores rápidos, y es también lo que haría que el
+sondeo de salud se quedara mudo justo cuando hay que saber qué pasa.
 """
 
 from datetime import timedelta
@@ -27,6 +43,7 @@ env = environ.Env(
     DJANGO_CSRF_TRUSTED_ORIGINS=(list, []),
     CORS_ALLOWED_ORIGINS=(list, ["http://localhost:5173"]),
     DB_CONN_MAX_AGE=(int, 60),
+    DB_CONNECT_TIMEOUT=(int, 5),
     JWT_ACCESS_TOKEN_MINUTES=(int, 30),
     JWT_REFRESH_TOKEN_DAYS=(int, 7),
     BUSINESS_TIME_ZONE=(str, "America/Mexico_City"),
@@ -44,6 +61,7 @@ INSECURE_SECRET_KEY = "dev-only-insecure-key"
 SECRET_KEY = env("DJANGO_SECRET_KEY", default=INSECURE_SECRET_KEY)
 DEBUG = env("DJANGO_DEBUG")
 ALLOWED_HOSTS = env("DJANGO_ALLOWED_HOSTS")
+ALLOWED_HOSTS += [h for h in ("127.0.0.1", "localhost") if h not in ALLOWED_HOSTS]
 CSRF_TRUSTED_ORIGINS = env("DJANGO_CSRF_TRUSTED_ORIGINS")
 
 if not DEBUG and SECRET_KEY == INSECURE_SECRET_KEY:
@@ -58,11 +76,12 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-    SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
+SECURE_SSL_REDIRECT = env.bool("DJANGO_SECURE_SSL_REDIRECT", default=not DEBUG)
+SECURE_REDIRECT_EXEMPT = [r"^api/v1/health/$"]
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 
@@ -148,6 +167,7 @@ DATABASES = {
 }
 DATABASES["default"]["CONN_MAX_AGE"] = env("DB_CONN_MAX_AGE")
 DATABASES["default"]["ATOMIC_REQUESTS"] = False
+DATABASES["default"].setdefault("OPTIONS", {})["connect_timeout"] = env("DB_CONNECT_TIMEOUT")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

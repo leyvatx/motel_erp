@@ -92,7 +92,11 @@ def emit_shift_receipt(*, shift, actor=None, is_reprint: bool = False) -> Receip
 def _enqueue(receipt_id: int, *, open_drawer: bool = False) -> None:
     """Encola la impresión; si el broker no responde, imprime en línea.
 
-    Un ticket no se pierde porque Redis este caido.
+    Un ticket no se pierde porque Redis este caido, y un cobro no se pierde
+    porque la impresora este caida: el respaldo en línea tiene que tragarse su
+    propia falla. Corre dentro de ``on_commit``, así que lo que levante aquí
+    sube al request de un cierre de folio que la base ya acepto. El comprobante
+    queda guardado con su error y se reimprime desde la interfaz.
     """
 
     def _dispatch() -> None:
@@ -100,8 +104,16 @@ def _enqueue(receipt_id: int, *, open_drawer: bool = False) -> None:
 
         try:
             print_receipt_task.apply_async(args=[receipt_id, open_drawer], retry=False)
+            return
         except Exception:
             logger.warning("Broker no disponible; se imprime el ticket en línea.")
+
+        try:
             print_receipt_task.run(receipt_id, open_drawer)
+        except Exception:
+            logger.warning(
+                "Impresión en línea fallida para el comprobante %s; queda para reimprimir.",
+                receipt_id,
+            )
 
     transaction.on_commit(_dispatch)

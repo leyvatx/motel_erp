@@ -34,6 +34,9 @@ services:
       timeout: 5s
       retries: 5
 
+  # El sondeo usa python y no curl: la imagen base es python:3.12-slim y no
+  # trae curl ni wget. start_period cubre migraciones y collectstatic, que
+  # corren al arrancar y tardan más que el primer intervalo.
   api:
     build: ./api
     restart: unless-stopped
@@ -46,7 +49,20 @@ services:
     volumes:
       - static_files:/app/staticfiles
       - media_files:/app/media
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health/', timeout=5)
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 90s
 
+  # -Q celery es obligatorio, no cosmético: sin la bandera este worker tomaría
+  # también los tickets y volveríamos a tener la impresión bloqueando los
+  # cronómetros, que es justo lo que la cola aparte viene a resolver.
   worker:
     build: ./api
     restart: unless-stopped
@@ -54,14 +70,30 @@ services:
     environment:
       RUN_MIGRATIONS: "0"
       RUN_COLLECTSTATIC: "0"
-    command: ["celery", "-A", "core", "worker", "-l", "info"]
+    command: ["celery", "-A", "core", "worker", "-Q", "celery", "-l", "info"]
     depends_on:
       api:
-        condition: service_started
+        condition: service_healthy
       redis:
         condition: service_healthy
     volumes:
       - media_files:/app/media
+
+  # Concurrencia baja a propósito: son sockets a impresoras, no CPU. Lo que
+  # importa es que atascarse aquí no le quite un worker a nadie más.
+  printer:
+    build: ./api
+    restart: unless-stopped
+    env_file: ./api/.env
+    environment:
+      RUN_MIGRATIONS: "0"
+      RUN_COLLECTSTATIC: "0"
+    command: ["celery", "-A", "core", "worker", "-Q", "printing", "-c", "2", "-l", "info"]
+    depends_on:
+      api:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   beat:
     build: ./api
@@ -73,21 +105,75 @@ services:
     command: ["celery", "-A", "core", "beat", "-l", "info"]
     depends_on:
       api:
-        condition: service_started
+        condition: service_healthy
       redis:
         condition: service_healthy
 
+  # El certificado provisional se genera antes de arrancar nginx porque nginx
+  # no levanta con un ssl_certificate que apunta a la nada. La recarga cada
+  # seis horas es como el certificado renovado entra en servicio sin reiniciar:
+  # nginx -s reload es elegante, deja vivir a los workers viejos hasta que sus
+  # WebSockets se cierren solos.
   web:
     build: ./frontend
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443"
+    environment:
+      CERT_DOMAIN: ${CERT_DOMAIN:?falta CERT_DOMAIN en api/.env}
+      NGINX_ENVSUBST_FILTER: CERT_
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     volumes:
-      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./deploy/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./deploy/bootstrap-cert.sh:/usr/local/bin/bootstrap-cert.sh:ro
+      - ./deploy/certs:/etc/letsencrypt
+      - certbot_webroot:/var/www/certbot
       - static_files:/srv/static:ro
       - media_files:/srv/media:ro
+    command:
+      - /bin/sh
+      - -c
+      - |
+        sh /usr/local/bin/bootstrap-cert.sh
+        while :; do sleep 6h & wait $${!}; nginx -s reload; done &
+        exec nginx -g 'daemon off;'
+
+  # Renovacion desatendida. Certbot no toca nada hasta que al certificado le
+  # quedan menos de treinta dias, asi que correrlo cada doce horas es barato y
+  # deja margen de sobra si un intento falla.
+  certbot:
+    image: certbot/certbot:latest
+    restart: unless-stopped
+    depends_on:
+      - web
+    volumes:
+      - ./deploy/certs:/etc/letsencrypt
+      - certbot_webroot:/var/www/certbot
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        trap exit TERM
+        while :; do
+          certbot renew --webroot -w /var/www/certbot --quiet
+          sleep 12h & wait $${!}
+        done
+
+  # Primera emision, a mano y una sola vez:
+  #   docker compose --env-file api/.env -f docker-compose.prod.yml run --rm certbot-init
+  certbot-init:
+    image: certbot/certbot:latest
+    profiles: ["init"]
+    environment:
+      CERT_DOMAIN: ${CERT_DOMAIN:?falta CERT_DOMAIN en api/.env}
+      CERT_EMAIL: ${CERT_EMAIL:?falta CERT_EMAIL en api/.env}
+    volumes:
+      - ./deploy/certs:/etc/letsencrypt
+      - ./deploy/issue-cert.sh:/usr/local/bin/issue-cert.sh:ro
+      - certbot_webroot:/var/www/certbot
+    entrypoint: ["/bin/sh", "/usr/local/bin/issue-cert.sh"]
 
   backup:
     image: postgres:16-alpine
@@ -111,3 +197,4 @@ volumes:
   static_files:
   media_files:
   backups:
+  certbot_webroot:

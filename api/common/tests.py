@@ -5,10 +5,13 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+from unittest import mock
 
 from django.conf import settings
 from django.core.cache import cache
-from django.test import SimpleTestCase, override_settings
+from django.test import SimpleTestCase, TestCase, override_settings
+
+from common import ws_tickets
 
 from apps.settings.models import Motel, _cache_safe
 
@@ -83,3 +86,62 @@ class CacheOutageTests(SimpleTestCase):
 
     def test_el_motel_vigente_responde_sin_cache(self) -> None:
         self.assertIsNotNone(Motel.current().name)
+
+
+class HealthCheckTests(TestCase):
+    """El sondeo contesta sin sesión y dice cuál dependencia se cayó.
+
+    Lo primero importa porque Docker lo consulta sin credenciales; lo segundo
+    porque un 503 que no distingue entre base y caché obliga a entrar al
+    servidor justo cuando menos tiempo hay.
+    """
+
+    URL = "/api/v1/health/"
+
+    def test_contesta_sin_autenticacion(self) -> None:
+        respuesta = self.client.get(self.URL)
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(respuesta.json(), {"database": "ok", "cache": "ok"})
+
+    def test_reporta_503_y_senala_la_cache_caida(self) -> None:
+        with mock.patch("common.health.cache.set", side_effect=RuntimeError("sin redis")):
+            respuesta = self.client.get(self.URL)
+
+        self.assertEqual(respuesta.status_code, 503)
+        cuerpo = respuesta.json()
+        self.assertEqual(cuerpo["database"], "ok")
+        self.assertTrue(cuerpo["cache"].startswith("error"))
+
+    @override_settings(SECURE_SSL_REDIRECT=True)
+    def test_no_lo_alcanza_la_redireccion_a_https(self) -> None:
+        """Sin la excepción, Docker recibiría un 301 en vez del estado real."""
+        respuesta = self.client.get(self.URL)
+
+        self.assertEqual(respuesta.status_code, 200)
+
+
+class WsTicketTests(TestCase):
+    """El boleto vale una sola vez y para un solo usuario.
+
+    Si se pudiera reusar, no habriamos ganado nada al sacarlo del JWT: seguiria
+    bastando con leerlo de una bitacora para abrir el socket de alguien mas.
+    """
+
+    def test_el_canje_devuelve_el_contexto_que_se_emitio(self) -> None:
+        boleto = ws_tickets.issue(user_id=7, motel_id=3, role="RECEPTION")
+
+        self.assertEqual(
+            ws_tickets.redeem(boleto),
+            {"user_id": 7, "motel_id": 3, "role": "RECEPTION"},
+        )
+
+    def test_el_segundo_canje_no_devuelve_nada(self) -> None:
+        boleto = ws_tickets.issue(user_id=7, motel_id=3, role="RECEPTION")
+
+        self.assertIsNotNone(ws_tickets.redeem(boleto))
+        self.assertIsNone(ws_tickets.redeem(boleto))
+
+    def test_un_boleto_inventado_no_sirve(self) -> None:
+        self.assertIsNone(ws_tickets.redeem("no-existe"))
+        self.assertIsNone(ws_tickets.redeem(""))

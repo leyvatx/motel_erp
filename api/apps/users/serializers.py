@@ -218,3 +218,10 @@ class RoleOptionSerializer(serializers.Serializer):
 
     value = serializers.ChoiceField(choices=Role.choices)
     label = serializers.CharField()
+
+
+class WsTicketSerializer(serializers.Serializer):
+    """Boleto de un solo uso para el handshake del WebSocket."""
+
+    ticket = serializers.CharField(read_only=True)
+    expires_in = serializers.IntegerField(read_only=True)

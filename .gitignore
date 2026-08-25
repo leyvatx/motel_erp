@@ -16,3 +16,6 @@ dist/
 .claude/
 .vscode/
 .idea/
+
+# Certificados TLS: llaves privadas, jamas al repositorio.
+deploy/certs/

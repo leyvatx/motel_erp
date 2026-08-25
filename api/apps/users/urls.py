@@ -12,6 +12,7 @@ from apps.users.views import (
     RoleListView,
     TeamPresenceView,
     UserViewSet,
+    WsTicketView,
 )
 
 router = DefaultRouter()
@@ -22,6 +23,7 @@ urlpatterns = [
     path("refresh/", TokenRefreshView.as_view(), name="token-refresh"),
     path("verify/", TokenVerifyView.as_view(), name="token-verify"),
     path("logout/", LogoutView.as_view(), name="logout"),
+    path("ws-ticket/", WsTicketView.as_view(), name="ws-ticket"),
     path("me/", MeView.as_view(), name="me"),
     path("change-password/", ChangePasswordView.as_view(), name="change-password"),
     path("roles/", RoleListView.as_view(), name="roles"),

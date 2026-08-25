@@ -13,7 +13,9 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from common import ws_tickets
 from common.middleware import get_current_ip, get_current_user_agent
+from common.permissions import IsAuthenticatedActive
 from common.tenancy import current_motel_id
 
 from apps.users.constants import PermissionCode, Role
@@ -25,6 +27,7 @@ from apps.users.serializers import (
     UserPresenceSerializer,
     UserSerializer,
     UserWriteSerializer,
+    WsTicketSerializer,
 )
 
 
@@ -211,3 +214,33 @@ class UserViewSet(viewsets.ModelViewSet):
         user.must_change_password = True
         user.save(update_fields=["must_change_password", "updated_at"])
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class WsTicketView(APIView):
+    """Entrega un boleto de un solo uso para abrir el WebSocket.
+
+    El handshake del navegador no admite cabeceras, asi que algo tiene que
+    viajar en el query string. Que sea esto y no el JWT: vive treinta segundos,
+    muere al canjearse y no abre la API REST.
+
+    El acceso al motel ya lo valido ``MotelJWTAuthentication`` al resolver la
+    cabecera ``X-Motel-Id``, de modo que el boleto guarda el motel ya resuelto
+    y el handshake no vuelve a consultarlo. Para una cuenta corporativa eso son
+    tres consultas menos por conexion.
+
+    Solo exige sesion vigente: ``HasMotelContext`` cerraria el paso a una
+    cuenta de plataforma sin motel activo, y el consumer ya sabe no suscribirla
+    a ningun grupo.
+    """
+
+    permission_classes = [IsAuthenticatedActive]
+
+    @extend_schema(operation_id="auth_ws_ticket", request=None, responses=WsTicketSerializer)
+    def post(self, request) -> Response:
+        user = request.user
+        ticket = ws_tickets.issue(
+            user_id=user.pk,
+            motel_id=getattr(user, "active_motel_id", None) or user.motel_id,
+            role=getattr(user, "active_access_role", None) or user.role,
+        )
+        return Response({"ticket": ticket, "expires_in": ws_tickets.TICKET_TTL_SECONDS})
