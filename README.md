@@ -286,11 +286,19 @@ con `plan: starter`, la misma imagen de `api/Dockerfile`, `RUN_MIGRATIONS=0`,
 
    Basta el host pelón: el backend le antepone `https://` solo.
 
-4. Crea la cuenta de plataforma desde **Shell** en el servicio `motel-erp-api`:
+4. La cuenta de plataforma se crea sola. `createsuperuser` es interactivo y el
+   plan gratuito de Render no da acceso a Shell, así que el arranque llama a
+   `ensure_platform_admin`, que la crea a partir de dos variables si todavía no
+   existe:
 
-```bash
-python manage.py createsuperuser
-```
+   | Variable | Valor |
+   | --- | --- |
+   | `PLATFORM_ADMIN_USERNAME` | la clave con la que vas a entrar |
+   | `PLATFORM_ADMIN_PASSWORD` | mínimo ocho caracteres, no puede ser solo números |
+
+   El comando es idempotente: si la cuenta ya existe no la toca ni le cambia la
+   contraseña. Cambiar `PLATFORM_ADMIN_PASSWORD` después no reescribe nada, así
+   que la contraseña se cambia desde la interfaz.
 
 `DJANGO_SECRET_KEY` vive en el grupo de variables `motel-erp-comun`, no en cada
 servicio. Tiene que ser la misma en todos: es la que firma los JWT, y si el

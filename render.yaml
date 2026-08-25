@@ -70,6 +70,10 @@ services:
         sync: false
       - key: DJANGO_CSRF_TRUSTED_ORIGINS
         sync: false
+      - key: PLATFORM_ADMIN_USERNAME
+        sync: false
+      - key: PLATFORM_ADMIN_PASSWORD
+        sync: false
 
   - type: web
     name: motel-erp-frontend
