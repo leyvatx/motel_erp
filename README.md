@@ -258,14 +258,18 @@ TLS y entrega dominios `*.onrender.com` con HTTPS ya resuelto.
 | `motel-erp-redis` | Redis administrado | gratuito |
 | `motel-erp-api` | Web (Docker, ASGI) | gratuito |
 | `motel-erp-frontend` | Sitio estático | gratuito |
-| `motel-erp-worker` | Worker (cola `celery`) | **de paga** |
-| `motel-erp-printer` | Worker (cola `printing`) | **de paga** |
-| `motel-erp-beat` | Worker (calendario) | **de paga** |
 
-Render no ofrece plan gratuito para *background workers*. Si quieres solo ver
-el sistema funcionando, borra los tres bloques `type: worker` del blueprint:
-pierdes los cronómetros automáticos, los avisos de stock y la impresión, pero
-recepción, caja, inventario y reportes funcionan igual.
+Render no ofrece plan gratuito para *background workers*, así que el blueprint
+no los incluye: el despliegue completo cabe en el plan gratuito. Lo que queda
+fuera mientras no haya workers son los cronómetros automáticos de vencimiento,
+los avisos de stock bajo y la impresión. Recepción, caja, inventario, reportes,
+auditoría y configuración funcionan igual, y el tiempo real de las acciones que
+hace un usuario sigue llegando por WebSocket.
+
+Para activarlos después se agregan al blueprint tres servicios `type: worker`
+con `plan: starter`, la misma imagen de `api/Dockerfile`, `RUN_MIGRATIONS=0`,
+`RUN_COLLECTSTATIC=0` y los comandos `celery -A core worker -Q celery`,
+`celery -A core worker -Q printing -c 2` y `celery -A core beat`.
 
 ### Pasos
 
