@@ -77,7 +77,7 @@ export default function LoginPage() {
                 autoComplete="username"
                 autoFocus
                 placeholder="recepcion"
-                className="h-11 font-mono lg:h-10"
+                className="font-mono"
                 aria-invalid={Boolean(errors.username)}
                 {...register('username')}
               />
@@ -92,7 +92,7 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 autoComplete="current-password"
-                className="h-11 lg:h-10"
+
                 aria-invalid={Boolean(errors.password)}
                 {...register('password')}
               />
@@ -107,7 +107,7 @@ export default function LoginPage() {
                 <Input
                   id="motel"
                   placeholder="arcos-del-sur"
-                  className="h-11 font-mono lg:h-10"
+                  className="font-mono"
                   {...register('motel')}
                 />
                 <p className="text-xs leading-relaxed text-muted-foreground">
