@@ -279,12 +279,21 @@ con `plan: starter`, la misma imagen de `api/Dockerfile`, `RUN_MIGRATIONS=0`,
    te asigne al frontend. Se llenan después del primer despliegue, en el panel
    del servicio `motel-erp-api`:
 
-   | Variable | Valor |
-   | --- | --- |
-   | `CORS_ALLOWED_ORIGINS` | el dominio del frontend |
-   | `DJANGO_CSRF_TRUSTED_ORIGINS` | el mismo dominio |
+   | Servicio | Variable | Valor |
+   | --- | --- | --- |
+   | `motel-erp-api` | `CORS_ALLOWED_ORIGINS` | dominio del frontend |
+   | `motel-erp-api` | `DJANGO_CSRF_TRUSTED_ORIGINS` | el mismo |
+   | `motel-erp-frontend` | `VITE_API_URL` | dominio del API |
+   | `motel-erp-frontend` | `VITE_WS_URL` | el mismo |
 
-   Basta el host pelón: el backend le antepone `https://` solo.
+   Basta el host pelón, sin `https://`: tanto el backend como el frontend lo
+   completan solos.
+
+   Los dominios van completos, con `.onrender.com`. No se resuelven con
+   `fromService` a propósito: esa referencia devuelve el nombre del servicio y
+   no el dominio, y el frontend termina llamando a un host que no existe. Las
+   dos del frontend son de tiempo de compilación, así que cambiarlas exige
+   reconstruir; Render lo hace solo al guardar.
 
 4. La cuenta de plataforma se crea sola. `createsuperuser` es interactivo y el
    plan gratuito de Render no da acceso a Shell, así que el arranque llama a
