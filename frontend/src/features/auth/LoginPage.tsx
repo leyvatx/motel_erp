@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { Navigate } from 'react-router-dom'
 import { z } from 'zod'
-import { BedDouble } from 'lucide-react'
+import { PiBed } from 'react-icons/pi'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -54,7 +54,7 @@ export default function LoginPage() {
             {logoUrl ? (
               <img src={logoUrl} alt="" className="h-full w-full object-contain" />
             ) : (
-              <BedDouble className="h-5 w-5" aria-hidden />
+              <PiBed className="h-5 w-5" aria-hidden />
             )}
           </div>
           <div className="space-y-1.5">

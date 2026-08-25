@@ -5,11 +5,16 @@ import { corporateApi } from './api'
 
 const key = ['corporate'] as const
 
-export const useCorporateDashboard = () => useQuery({ queryKey: [...key, 'dashboard'], queryFn: corporateApi.dashboard })
-export const useCorporateMotels = () => useQuery({ queryKey: [...key, 'motels'], queryFn: corporateApi.motels })
-export const useCorporateGroups = () => useQuery({ queryKey: [...key, 'groups'], queryFn: corporateApi.groups })
-export const useCorporateRegions = () => useQuery({ queryKey: [...key, 'regions'], queryFn: corporateApi.regions })
-export const useCorporateUsers = () => useQuery({ queryKey: [...key, 'users'], queryFn: corporateApi.users })
+export const useCorporateDashboard = () =>
+  useQuery({ queryKey: [...key, 'dashboard'], queryFn: corporateApi.dashboard })
+export const useCorporateMotels = () =>
+  useQuery({ queryKey: [...key, 'motels'], queryFn: corporateApi.motels })
+export const useCorporateGroups = () =>
+  useQuery({ queryKey: [...key, 'groups'], queryFn: corporateApi.groups })
+export const useCorporateRegions = () =>
+  useQuery({ queryKey: [...key, 'regions'], queryFn: corporateApi.regions })
+export const useCorporateUsers = () =>
+  useQuery({ queryKey: [...key, 'users'], queryFn: corporateApi.users })
 
 export function useCorporateMutation<T>(fn: (body: T) => Promise<unknown>, message: string) {
   const queryClient = useQueryClient()

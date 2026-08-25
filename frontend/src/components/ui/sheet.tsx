@@ -1,7 +1,7 @@
 import * as React from 'react'
 import * as SheetPrimitive from '@radix-ui/react-dialog'
 import { cva, type VariantProps } from 'class-variance-authority'
-import { X } from 'lucide-react'
+import { PiX } from 'react-icons/pi'
 
 import { cn } from '@/lib/utils'
 
@@ -47,7 +47,8 @@ const sheetVariants = cva(
 )
 
 interface SheetContentProps
-  extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
+  extends
+    React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
     VariantProps<typeof sheetVariants> {
   hideClose?: boolean
 }
@@ -62,7 +63,7 @@ const SheetContent = React.forwardRef<
       {children}
       {hideClose ? null : (
         <SheetPrimitive.Close className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-md opacity-60 outline-none transition-opacity hover:opacity-100 focus-visible:ring-[3px] focus-visible:ring-ring/40">
-          <X className="h-5 w-5" />
+          <PiX className="h-5 w-5" />
           <span className="sr-only">Cerrar</span>
         </SheetPrimitive.Close>
       )}

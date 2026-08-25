@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BedDouble, Sparkles, Wrench } from 'lucide-react'
+import { PiBed, PiSparkle, PiWrench } from 'react-icons/pi'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -60,7 +60,7 @@ export function RoomActionsDialog({ room, open, onOpenChange, onRent }: Props) {
         <div className="space-y-2">
           {room.status === 'AVAILABLE' || room.status === 'RESERVED' ? (
             <Button className="w-full justify-start" onClick={() => onRent(room)}>
-              <BedDouble className="h-4 w-4" />
+              <PiBed className="h-4 w-4" />
               Rentar
             </Button>
           ) : null}
@@ -72,7 +72,7 @@ export function RoomActionsDialog({ room, open, onOpenChange, onRent }: Props) {
               loading={finishCleaning.isPending}
               onClick={() => finishCleaning.mutate(room.id, { onSuccess: close })}
             >
-              <Sparkles className="h-4 w-4" />
+              <PiSparkle className="h-4 w-4" />
               Marcar limpieza terminada
             </Button>
           ) : null}
@@ -83,7 +83,7 @@ export function RoomActionsDialog({ room, open, onOpenChange, onRent }: Props) {
               className="w-full justify-start"
               onClick={() => setShowReason(true)}
             >
-              <Wrench className="h-4 w-4" />
+              <PiWrench className="h-4 w-4" />
               Enviar a mantenimiento
             </Button>
           ) : null}

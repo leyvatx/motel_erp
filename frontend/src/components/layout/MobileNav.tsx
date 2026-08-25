@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BedDouble } from 'lucide-react'
+import { PiBed } from 'react-icons/pi'
 
 import { SidebarNav } from '@/components/layout/SidebarNav'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
@@ -37,7 +37,7 @@ export function MobileNav({ open, onOpenChange }: Props) {
             {logoUrl ? (
               <img src={logoUrl} alt="" className="h-full w-full object-contain" />
             ) : (
-              <BedDouble className="h-4 w-4 text-white" aria-hidden />
+              <PiBed className="h-4 w-4 text-white" aria-hidden />
             )}
           </div>
           <div className="min-w-0 leading-tight">

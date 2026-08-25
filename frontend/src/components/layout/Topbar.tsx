@@ -1,5 +1,13 @@
 import { useEffect, useState } from 'react'
-import { KeyRound, LogOut, Menu, Moon, Sun, Volume2, VolumeX } from 'lucide-react'
+import {
+  PiKey,
+  PiList,
+  PiMoon,
+  PiSignOut,
+  PiSpeakerHigh,
+  PiSpeakerSlash,
+  PiSun,
+} from 'react-icons/pi'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 
@@ -64,7 +72,7 @@ export function Topbar({ connection, onOpenMenu }: Props) {
         onClick={onOpenMenu}
         aria-label="Abrir menú"
       >
-        <Menu className="h-5 w-5" />
+        <PiList className="h-5 w-5" />
       </Button>
 
       <div className="hidden lg:block">
@@ -76,11 +84,16 @@ export function Topbar({ connection, onOpenMenu }: Props) {
       {operational ? <GlobalSearch onSelectStay={setStayId} /> : null}
 
       {corporate && activeMotelName ? (
-        <Button variant="outline" size="sm" className="hidden max-w-52 sm:flex" onClick={() => {
-          clearActiveMotel()
-          queryClient.clear()
-          navigate('/corporate')
-        }}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="hidden max-w-52 sm:flex"
+          onClick={() => {
+            clearActiveMotel()
+            queryClient.clear()
+            navigate('/corporate')
+          }}
+        >
           {activeMotelName} · Volver
         </Button>
       ) : null}
@@ -110,7 +123,11 @@ export function Topbar({ connection, onOpenMenu }: Props) {
               aria-label={soundAlerts ? 'Silenciar alertas' : 'Activar alertas sonoras'}
               title={soundAlerts ? 'Alertas sonoras activas' : 'Alertas sonoras silenciadas'}
             >
-              {soundAlerts ? <Volume2 /> : <VolumeX className="text-muted-foreground" />}
+              {soundAlerts ? (
+                <PiSpeakerHigh />
+              ) : (
+                <PiSpeakerSlash className="text-muted-foreground" />
+              )}
             </Button>
           </>
         ) : null}
@@ -122,7 +139,7 @@ export function Topbar({ connection, onOpenMenu }: Props) {
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           aria-label="Cambiar tema"
         >
-          {theme === 'dark' ? <Sun /> : <Moon />}
+          {theme === 'dark' ? <PiSun /> : <PiMoon />}
         </Button>
 
         {operational ? (
@@ -154,12 +171,12 @@ export function Topbar({ connection, onOpenMenu }: Props) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => setPasswordOpen(true)}>
-              <KeyRound />
+              <PiKey />
               Cambiar contraseña
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => logout.mutate()}>
-              <LogOut />
+              <PiSignOut />
               Cerrar sesión
             </DropdownMenuItem>
           </DropdownMenuContent>

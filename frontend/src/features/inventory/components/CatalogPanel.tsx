@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Boxes, FolderPlus, PackagePlus, Plus } from 'lucide-react'
+import { PiCube, PiFolderPlus, PiPackage, PiPlus } from 'react-icons/pi'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -58,13 +58,13 @@ export function CatalogPanel() {
         />
         <div className="ml-auto flex flex-wrap gap-2">
           <Button size="sm" variant="outline" onClick={() => setDialog('category')}>
-            <FolderPlus /> Categoría
+            <PiFolderPlus /> Categoría
           </Button>
           <Button size="sm" variant="outline" onClick={() => setDialog('warehouse')}>
-            <Boxes /> Almacén
+            <PiCube /> Almacén
           </Button>
           <Button size="sm" onClick={() => setDialog('product')}>
-            <PackagePlus /> Producto
+            <PiPackage /> Producto
           </Button>
         </div>
       </div>
@@ -298,7 +298,7 @@ function ProductForm({ close }: { close: () => void }) {
             Cancelar
           </Button>
           <Button type="submit" disabled={create.isPending || !form.category}>
-            <Plus /> Crear producto
+            <PiPlus /> Crear producto
           </Button>
         </DialogFooter>
       </form>

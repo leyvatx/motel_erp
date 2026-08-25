@@ -16,4 +16,9 @@ if [ "${RUN_MIGRATIONS:-1}" = "1" ]; then
   python manage.py ensure_platform_admin
 fi
 
+if [ "${RUN_MIGRATIONS:-1}" = "1" ] && [ "${SEED_DEMO:-0}" = "1" ]; then
+  echo "==> Sembrando datos de ejemplo"
+  python manage.py seed_demo || echo "AVISO: la siembra falló; el servidor arranca igual." >&2
+fi
+
 exec "$@"

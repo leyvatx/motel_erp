@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Download } from 'lucide-react'
+import { PiDownloadSimple } from 'react-icons/pi'
 
 import { PageShell } from '@/components/layout/PageShell'
 import { StatStrip, type Stat } from '@/components/layout/StatStrip'
@@ -293,7 +293,7 @@ export default function ReportsPage() {
       description="Indicadores gerenciales de este motel."
       actions={
         <Button variant="outline" onClick={download} loading={exporting} disabled={!report.data}>
-          <Download />
+          <PiDownloadSimple />
           Exportar CSV
         </Button>
       }

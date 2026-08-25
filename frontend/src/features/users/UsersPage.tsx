@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { KeyRound, Pencil, UserCheck, UserPlus, UserX } from 'lucide-react'
+import { PiKey, PiPencilSimple, PiUserCheck, PiUserMinus, PiUserPlus } from 'react-icons/pi'
 
 import { PageShell, TableScroll } from '@/components/layout/PageShell'
 import { Badge } from '@/components/ui/badge'
@@ -80,13 +80,13 @@ export default function UsersPage() {
     {
       key: 'edit',
       label: 'Editar usuario',
-      icon: <Pencil />,
+      icon: <PiPencilSimple />,
       onSelect: () => openEdit(user),
     },
     {
       key: 'password',
       label: 'Forzar nueva contraseña',
-      icon: <KeyRound />,
+      icon: <PiKey />,
       onSelect: () => forcePassword.mutate(user.id),
       disabled: !user.is_active,
     },
@@ -94,7 +94,7 @@ export default function UsersPage() {
       ? {
           key: 'deactivate',
           label: 'Desactivar usuario',
-          icon: <UserX />,
+          icon: <PiUserMinus />,
           danger: true,
           separated: true,
           disabled: user.id === currentUserId,
@@ -107,7 +107,7 @@ export default function UsersPage() {
       : {
           key: 'restore',
           label: 'Reactivar usuario',
-          icon: <UserCheck />,
+          icon: <PiUserCheck />,
           separated: true,
           onSelect: () => restore.mutate(user.id),
         },
@@ -119,7 +119,7 @@ export default function UsersPage() {
       description="Altas, roles y acceso del personal de este motel."
       actions={
         <Button onClick={openCreate}>
-          <UserPlus />
+          <PiUserPlus />
           Nuevo usuario
         </Button>
       }

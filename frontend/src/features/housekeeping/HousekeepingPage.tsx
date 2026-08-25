@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CheckCircle2, Eye, Play, UserCheck, Wrench } from 'lucide-react'
+import { PiCheckCircle, PiEye, PiPlay, PiUserCheck, PiWrench } from 'react-icons/pi'
 
 import { PageShell, TableScroll } from '@/components/layout/PageShell'
 import { StatStrip } from '@/components/layout/StatStrip'
@@ -77,14 +77,14 @@ export default function HousekeepingPage() {
     {
       key: 'start',
       label: 'Iniciar limpieza',
-      icon: <Play />,
+      icon: <PiPlay />,
       disabled: task.status === 'IN_PROGRESS',
       onSelect: () => start.mutate(task.id),
     },
     {
       key: 'finish',
       label: 'Terminar y liberar cuarto',
-      icon: <CheckCircle2 />,
+      icon: <PiCheckCircle />,
       disabled: task.status !== 'IN_PROGRESS',
       onSelect: () => {
         setNotes('')
@@ -100,11 +100,11 @@ export default function HousekeepingPage() {
       actions={
         <>
           <Button variant="outline" size="sm" onClick={() => setMine(!mine)}>
-            <UserCheck />
+            <PiUserCheck />
             {mine ? 'Ver todas' : 'Solo las mías'}
           </Button>
           <Button size="sm" onClick={() => setReporting(true)}>
-            <Wrench />
+            <PiWrench />
             Reportar falla
           </Button>
         </>
@@ -314,7 +314,7 @@ export default function HousekeepingPage() {
                 )
               }
             >
-              <CheckCircle2 />
+              <PiCheckCircle />
               Terminar y liberar
             </Button>
           </div>
@@ -332,11 +332,11 @@ function MaintenanceRow({ report, onDetail }: { report: MaintenanceReport; onDet
   const openContextMenu = useRowContextMenu()
 
   const actions: RowAction[] = [
-    { key: 'detail', label: 'Ver detalles', icon: <Eye />, onSelect: onDetail },
+    { key: 'detail', label: 'Ver detalles', icon: <PiEye />, onSelect: onDetail },
     {
       key: 'attend',
       label: 'Marcar en atención',
-      icon: <Wrench />,
+      icon: <PiWrench />,
       separated: true,
       disabled: !['REPORTED', 'ACKNOWLEDGED'].includes(report.status),
       onSelect: () =>
@@ -345,7 +345,7 @@ function MaintenanceRow({ report, onDetail }: { report: MaintenanceReport; onDet
     {
       key: 'resolve',
       label: 'Marcar resuelto',
-      icon: <CheckCircle2 />,
+      icon: <PiCheckCircle />,
       disabled: report.status !== 'IN_PROGRESS',
       onSelect: () => transition.mutate({ new_status: 'RESOLVED', note: 'Reparación terminada' }),
     },

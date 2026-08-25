@@ -11,8 +11,8 @@ import { useAuthStore } from '@/store/auth'
 export function useBusinessProfile() {
   const authenticated = useAuthStore((state) => Boolean(state.access))
   const platform = useAuthStore((state) => Boolean(state.user?.is_platform_admin))
-  const corporateWithoutMotel = useAuthStore(
-    (state) => Boolean(state.user?.is_corporate_user && !state.activeMotelId),
+  const corporateWithoutMotel = useAuthStore((state) =>
+    Boolean(state.user?.is_corporate_user && !state.activeMotelId),
   )
 
   return useQuery({

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Banknote, Lock, Unlock } from 'lucide-react'
+import { PiLock, PiLockOpen, PiMoney } from 'react-icons/pi'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -25,7 +25,7 @@ export function OpenShiftScreen() {
         <CardContent className="space-y-6 p-6">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-accent/10">
-              <Lock className="h-5 w-5 text-brand-accent" aria-hidden />
+              <PiLock className="h-5 w-5 text-brand-accent" aria-hidden />
             </div>
             <div>
               <h2 className="text-lg font-semibold tracking-tight">Tu caja está cerrada</h2>
@@ -52,7 +52,7 @@ export function OpenShiftScreen() {
 
           <div className="space-y-3 rounded-lg border p-4">
             <div className="flex items-center gap-2">
-              <Banknote className="h-4 w-4 text-muted-foreground" aria-hidden />
+              <PiMoney className="h-4 w-4 text-muted-foreground" aria-hidden />
               <p className="text-sm font-medium">Fondo inicial</p>
             </div>
 
@@ -84,7 +84,7 @@ export function OpenShiftScreen() {
                 loading={openShift.isPending}
                 onClick={() => openShift.mutate({ opening_balance: total.toFixed(2), breakdown })}
               >
-                <Unlock />
+                <PiLockOpen />
                 Abrir turno con {formatMoney(total)}
               </Button>
             </div>

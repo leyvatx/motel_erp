@@ -1,17 +1,17 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  AlertTriangle,
-  BedDouble,
-  CalendarDays,
-  CreditCard,
-  Eye,
-  Plus,
-  RefreshCw,
-  Settings,
-  Sparkles,
-  Wrench,
-} from 'lucide-react'
+  PiArrowsClockwise,
+  PiBed,
+  PiCalendar,
+  PiCreditCard,
+  PiEye,
+  PiGear,
+  PiPlus,
+  PiSparkle,
+  PiWarning,
+  PiWrench,
+} from 'react-icons/pi'
 
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
@@ -92,17 +92,17 @@ export default function FrontDeskPage() {
     const stay = room.current_stay
     if (stay) {
       return [
-        { key: 'detail', label: 'Ver renta', icon: <Eye />, onSelect: () => setStayId(stay.id) },
+        { key: 'detail', label: 'Ver renta', icon: <PiEye />, onSelect: () => setStayId(stay.id) },
         {
           key: 'extend',
           label: 'Extender tiempo',
-          icon: <Plus />,
+          icon: <PiPlus />,
           onSelect: () => setStayId(stay.id),
         },
         {
           key: 'checkout',
           label: 'Cobrar y cerrar',
-          icon: <CreditCard />,
+          icon: <PiCreditCard />,
           separated: true,
           onSelect: () => setStayId(stay.id),
         },
@@ -113,21 +113,21 @@ export default function FrontDeskPage() {
       {
         key: 'rent',
         label: 'Rentar',
-        icon: <BedDouble />,
+        icon: <PiBed />,
         disabled: room.status !== 'AVAILABLE' && room.status !== 'RESERVED',
         onSelect: () => setRentRoom(room),
       },
       {
         key: 'clean',
         label: 'Marcar limpieza terminada',
-        icon: <Sparkles />,
+        icon: <PiSparkle />,
         disabled: room.status !== 'CLEANING',
         onSelect: () => finishCleaning.mutate(room.id),
       },
       {
         key: 'maintenance',
         label: 'Enviar a mantenimiento',
-        icon: <Wrench />,
+        icon: <PiWrench />,
         separated: true,
         disabled: room.status === 'MAINTENANCE',
         onSelect: () => setActionsRoom(room),
@@ -163,19 +163,19 @@ export default function FrontDeskPage() {
               }}
               loading={grid.isFetching}
             >
-              <RefreshCw />
+              <PiArrowsClockwise />
               Actualizar
             </Button>
             <Button variant="outline" size="sm" asChild>
               <Link to="/reservations">
-                <CalendarDays />
+                <PiCalendar />
                 Reservaciones
               </Link>
             </Button>
             {canConfigure ? (
               <Button variant="outline" size="sm" asChild>
                 <Link to="/config">
-                  <Settings />
+                  <PiGear />
                   Habitaciones y tarifas
                 </Link>
               </Button>
@@ -195,7 +195,7 @@ export default function FrontDeskPage() {
         <Card className="border-status-cleaning/40">
           <CardContent className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
             <span className="flex items-center gap-2 text-sm font-medium">
-              <AlertTriangle className="h-4 w-4 text-status-cleaning" aria-hidden />
+              <PiWarning className="h-4 w-4 text-status-cleaning" aria-hidden />
               {alerts.length} {alerts.length === 1 ? 'renta requiere' : 'rentas requieren'} atención
             </span>
             <div className="flex flex-wrap gap-1.5">
@@ -221,7 +221,7 @@ export default function FrontDeskPage() {
         <Card className="border-primary/30">
           <CardContent className="flex flex-wrap items-center gap-3 px-4 py-3">
             <span className="flex items-center gap-2 text-sm font-medium">
-              <CalendarDays className="size-4 text-primary" />
+              <PiCalendar className="size-4 text-primary" />
               {upcomingReservations.data?.count} próximas llegadas
             </span>
             <div className="flex flex-1 flex-wrap gap-1.5">

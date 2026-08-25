@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CalendarPlus, Plus, Trash2 } from 'lucide-react'
+import { PiCalendarPlus, PiPlus, PiTrash } from 'react-icons/pi'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -128,7 +128,7 @@ export function DynamicPricingSettings() {
             <CardDescription>La regla activa con mayor prioridad define el precio.</CardDescription>
           </div>
           <Button size="sm" onClick={openRule}>
-            <Plus />
+            <PiPlus />
             Nueva regla
           </Button>
         </CardHeader>
@@ -170,7 +170,7 @@ export function DynamicPricingSettings() {
                             deleteRule.mutate(rule.id)
                         }}
                       >
-                        <Trash2 />
+                        <PiTrash />
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -200,7 +200,7 @@ export function DynamicPricingSettings() {
               setHolidayOpen(true)
             }}
           >
-            <CalendarPlus />
+            <PiCalendarPlus />
             Agregar
           </Button>
         </CardHeader>
@@ -220,7 +220,7 @@ export function DynamicPricingSettings() {
                   size="icon-sm"
                   onClick={() => deleteHoliday.mutate(item.id)}
                 >
-                  <Trash2 />
+                  <PiTrash />
                 </Button>
               </div>
             ))

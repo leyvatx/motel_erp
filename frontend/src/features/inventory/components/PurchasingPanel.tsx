@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Ban, Eye, PackageCheck, Plus, Send, Truck } from 'lucide-react'
+import { PiEye, PiPaperPlaneTilt, PiPlus, PiProhibit, PiSealCheck, PiTruck } from 'react-icons/pi'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -80,7 +80,7 @@ export function PurchasingPanel() {
       {
         key: 'detail',
         label: 'Ver detalle',
-        icon: <Eye />,
+        icon: <PiEye />,
         onSelect: () => setDetail(order),
       },
     ]
@@ -88,7 +88,7 @@ export function PurchasingPanel() {
       result.push({
         key: 'submit',
         label: 'Enviar al proveedor',
-        icon: <Send />,
+        icon: <PiPaperPlaneTilt />,
         onSelect: () => submit.mutate(order.id),
       })
     }
@@ -96,7 +96,7 @@ export function PurchasingPanel() {
       result.push({
         key: 'receive',
         label: 'Recibir mercancía',
-        icon: <PackageCheck />,
+        icon: <PiSealCheck />,
         onSelect: () => setReceiving(order),
       })
     }
@@ -104,7 +104,7 @@ export function PurchasingPanel() {
       result.push({
         key: 'cancel',
         label: 'Cancelar compra',
-        icon: <Ban />,
+        icon: <PiProhibit />,
         danger: true,
         separated: true,
         onSelect: () => cancel.mutate(order.id),
@@ -146,10 +146,10 @@ export function PurchasingPanel() {
         </Select>
         <div className="ml-auto flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setSupplierOpen(true)}>
-            <Truck /> Nuevo proveedor
+            <PiTruck /> Nuevo proveedor
           </Button>
           <Button size="sm" onClick={() => setPurchaseOpen(true)}>
-            <Plus /> Nueva compra
+            <PiPlus /> Nueva compra
           </Button>
         </div>
       </div>
@@ -612,7 +612,7 @@ function PurchaseDialog({
                     setItems((current) => current.filter((row) => row.key !== item.key))
                   }
                 >
-                  <Ban />
+                  <PiProhibit />
                 </Button>
               </div>
             ))}
@@ -627,7 +627,7 @@ function PurchaseDialog({
                 ])
               }
             >
-              <Plus /> Agregar producto
+              <PiPlus /> Agregar producto
             </Button>
           </div>
           <div className="flex items-center justify-between rounded-lg bg-muted px-4 py-3">
@@ -759,7 +759,7 @@ function ReceiveDialog({
               )
             }
           >
-            <PackageCheck /> Registrar recepción
+            <PiSealCheck /> Registrar recepción
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -781,7 +781,7 @@ export function SuppliersPanel() {
           className="max-w-xs"
         />
         <Button className="ml-auto" size="sm" onClick={() => setOpen(true)}>
-          <Plus /> Nuevo proveedor
+          <PiPlus /> Nuevo proveedor
         </Button>
       </div>
       <Card>

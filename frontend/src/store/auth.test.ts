@@ -48,7 +48,13 @@ describe('acceso por rol', () => {
   })
 
   it('mantiene al usuario corporativo en el panel hasta seleccionar un motel', () => {
-    const corporate = { ...user('MANAGER'), motel: null, motel_name: null, motel_slug: null, is_corporate_user: true }
+    const corporate = {
+      ...user('MANAGER'),
+      motel: null,
+      motel_name: null,
+      motel_slug: null,
+      is_corporate_user: true,
+    }
     useAuthStore.getState().clearActiveMotel()
     expect(defaultRouteFor(corporate)).toBe('/corporate')
     expect(canAccessSection(corporate, 'corporate')).toBe(true)

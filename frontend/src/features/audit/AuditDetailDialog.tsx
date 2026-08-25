@@ -1,4 +1,4 @@
-import { ArrowRight, Globe2, Monitor, UserRound } from 'lucide-react'
+import { PiArrowRight, PiGlobe, PiMonitor, PiUserCircle } from 'react-icons/pi'
 
 import { Badge } from '@/components/ui/badge'
 import {
@@ -51,7 +51,7 @@ export function AuditDetailDialog({
 
         <div className="grid gap-3 rounded-lg border bg-muted/20 p-4 text-sm sm:grid-cols-2">
           <div className="flex gap-2">
-            <UserRound className="mt-0.5 size-4 text-muted-foreground" />
+            <PiUserCircle className="mt-0.5 size-4 text-muted-foreground" />
             <div>
               <p className="text-xs text-muted-foreground">Realizado por</p>
               <p className="font-medium">
@@ -60,7 +60,7 @@ export function AuditDetailDialog({
             </div>
           </div>
           <div className="flex gap-2">
-            <Globe2 className="mt-0.5 size-4 text-muted-foreground" />
+            <PiGlobe className="mt-0.5 size-4 text-muted-foreground" />
             <div>
               <p className="text-xs text-muted-foreground">Dirección IP</p>
               <p className="font-medium">{log.ip_address || 'No registrada'}</p>
@@ -84,7 +84,7 @@ export function AuditDetailDialog({
                   <pre className="overflow-auto whitespace-pre-wrap break-words rounded-md bg-muted p-2 text-xs">
                     {readable(change.before)}
                   </pre>
-                  <ArrowRight className="mt-2 hidden size-4 text-muted-foreground sm:block" />
+                  <PiArrowRight className="mt-2 hidden size-4 text-muted-foreground sm:block" />
                   <pre className="overflow-auto whitespace-pre-wrap break-words rounded-md bg-primary/5 p-2 text-xs">
                     {readable(change.after)}
                   </pre>
@@ -112,7 +112,7 @@ export function AuditDetailDialog({
           <>
             <Separator />
             <div className="flex gap-2 text-xs text-muted-foreground">
-              <Monitor className="size-4 shrink-0" />
+              <PiMonitor className="size-4 shrink-0" />
               <span className="break-all">{log.user_agent}</span>
             </div>
           </>

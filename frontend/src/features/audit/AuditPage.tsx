@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Download, RotateCcw, Search } from 'lucide-react'
+import { PiArrowCounterClockwise, PiDownloadSimple, PiMagnifyingGlass } from 'react-icons/pi'
 import { useSearchParams } from 'react-router-dom'
 
 import { PageShell, TableScroll } from '@/components/layout/PageShell'
@@ -125,7 +125,7 @@ export default function AuditPage() {
       description="Consulta quién hizo cada cambio y cuándo ocurrió."
       actions={
         <Button variant="outline" onClick={download} loading={exporting} disabled={!totalSummary}>
-          <Download />
+          <PiDownloadSimple />
           Exportar CSV
         </Button>
       }
@@ -144,7 +144,7 @@ export default function AuditPage() {
           />
           <div className="flex flex-wrap gap-2">
             <div className="relative min-w-64 flex-1 sm:max-w-sm">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <PiMagnifyingGlass className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={search}
                 onChange={(event) => {
@@ -233,7 +233,7 @@ export default function AuditPage() {
               aria-label="Fecha final"
             />
             <Button variant="ghost" size="icon" onClick={resetFilters} title="Limpiar filtros">
-              <RotateCcw />
+              <PiArrowCounterClockwise />
             </Button>
           </div>
           {target ? (

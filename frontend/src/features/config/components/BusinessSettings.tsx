@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ImageUp, Save, Trash2 } from 'lucide-react'
+import { PiFloppyDisk, PiImageSquare, PiTrash } from 'react-icons/pi'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -164,7 +164,7 @@ export function BusinessSettings() {
             : 'Todo guardado. Estos datos son iguales en todas las terminales.'}
         </p>
         <Button size="sm" onClick={save} disabled={dirty.length === 0} loading={update.isPending}>
-          <Save />
+          <PiFloppyDisk />
           Guardar cambios
         </Button>
       </div>
@@ -244,7 +244,7 @@ export function BusinessSettings() {
                       className="h-full w-full object-contain"
                     />
                   ) : (
-                    <ImageUp className="h-5 w-5 text-muted-foreground" aria-hidden />
+                    <PiImageSquare className="h-5 w-5 text-muted-foreground" aria-hidden />
                   )}
                 </div>
 
@@ -255,7 +255,7 @@ export function BusinessSettings() {
                     loading={updateLogo.isPending}
                     onClick={() => fileRef.current?.click()}
                   >
-                    <ImageUp />
+                    <PiImageSquare />
                     {profile.logo_url ? 'Cambiar imagen' : 'Subir imagen'}
                   </Button>
                   {profile.logo_url ? (
@@ -265,7 +265,7 @@ export function BusinessSettings() {
                       className="text-destructive"
                       onClick={() => updateLogo.mutate(null)}
                     >
-                      <Trash2 />
+                      <PiTrash />
                       Quitar
                     </Button>
                   ) : null}

@@ -1,5 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Monitor, Moon, Rows2, Rows3, Save, Sun, Volume2, VolumeX } from 'lucide-react'
+import {
+  PiFloppyDisk,
+  PiMonitor,
+  PiMoon,
+  PiRows,
+  PiSpeakerHigh,
+  PiSpeakerSlash,
+  PiSun,
+} from 'react-icons/pi'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -101,7 +109,7 @@ export function AppearanceSettings() {
           </p>
         </div>
         <Button size="sm" loading={update.isPending} onClick={() => update.mutate(form)}>
-          <Save /> Guardar identidad
+          <PiFloppyDisk /> Guardar identidad
         </Button>
       </div>
 
@@ -231,9 +239,9 @@ export function AppearanceSettings() {
             value={theme}
             onChange={(value) => setTheme(value as ThemePreference)}
             options={[
-              ['motel', 'Del motel', Monitor],
-              ['light', 'Claro', Sun],
-              ['dark', 'Oscuro', Moon],
+              ['motel', 'Del motel', PiMonitor],
+              ['light', 'Claro', PiSun],
+              ['dark', 'Oscuro', PiMoon],
             ]}
           />
           <PreferenceGroup
@@ -241,9 +249,9 @@ export function AppearanceSettings() {
             value={density}
             onChange={(value) => setDensity(value as DensityPreference)}
             options={[
-              ['motel', 'Del motel', Monitor],
-              ['comfortable', 'Cómoda', Rows2],
-              ['compact', 'Compacta', Rows3],
+              ['motel', 'Del motel', PiMonitor],
+              ['comfortable', 'Cómoda', PiRows],
+              ['compact', 'Compacta', PiRows],
             ]}
           />
           <div className="space-y-2">
@@ -253,7 +261,7 @@ export function AppearanceSettings() {
               className="w-full justify-start"
               onClick={() => setSoundAlerts(!soundAlerts)}
             >
-              {soundAlerts ? <Volume2 /> : <VolumeX />}
+              {soundAlerts ? <PiSpeakerHigh /> : <PiSpeakerSlash />}
               {soundAlerts ? 'Activadas' : 'Silenciadas'}
             </Button>
           </div>
@@ -335,7 +343,7 @@ function PreferenceGroup({
   label: string
   value: string
   onChange: (value: string) => void
-  options: Array<[string, string, typeof Sun]>
+  options: Array<[string, string, typeof PiSun]>
 }) {
   return (
     <div className="space-y-2">

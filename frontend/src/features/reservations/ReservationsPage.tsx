@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CalendarPlus, LogIn, Search, UserX, XCircle } from 'lucide-react'
+import { PiCalendarPlus, PiMagnifyingGlass, PiSignIn, PiUserMinus, PiXCircle } from 'react-icons/pi'
 
 import { PageShell, TableScroll } from '@/components/layout/PageShell'
 import { StatStrip } from '@/components/layout/StatStrip'
@@ -91,14 +91,14 @@ export default function ReservationsPage() {
       {
         key: 'check-in',
         label: 'Registrar llegada',
-        icon: <LogIn />,
+        icon: <PiSignIn />,
         disabled: !active,
         onSelect: () => setCheckingIn(item),
       },
       {
         key: 'no-show',
         label: 'No se presentó',
-        icon: <UserX />,
+        icon: <PiUserMinus />,
         disabled: !active,
         onSelect: () => {
           if (window.confirm(`¿Marcar ${item.code} como no-show?`)) noShow.mutate(item.id)
@@ -107,7 +107,7 @@ export default function ReservationsPage() {
       {
         key: 'cancel',
         label: 'Cancelar reservación',
-        icon: <XCircle />,
+        icon: <PiXCircle />,
         danger: true,
         separated: true,
         disabled: !active,
@@ -125,7 +125,7 @@ export default function ReservationsPage() {
       description="Llegadas programadas y asignación de habitaciones."
       actions={
         <Button onClick={() => setCreateOpen(true)}>
-          <CalendarPlus />
+          <PiCalendarPlus />
           Nueva reservación
         </Button>
       }
@@ -148,7 +148,7 @@ export default function ReservationsPage() {
           />
           <div className="flex flex-wrap gap-2">
             <div className="relative min-w-64 flex-1 sm:max-w-sm">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <PiMagnifyingGlass className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={search}
                 onChange={(event) => {

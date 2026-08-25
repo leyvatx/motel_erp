@@ -1,14 +1,14 @@
 import {
-  Ban,
-  BedDouble,
-  Clock,
-  CreditCard,
-  DoorOpen,
-  Package,
-  Receipt,
-  ShieldQuestion,
-} from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+  PiBed,
+  PiClock,
+  PiCreditCard,
+  PiDoorOpen,
+  PiPackage,
+  PiProhibit,
+  PiReceipt,
+  PiSealQuestion,
+} from 'react-icons/pi'
+import type { IconType } from 'react-icons'
 import { Link } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
@@ -18,16 +18,16 @@ import { formatDateTime, formatMoney } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { canAccessSection, useAuthStore } from '@/store/auth'
 
-const MARKS: Record<string, { icon: LucideIcon; tone: string }> = {
-  ROOM_RENTED: { icon: BedDouble, tone: 'text-status-available' },
-  ROOM_EXTENDED: { icon: Clock, tone: 'text-status-cleaning' },
-  ROOM_CHECKOUT: { icon: DoorOpen, tone: 'text-brand-accent' },
-  ROOM_CANCELLED: { icon: Ban, tone: 'text-status-occupied' },
-  ROOM_STATUS: { icon: DoorOpen, tone: 'text-muted-foreground' },
-  ORDER_CREATED: { icon: Package, tone: 'text-brand-accent' },
-  ORDER_CANCELLED: { icon: Ban, tone: 'text-status-occupied' },
-  PAYMENT_REGISTERED: { icon: CreditCard, tone: 'text-status-available' },
-  FOLIO_CLOSED: { icon: Receipt, tone: 'text-brand-accent' },
+const MARKS: Record<string, { icon: IconType; tone: string }> = {
+  ROOM_RENTED: { icon: PiBed, tone: 'text-status-available' },
+  ROOM_EXTENDED: { icon: PiClock, tone: 'text-status-cleaning' },
+  ROOM_CHECKOUT: { icon: PiDoorOpen, tone: 'text-brand-accent' },
+  ROOM_CANCELLED: { icon: PiProhibit, tone: 'text-status-occupied' },
+  ROOM_STATUS: { icon: PiDoorOpen, tone: 'text-muted-foreground' },
+  ORDER_CREATED: { icon: PiPackage, tone: 'text-brand-accent' },
+  ORDER_CANCELLED: { icon: PiProhibit, tone: 'text-status-occupied' },
+  PAYMENT_REGISTERED: { icon: PiCreditCard, tone: 'text-status-available' },
+  FOLIO_CLOSED: { icon: PiReceipt, tone: 'text-brand-accent' },
 }
 
 function detailsOf(log: AuditLog): string[] {
@@ -116,7 +116,7 @@ export function StayTimeline({ stayId, folioId }: Props) {
         <span className="absolute bottom-2 left-[7px] top-2 w-px bg-border" aria-hidden />
 
         {entries.map((log) => {
-          const mark = MARKS[log.action] ?? { icon: ShieldQuestion, tone: 'text-muted-foreground' }
+          const mark = MARKS[log.action] ?? { icon: PiSealQuestion, tone: 'text-muted-foreground' }
           const Icon = mark.icon
           const details = detailsOf(log)
           const items = itemsOf(log)

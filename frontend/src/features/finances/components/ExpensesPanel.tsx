@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Check, Plus, X } from 'lucide-react'
+import { PiCheck, PiPlus, PiX } from 'react-icons/pi'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -175,13 +175,13 @@ export function ExpensesPanel({ openIntent = 0 }: { openIntent?: number }) {
       {
         key: 'approve',
         label: 'Aprobar gasto',
-        icon: <Check />,
+        icon: <PiCheck />,
         onSelect: () => review.mutate({ expenseId: expense.id, approve: true }),
       },
       {
         key: 'reject',
         label: 'Rechazar gasto',
-        icon: <X />,
+        icon: <PiX />,
         danger: true,
         separated: true,
         onSelect: () =>
@@ -199,7 +199,7 @@ export function ExpensesPanel({ openIntent = 0 }: { openIntent?: number }) {
       <CardHeader className="flex-row items-center justify-between space-y-0">
         <CardTitle className="text-base">Gastos del turno</CardTitle>
         <Button size="sm" onClick={() => setCreating(true)}>
-          <Plus className="h-4 w-4" />
+          <PiPlus className="h-4 w-4" />
           Registrar gasto
         </Button>
       </CardHeader>

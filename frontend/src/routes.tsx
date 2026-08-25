@@ -82,7 +82,9 @@ const routes: RouteObject[] = [
         path: 'corporate',
         element: (
           <ProtectedRoute section="corporate">
-            <Lazy><CorporatePage /></Lazy>
+            <Lazy>
+              <CorporatePage />
+            </Lazy>
           </ProtectedRoute>
         ),
       },

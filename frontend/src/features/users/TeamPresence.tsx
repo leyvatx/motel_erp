@@ -1,4 +1,4 @@
-import { Users } from 'lucide-react'
+import { PiUsers } from 'react-icons/pi'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -74,7 +74,7 @@ export function TeamPresence() {
               ))}
             </span>
           ) : (
-            <Users className="text-muted-foreground" />
+            <PiUsers className="text-muted-foreground" />
           )}
           <span className="hidden text-xs font-medium tabular text-muted-foreground md:block">
             {online.length}

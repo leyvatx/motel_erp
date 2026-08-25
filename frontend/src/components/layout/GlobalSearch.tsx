@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Search } from 'lucide-react'
+import { PiMagnifyingGlass } from 'react-icons/pi'
 
 import { Input } from '@/components/ui/input'
 import { frontdeskApi } from '@/features/frontdesk/api'
@@ -47,7 +47,7 @@ export function GlobalSearch({ onSelectStay }: Props) {
 
   return (
     <div className="relative w-full max-w-sm">
-      <Search
+      <PiMagnifyingGlass
         className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
         aria-hidden
       />

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Ban, Pencil, Plus } from 'lucide-react'
+import { PiPencilSimple, PiPlus, PiProhibit } from 'react-icons/pi'
 
 import { PageShell, TableScroll } from '@/components/layout/PageShell'
 import { AppearanceSettings } from '@/features/config/components/AppearanceSettings'
@@ -66,13 +66,13 @@ export default function ConfigPage() {
     {
       key: 'edit',
       label: 'Editar',
-      icon: <Pencil />,
+      icon: <PiPencilSimple />,
       onSelect: () => setRoomForm({ open: true, room }),
     },
     {
       key: 'deactivate',
       label: 'Dar de baja',
-      icon: <Ban />,
+      icon: <PiProhibit />,
       danger: true,
       separated: true,
       disabled: !room.is_active,
@@ -84,19 +84,19 @@ export default function ConfigPage() {
     {
       key: 'edit',
       label: 'Editar',
-      icon: <Pencil />,
+      icon: <PiPencilSimple />,
       onSelect: () => setTypeForm({ open: true, item }),
     },
     {
       key: 'tariff',
       label: 'Nueva tarifa para este tipo',
-      icon: <Plus />,
+      icon: <PiPlus />,
       onSelect: () => setTariffForm({ open: true, item: null }),
     },
     {
       key: 'deactivate',
       label: 'Dar de baja',
-      icon: <Ban />,
+      icon: <PiProhibit />,
       danger: true,
       separated: true,
       disabled: !item.is_active,
@@ -108,13 +108,13 @@ export default function ConfigPage() {
     {
       key: 'edit',
       label: 'Editar',
-      icon: <Pencil />,
+      icon: <PiPencilSimple />,
       onSelect: () => setTariffForm({ open: true, item }),
     },
     {
       key: 'deactivate',
       label: 'Dar de baja',
-      icon: <Ban />,
+      icon: <PiProhibit />,
       danger: true,
       separated: true,
       disabled: !item.is_active,
@@ -151,7 +151,7 @@ export default function ConfigPage() {
                 </CardDescription>
               </div>
               <Button size="sm" onClick={() => setRoomForm({ open: true, room: null })}>
-                <Plus />
+                <PiPlus />
                 Nueva habitación
               </Button>
             </CardHeader>
@@ -232,7 +232,7 @@ export default function ConfigPage() {
                 <CardDescription>Definen capacidad y cargo por persona extra.</CardDescription>
               </div>
               <Button size="sm" onClick={() => setTypeForm({ open: true, item: null })}>
-                <Plus />
+                <PiPlus />
                 Nuevo tipo
               </Button>
             </CardHeader>
@@ -287,7 +287,7 @@ export default function ConfigPage() {
                 </CardDescription>
               </div>
               <Button size="sm" onClick={() => setTariffForm({ open: true, item: null })}>
-                <Plus />
+                <PiPlus />
                 Nueva tarifa
               </Button>
             </CardHeader>

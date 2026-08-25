@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react'
 import {
-  ArrowLeftRight,
-  ClipboardCheck,
-  Eye,
-  PackagePlus,
-  Plus,
-  SlidersHorizontal,
-  Trash2,
-} from 'lucide-react'
+  PiArrowsLeftRight,
+  PiClipboardText,
+  PiEye,
+  PiFadersHorizontal,
+  PiPackage,
+  PiPlus,
+  PiTrash,
+} from 'react-icons/pi'
 
 import { PageShell, TableScroll } from '@/components/layout/PageShell'
 import { StatStrip } from '@/components/layout/StatStrip'
@@ -94,32 +94,32 @@ export default function InventoryPage() {
     {
       key: 'detail',
       label: 'Ver ficha y Kardex',
-      icon: <Eye />,
+      icon: <PiEye />,
       onSelect: () => setDetail(row),
     },
     {
       key: 'entry',
       label: 'Registrar entrada',
-      icon: <PackagePlus />,
+      icon: <PiPackage />,
       separated: true,
       onSelect: () => setMovement('entry'),
     },
     {
       key: 'transfer',
       label: 'Traspasar a otro almacén',
-      icon: <ArrowLeftRight />,
+      icon: <PiArrowsLeftRight />,
       onSelect: () => setMovement('transfer'),
     },
     {
       key: 'adjust',
       label: 'Ajustar por conteo',
-      icon: <ClipboardCheck />,
+      icon: <PiClipboardText />,
       onSelect: () => setMovement('adjust'),
     },
     {
       key: 'waste',
       label: 'Registrar merma',
-      icon: <Trash2 />,
+      icon: <PiTrash />,
       danger: true,
       separated: true,
       onSelect: () => setMovement('waste'),
@@ -135,28 +135,28 @@ export default function InventoryPage() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="sm">
-                <Plus />
+                <PiPlus />
                 Registrar movimiento
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuItem onSelect={() => setMovement('entry')}>
-                <PackagePlus />
+                <PiPackage />
                 Entrada de mercancía
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => setMovement('transfer')}>
-                <ArrowLeftRight />
+                <PiArrowsLeftRight />
                 Traspaso entre almacenes
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => setMovement('adjust')}>
-                <ClipboardCheck />
+                <PiClipboardText />
                 Ajuste por conteo físico
               </DropdownMenuItem>
               <DropdownMenuItem
                 onSelect={() => setMovement('waste')}
                 className="text-destructive focus:bg-destructive/10 focus:text-destructive"
               >
-                <Trash2 />
+                <PiTrash />
                 Merma o caducidad
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -238,7 +238,7 @@ export default function InventoryPage() {
 
                 {view !== 'all' ? (
                   <Button variant="ghost" size="sm" onClick={() => setView('all')}>
-                    <SlidersHorizontal />
+                    <PiFadersHorizontal />
                     Quitar filtro
                   </Button>
                 ) : null}

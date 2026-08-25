@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Ban, Clock, CreditCard, Plus } from 'lucide-react'
+import { PiClock, PiCreditCard, PiPlus, PiProhibit } from 'react-icons/pi'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -127,15 +127,15 @@ export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
             {panel === 'detail' ? (
               <div className="grid grid-cols-3 gap-2">
                 <Button variant="outline" onClick={() => setPanel('extend')}>
-                  <Plus className="h-4 w-4" />
+                  <PiPlus className="h-4 w-4" />
                   Extender
                 </Button>
                 <Button onClick={() => setPanel('checkout')}>
-                  <CreditCard className="h-4 w-4" />
+                  <PiCreditCard className="h-4 w-4" />
                   Cobrar
                 </Button>
                 <Button variant="destructive" onClick={() => setPanel('cancel')}>
-                  <Ban className="h-4 w-4" />
+                  <PiProhibit className="h-4 w-4" />
                   Cancelar
                 </Button>
               </div>
@@ -201,7 +201,7 @@ function StayTimer({ expiresAt }: { expiresAt: string }) {
             : 'border-status-available/40 bg-status-available/10 text-status-available',
       )}
     >
-      <Clock className="h-6 w-6" aria-hidden />
+      <PiClock className="h-6 w-6" aria-hidden />
       {formatCountdown(countdown.seconds)}
     </div>
   )

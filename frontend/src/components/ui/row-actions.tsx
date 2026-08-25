@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
-import { MoreVertical } from 'lucide-react'
+import { PiDotsThreeVertical } from 'react-icons/pi'
 import { create } from 'zustand'
 
 import { Button } from '@/components/ui/button'
@@ -92,7 +92,7 @@ export function RowActions({ items, label }: { items: RowAction[]; label: string
           aria-label={`Acciones de ${label}`}
           onClick={(event) => event.stopPropagation()}
         >
-          <MoreVertical />
+          <PiDotsThreeVertical />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52">

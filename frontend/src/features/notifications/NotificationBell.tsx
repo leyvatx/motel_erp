@@ -1,4 +1,4 @@
-import { Bell, CheckCheck } from 'lucide-react'
+import { PiBell, PiChecks } from 'react-icons/pi'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -53,7 +53,7 @@ export function NotificationBell() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative" aria-label="Notificaciones">
-          <Bell className="h-5 w-5" />
+          <PiBell className="h-5 w-5" />
           {unread > 0 ? (
             <Badge
               className={cn(
@@ -78,7 +78,7 @@ export function NotificationBell() {
               onClick={() => markAllRead.mutate()}
               loading={markAllRead.isPending}
             >
-              <CheckCheck className="h-4 w-4" />
+              <PiChecks className="h-4 w-4" />
               Marcar leidas
             </Button>
           ) : null}

@@ -1,5 +1,12 @@
 import { useState } from 'react'
-import { ArrowDownToLine, ArrowUpFromLine, ChevronDown, Lock, Printer, Receipt } from 'lucide-react'
+import {
+  PiArrowLineDown,
+  PiArrowLineUp,
+  PiCaretDown,
+  PiLock,
+  PiPrinter,
+  PiReceipt,
+} from 'react-icons/pi'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -87,7 +94,7 @@ export function ShiftBar({ shift, onRegisterExpense }: Props) {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
                   Movimientos de caja
-                  <ChevronDown />
+                  <PiCaretDown />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-60">
@@ -96,15 +103,15 @@ export function ShiftBar({ shift, onRegisterExpense }: Props) {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={onRegisterExpense}>
-                  <Receipt />
+                  <PiReceipt />
                   Registrar un gasto
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => setMovement('OUT')}>
-                  <ArrowUpFromLine />
+                  <PiArrowLineUp />
                   Retirar efectivo a bóveda
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => setMovement('IN')}>
-                  <ArrowDownToLine />
+                  <PiArrowLineDown />
                   Meter cambio a la caja
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -116,14 +123,14 @@ export function ShiftBar({ shift, onRegisterExpense }: Props) {
               loading={printReport.isPending}
               onClick={() => printReport.mutate(shift.id)}
             >
-              <Printer />
+              <PiPrinter />
               Imprimir corte
             </Button>
           )}
 
           {open ? (
             <Button size="sm" onClick={() => setClosing(true)}>
-              <Lock />
+              <PiLock />
               Cerrar turno
             </Button>
           ) : null}

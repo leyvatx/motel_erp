@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { AlertTriangle, CheckCircle2, Info, X, XCircle } from 'lucide-react'
+import { PiCheckCircle, PiInfo, PiWarning, PiX, PiXCircle } from 'react-icons/pi'
 import { create } from 'zustand'
 
 import { cn } from '@/lib/utils'
@@ -44,10 +44,10 @@ export const toast = {
 }
 
 const ICONS = {
-  info: Info,
-  success: CheckCircle2,
-  warning: AlertTriangle,
-  error: XCircle,
+  info: PiInfo,
+  success: PiCheckCircle,
+  warning: PiWarning,
+  error: PiXCircle,
 } as const
 
 const STYLES: Record<ToastVariant, string> = {
@@ -94,7 +94,7 @@ function ToastCard({ item }: { item: Toast }) {
         className="text-muted-foreground transition-colors hover:text-foreground"
         aria-label="Cerrar aviso"
       >
-        <X className="h-4 w-4" />
+        <PiX className="h-4 w-4" />
       </button>
     </div>
   )

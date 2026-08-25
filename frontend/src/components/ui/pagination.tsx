@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { PiCaretLeft, PiCaretRight } from 'react-icons/pi'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -68,7 +68,7 @@ export function Pagination({
             onClick={() => onPageChange(page - 1)}
             aria-label="Página anterior"
           >
-            <ChevronLeft />
+            <PiCaretLeft />
           </Button>
           <span className="px-2 text-xs tabular text-muted-foreground">
             {page} / {Math.max(totalPages, 1)}
@@ -80,7 +80,7 @@ export function Pagination({
             onClick={() => onPageChange(page + 1)}
             aria-label="Página siguiente"
           >
-            <ChevronRight />
+            <PiCaretRight />
           </Button>
         </div>
       </div>

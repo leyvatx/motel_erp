@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BedDouble, PanelLeftClose } from 'lucide-react'
+import { PiBed, PiSidebarSimple } from 'react-icons/pi'
 
 import { SidebarNav } from '@/components/layout/SidebarNav'
 import { useBrand } from '@/features/config/hooks'
@@ -45,7 +45,7 @@ export function Sidebar() {
             {logoUrl ? (
               <img src={logoUrl} alt="" className="h-full w-full object-contain" />
             ) : (
-              <BedDouble className="h-4 w-4 text-white" aria-hidden />
+              <PiBed className="h-4 w-4 text-white" aria-hidden />
             )}
           </div>
           <div
@@ -96,7 +96,7 @@ export function Sidebar() {
             aria-label={pinnedCollapsed ? 'Anclar menú abierto' : 'Colapsar menú'}
             title={pinnedCollapsed ? 'Anclar menú abierto' : 'Colapsar menú'}
           >
-            <PanelLeftClose
+            <PiSidebarSimple
               className={cn(
                 'h-4 w-4 shrink-0 transition-transform duration-200',
                 pinnedCollapsed && 'rotate-180',

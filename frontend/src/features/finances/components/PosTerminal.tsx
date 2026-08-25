@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { BedDouble, Minus, Plus, Receipt, ScanLine, Trash2 } from 'lucide-react'
+import { PiBed, PiMinus, PiPlus, PiReceipt, PiScan, PiTrash } from 'react-icons/pi'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -238,7 +238,7 @@ export function PosTerminal() {
           </div>
 
           <div className="relative">
-            <ScanLine
+            <PiScan
               className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
               aria-hidden
             />
@@ -332,7 +332,7 @@ export function PosTerminal() {
                       onClick={() => changeQuantity(line.product.id, -1)}
                       aria-label="Quitar uno"
                     >
-                      <Minus className="h-3 w-3" />
+                      <PiMinus className="h-3 w-3" />
                     </Button>
                     <Button
                       variant="ghost"
@@ -341,7 +341,7 @@ export function PosTerminal() {
                       onClick={() => changeQuantity(line.product.id, 1)}
                       aria-label="Agregar uno"
                     >
-                      <Plus className="h-3 w-3" />
+                      <PiPlus className="h-3 w-3" />
                     </Button>
                     <Button
                       variant="ghost"
@@ -350,7 +350,7 @@ export function PosTerminal() {
                       onClick={() => changeQuantity(line.product.id, -line.quantity)}
                       aria-label="Quitar renglón"
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <PiTrash className="h-3 w-3" />
                     </Button>
                   </div>
                 </li>
@@ -379,7 +379,7 @@ export function PosTerminal() {
                 loading={chargeToRoom.isPending}
                 onClick={() => chargeToRoom.mutate()}
               >
-                <BedDouble />
+                <PiBed />
                 Cargar a la habitación {target?.number}
               </Button>
             </>
@@ -450,7 +450,7 @@ export function PosTerminal() {
                 loading={checkout.isPending}
                 onClick={() => checkout.mutate()}
               >
-                <Receipt />
+                <PiReceipt />
                 Cobrar {total > 0 ? formatMoney(total) : ''}
               </Button>
             </div>

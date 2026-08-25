@@ -1,17 +1,17 @@
 import type { ReactNode } from 'react'
 import {
-  AlertTriangle,
-  ArrowRight,
-  BedDouble,
-  Brush,
-  CheckCircle2,
-  Clock3,
-  PackageSearch,
-  Sparkles,
-  Users,
-  WalletCards,
-  Wrench,
-} from 'lucide-react'
+  PiArrowRight,
+  PiBed,
+  PiCheckCircle,
+  PiClock,
+  PiPackage,
+  PiPaintBrush,
+  PiSparkle,
+  PiUsers,
+  PiWallet,
+  PiWarning,
+  PiWrench,
+} from 'react-icons/pi'
 import { Link } from 'react-router-dom'
 
 import { PageShell } from '@/components/layout/PageShell'
@@ -109,13 +109,13 @@ function roleActions(role: Role) {
         label: 'Ver mis limpiezas',
         detail: 'Continuar tareas asignadas',
         to: '/housekeeping',
-        icon: Brush,
+        icon: PiPaintBrush,
       },
       {
         label: 'Revisar inventario',
         detail: 'Existencias e insumos',
         to: '/inventory',
-        icon: PackageSearch,
+        icon: PiPackage,
       },
     ]
   }
@@ -125,20 +125,20 @@ function roleActions(role: Role) {
       label: 'Ir a recepción',
       detail: 'Rentar y liberar habitaciones',
       to: '/frontdesk',
-      icon: BedDouble,
+      icon: PiBed,
     },
-    { label: 'Abrir caja', detail: 'Ventas, gastos y corte', to: '/finances', icon: WalletCards },
+    { label: 'Abrir caja', detail: 'Ventas, gastos y corte', to: '/finances', icon: PiWallet },
     {
       label: 'Ama de llaves',
       detail: 'Limpieza y mantenimiento',
       to: '/housekeeping',
-      icon: Brush,
+      icon: PiPaintBrush,
     },
     {
       label: 'Inventario',
       detail: 'Productos y existencias',
       to: '/inventory',
-      icon: PackageSearch,
+      icon: PiPackage,
     },
   ]
   if (role === 'SUPERADMIN') {
@@ -146,7 +146,7 @@ function roleActions(role: Role) {
       label: 'Usuarios',
       detail: 'Equipo, roles y accesos',
       to: '/users',
-      icon: Users,
+      icon: PiUsers,
     })
   }
   return actions
@@ -250,21 +250,21 @@ export default function DashboardPage() {
                 title="Mis tareas activas"
                 value={activeCleaning.length}
                 detail="Pendientes y en proceso"
-                icon={<Brush className="size-5" />}
+                icon={<PiPaintBrush className="size-5" />}
                 loading={cleaning.isLoading}
               />
               <MetricCard
                 title="En proceso"
                 value={activeCleaning.filter((task) => task.status === 'IN_PROGRESS').length}
                 detail="Limpiezas iniciadas"
-                icon={<Clock3 className="size-5" />}
+                icon={<PiClock className="size-5" />}
                 loading={cleaning.isLoading}
               />
               <MetricCard
                 title="Mantenimiento"
                 value={openMaintenance.length}
                 detail={`${urgentMaintenance.length} urgentes`}
-                icon={<Wrench className="size-5" />}
+                icon={<PiWrench className="size-5" />}
                 loading={maintenance.isLoading}
                 tone={urgentMaintenance.length ? 'warning' : 'default'}
               />
@@ -272,7 +272,7 @@ export default function DashboardPage() {
                 title="Stock bajo"
                 value={lowStock.data?.count ?? 0}
                 detail="Insumos por reponer"
-                icon={<PackageSearch className="size-5" />}
+                icon={<PiPackage className="size-5" />}
                 loading={lowStock.isLoading}
                 tone={(lowStock.data?.count ?? 0) ? 'warning' : 'success'}
               />
@@ -283,14 +283,14 @@ export default function DashboardPage() {
                 title="Ocupación"
                 value={`${occupancy}%`}
                 detail={`${occupied} de ${totalRooms} habitaciones`}
-                icon={<BedDouble className="size-5" />}
+                icon={<PiBed className="size-5" />}
                 loading={rooms.isLoading}
               />
               <MetricCard
                 title="Disponibles"
                 value={counts.AVAILABLE ?? 0}
                 detail="Listas para rentar"
-                icon={<CheckCircle2 className="size-5" />}
+                icon={<PiCheckCircle className="size-5" />}
                 loading={rooms.isLoading}
                 tone="success"
               />
@@ -298,7 +298,7 @@ export default function DashboardPage() {
                 title="Por vencer"
                 value={expiring.data?.count ?? 0}
                 detail={`${expiredStays.length} ya vencidas`}
-                icon={<Clock3 className="size-5" />}
+                icon={<PiClock className="size-5" />}
                 loading={expiring.isLoading}
                 tone={expiredStays.length ? 'warning' : 'default'}
               />
@@ -306,7 +306,7 @@ export default function DashboardPage() {
                 title="Limpieza"
                 value={activeCleaning.length}
                 detail="Habitaciones en proceso"
-                icon={<Sparkles className="size-5" />}
+                icon={<PiSparkle className="size-5" />}
                 loading={cleaning.isLoading}
               />
             </>
@@ -376,7 +376,7 @@ export default function DashboardPage() {
               )}
               <Button asChild variant="outline" className="w-full">
                 <Link to={isHousekeeping ? '/housekeeping' : '/frontdesk'}>
-                  Ver operación completa <ArrowRight className="size-4" />
+                  Ver operación completa <PiArrowRight className="size-4" />
                 </Link>
               </Button>
             </CardContent>
@@ -406,7 +406,7 @@ export default function DashboardPage() {
                 </>
               ) : attention.length === 0 ? (
                 <div className="flex flex-col items-center gap-2 py-8 text-center">
-                  <CheckCircle2 className="size-8 text-emerald-600" />
+                  <PiCheckCircle className="size-8 text-emerald-600" />
                   <p className="font-medium">Todo al día</p>
                   <p className="text-sm text-muted-foreground">No hay pendientes críticos.</p>
                 </div>
@@ -417,7 +417,7 @@ export default function DashboardPage() {
                     to={item.to}
                     className="flex items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50"
                   >
-                    <AlertTriangle
+                    <PiWarning
                       className={cn(
                         'size-4 shrink-0 text-amber-600',
                         item.urgent && 'text-destructive',
@@ -427,7 +427,7 @@ export default function DashboardPage() {
                       <p className="truncate text-sm font-medium">{item.title}</p>
                       <p className="truncate text-xs text-muted-foreground">{item.detail}</p>
                     </div>
-                    <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
+                    <PiArrowRight className="size-4 shrink-0 text-muted-foreground" />
                   </Link>
                 ))
               )}
@@ -479,7 +479,7 @@ export default function DashboardPage() {
                       <p className="font-medium">{action.label}</p>
                       <p className="truncate text-xs text-muted-foreground">{action.detail}</p>
                     </div>
-                    <ArrowRight className="size-4 text-muted-foreground" />
+                    <PiArrowRight className="size-4 text-muted-foreground" />
                   </Link>
                 </Card>
               )

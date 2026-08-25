@@ -1,6 +1,6 @@
 import { Fragment } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { ChevronRight } from 'lucide-react'
+import { PiCaretRight } from 'react-icons/pi'
 
 const LABELS: Record<string, string> = {
   frontdesk: 'Recepción',
@@ -30,7 +30,7 @@ export function Breadcrumbs() {
           return (
             <Fragment key={path}>
               {index > 0 ? (
-                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" aria-hidden />
+                <PiCaretRight className="h-3.5 w-3.5 text-muted-foreground/60" aria-hidden />
               ) : null}
               <li>
                 {isLast ? (

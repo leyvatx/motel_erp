@@ -43,12 +43,16 @@ export const useAuthStore = create<AuthState>()(
       setUser: (user) => set({ user, motelSlug: user.motel_slug }),
       setActiveMotel: (id, name, role) =>
         set({ activeMotelId: id, activeMotelName: name, activeRole: role }),
-      clearActiveMotel: () =>
-        set({ activeMotelId: null, activeMotelName: null, activeRole: null }),
-      clear: () => set({
-        user: null, access: null, refresh: null,
-        activeMotelId: null, activeMotelName: null, activeRole: null,
-      }),
+      clearActiveMotel: () => set({ activeMotelId: null, activeMotelName: null, activeRole: null }),
+      clear: () =>
+        set({
+          user: null,
+          access: null,
+          refresh: null,
+          activeMotelId: null,
+          activeMotelName: null,
+          activeRole: null,
+        }),
     }),
     { name: 'motel-erp-auth' },
   ),
