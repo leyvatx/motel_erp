@@ -9,7 +9,12 @@ import { syncServerTime } from '@/lib/serverTime'
 import { authSnapshot, useAuthStore } from '@/store/auth'
 import type { ApiErrorBody, TokenPair } from '@/types/api'
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? ''
+function absolute(value: string | undefined): string {
+  if (!value) return ''
+  return /^https?:\/\//.test(value) ? value : `https://${value}`
+}
+
+const BASE_URL = absolute(import.meta.env.VITE_API_URL)
 
 export const api: AxiosInstance = axios.create({
   baseURL: `${BASE_URL}/api/v1`,

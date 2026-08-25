@@ -246,6 +246,65 @@ tu proveedor): borra el bloque `443` de `deploy/nginx.conf.template`, cambia
 `$scheme` por `$http_x_forwarded_proto` y pon `DJANGO_SECURE_SSL_REDIRECT=False`
 en `api/.env`.
 
+## Despliegue en Render
+
+`render.yaml` es un Blueprint: describe los seis servicios completos y Render
+los crea de una sola vez. No hace falta nginx ni certbot, porque Render termina
+TLS y entrega dominios `*.onrender.com` con HTTPS ya resuelto.
+
+| Servicio | Tipo | Plan |
+| --- | --- | --- |
+| `motel-erp-db` | PostgreSQL administrado | gratuito |
+| `motel-erp-redis` | Redis administrado | gratuito |
+| `motel-erp-api` | Web (Docker, ASGI) | gratuito |
+| `motel-erp-frontend` | Sitio estático | gratuito |
+| `motel-erp-worker` | Worker (cola `celery`) | **de paga** |
+| `motel-erp-printer` | Worker (cola `printing`) | **de paga** |
+| `motel-erp-beat` | Worker (calendario) | **de paga** |
+
+Render no ofrece plan gratuito para *background workers*. Si quieres solo ver
+el sistema funcionando, borra los tres bloques `type: worker` del blueprint:
+pierdes los cronómetros automáticos, los avisos de stock y la impresión, pero
+recepción, caja, inventario y reportes funcionan igual.
+
+### Pasos
+
+1. Sube la rama a GitHub.
+2. En Render: **New → Blueprint**, conecta el repositorio y elige la rama.
+3. Render pide dos valores que no puede adivinar porque dependen de la URL que
+   te asigne al frontend. Se llenan después del primer despliegue, en el panel
+   del servicio `motel-erp-api`:
+
+   | Variable | Valor |
+   | --- | --- |
+   | `CORS_ALLOWED_ORIGINS` | el dominio del frontend |
+   | `DJANGO_CSRF_TRUSTED_ORIGINS` | el mismo dominio |
+
+   Basta el host pelón: el backend le antepone `https://` solo.
+
+4. Crea la cuenta de plataforma desde **Shell** en el servicio `motel-erp-api`:
+
+```bash
+python manage.py createsuperuser
+```
+
+`DJANGO_SECRET_KEY` vive en el grupo de variables `motel-erp-comun`, no en cada
+servicio. Tiene que ser la misma en todos: es la que firma los JWT, y si el
+worker tuviera otra, los tokens que emite la API no valdrían nada.
+
+### Lo que este despliegue todavía no resuelve
+
+- El plan gratuito del servicio web se duerme sin tráfico. La primera visita
+  después de un rato tarda cerca de un minuto en responder.
+- El disco es efímero: los logotipos que suba cada motel desaparecen en el
+  siguiente despliegue. Para conservarlos hace falta un disco persistente, que
+  es de paga, o mover `MEDIA_ROOT` a almacenamiento externo.
+- El plan gratuito de PostgreSQL caduca. Revisa la vigencia vigente en Render
+  antes de cargar datos que te importen.
+- La impresión térmica no funciona desde la nube por la misma razón de siempre:
+  el servidor no alcanza la red local de cada motel. Por eso `PRINTER_BACKEND`
+  viene en `dummy` y el ticket automático al cerrar folio queda apagado.
+
 ### Respaldos
 
 El servicio `backup` saca un `pg_dump` comprimido al arrancar y luego cada 24 h,

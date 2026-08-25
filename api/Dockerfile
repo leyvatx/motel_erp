@@ -21,6 +21,6 @@ USER app
 EXPOSE 8000
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-CMD ["uvicorn", "core.asgi:application", \
-     "--host", "0.0.0.0", "--port", "8000", \
-     "--workers", "4", "--proxy-headers", "--forwarded-allow-ips", "*"]
+CMD ["sh", "-c", "exec uvicorn core.asgi:application \
+     --host 0.0.0.0 --port ${PORT:-8000} \
+     --workers ${WEB_CONCURRENCY:-4} --proxy-headers --forwarded-allow-ips '*'"]

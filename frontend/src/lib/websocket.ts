@@ -16,7 +16,12 @@ const MAX_BACKOFF_MS = 30_000
 
 function resolveWsUrl(path: string): string {
   const configured = import.meta.env.VITE_WS_URL
-  if (configured) return `${configured}${path}`
+  if (configured) {
+    const base = /^wss?:\/\//.test(configured)
+      ? configured
+      : `wss://${configured.replace(/^https?:\/\//, '')}`
+    return `${base}${path}`
+  }
 
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
   return `${protocol}//${window.location.host}${path}`

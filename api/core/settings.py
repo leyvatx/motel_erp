@@ -58,11 +58,28 @@ environ.Env.read_env(BASE_DIR / ".env")
 
 INSECURE_SECRET_KEY = "dev-only-insecure-key"
 
+def _como_origen(valor: str) -> str:
+    """Completa a origen absoluto lo que venga sin esquema.
+
+    Render entrega los nombres de un servicio a otro como ``host`` pelón, sin
+    ``https://``. Django exige origen completo en ``CSRF_TRUSTED_ORIGINS`` y
+    django-cors-headers en ``CORS_ALLOWED_ORIGINS``, así que se completa aquí
+    en vez de obligar a escribir la URL a mano en el panel, que es donde se
+    equivoca uno y luego el login falla sin decir por qué.
+    """
+    return valor if valor.startswith(("http://", "https://")) else f"https://{valor}"
+
+
 SECRET_KEY = env("DJANGO_SECRET_KEY", default=INSECURE_SECRET_KEY)
 DEBUG = env("DJANGO_DEBUG")
 ALLOWED_HOSTS = env("DJANGO_ALLOWED_HOSTS")
 ALLOWED_HOSTS += [h for h in ("127.0.0.1", "localhost") if h not in ALLOWED_HOSTS]
-CSRF_TRUSTED_ORIGINS = env("DJANGO_CSRF_TRUSTED_ORIGINS")
+
+RENDER_EXTERNAL_HOSTNAME = env("RENDER_EXTERNAL_HOSTNAME", default="")
+if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+CSRF_TRUSTED_ORIGINS = [_como_origen(o) for o in env("DJANGO_CSRF_TRUSTED_ORIGINS")]
 
 if not DEBUG and SECRET_KEY == INSECURE_SECRET_KEY:
     raise ImproperlyConfigured(
@@ -130,6 +147,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -191,6 +209,10 @@ BUSINESS_CURRENCY = env("BUSINESS_CURRENCY")
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+}
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
@@ -283,7 +305,7 @@ SPECTACULAR_SETTINGS = {
     },
 }
 
-CORS_ALLOWED_ORIGINS = env("CORS_ALLOWED_ORIGINS")
+CORS_ALLOWED_ORIGINS = [_como_origen(o) for o in env("CORS_ALLOWED_ORIGINS")]
 CORS_ALLOW_CREDENTIALS = True
 
 REDIS_URL = env("REDIS_URL", default="redis://localhost:6379/0")
