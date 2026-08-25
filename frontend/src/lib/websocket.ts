@@ -1,18 +1,3 @@
-/**
- * Canal de tiempo real.
- *
- * El handshake de WebSocket del navegador no admite cabeceras, asi que la
- * credencial va en el query string. Antes iba el JWT de acceso y acababa
- * escrito en el access_log de nginx con media hora de vida por delante; ahora
- * va un boleto de un solo uso que se pide por HTTP y muere a los treinta
- * segundos.
- *
- * El boleto se pide con la instancia compartida de axios, no con fetch: asi
- * hereda la cabecera Authorization, el X-Motel-Id del motel activo y el
- * reintento con refresh ante un 401. Eso ultimo cura de paso las reconexiones
- * que antes fallaban en seco cuando el token de acceso vencia con la pestana
- * abierta.
- */
 import { api } from '@/lib/axios'
 import { syncServerTime } from '@/lib/serverTime'
 import { authSnapshot } from '@/store/auth'

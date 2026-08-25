@@ -1,10 +1,4 @@
 #!/bin/sh
-# Respaldo periódico de PostgreSQL.
-#
-# Dos reglas que no se negocian: el nombre definitivo aparece solo cuando el
-# volcado y la compresión terminaron bien -- un respaldo a medias nunca debe
-# parecer bueno -- y la poda de los viejos corre únicamente después de un
-# respaldo exitoso, para que una semana de fallas no borre el historial.
 set -eu
 
 DB_HOST=${POSTGRES_HOST:-db}

@@ -1,14 +1,3 @@
-/**
- * Navegacion en celular y tableta: el mismo menu, en un cajon.
- *
- * Existe porque hasta ahora no habia ninguna. El menu lateral es hidden lg:block
- * y el boton del Topbar solo cambiaba el anclado del escritorio, asi que por
- * debajo de 1024px no se podia cambiar de seccion.
- *
- * El corte esta en lg y no en md a proposito: una tableta en vertical mide
- * 768px y un menu fijo de 256px se llevaria un tercio de la pantalla. La
- * tableta queda mejor con cajon.
- */
 import { useEffect } from 'react'
 import { BedDouble } from 'lucide-react'
 

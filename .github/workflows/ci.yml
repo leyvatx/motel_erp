@@ -50,10 +50,6 @@ jobs:
       - run: pip install -r requirements.txt
       - run: python manage.py makemigrations --check --dry-run
       - run: python manage.py migrate --noinput
-      # --tag security acota la compuerta a lo que importa aquí. Sin ella
-      # --fail-level WARNING también recoge los 62 avisos de esquema de
-      # drf_spectacular y el gate de seguridad se vuelve un linter de OpenAPI
-      # que nadie va a poder mantener en verde.
       - name: Verificación de despliegue (un aviso de seguridad rompe la construcción)
         run: python manage.py check --deploy --tag security --fail-level WARNING
       - name: Pruebas

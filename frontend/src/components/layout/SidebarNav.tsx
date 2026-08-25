@@ -1,15 +1,3 @@
-/**
- * La lista de navegacion, compartida por el cajon de celular y el menu fijo de
- * escritorio.
- *
- * Vive aparte porque son dos presentaciones del mismo menu. Duplicarla
- * significaria que una seccion nueva aparece en escritorio y no en celular, y
- * ese es justo el tipo de diferencia que nadie nota hasta que limpieza reporta
- * que "no le sale" una pantalla.
- *
- * Las alturas van al reves de lo habitual: h-11 es la base, porque son 44px, la
- * zona tactil minima; lg:h-9 la reduce solo cuando ya hay raton.
- */
 import { NavLink } from 'react-router-dom'
 
 import { NAV_GROUPS } from '@/components/layout/navigation'

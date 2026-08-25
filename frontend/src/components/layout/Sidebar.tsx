@@ -1,7 +1,3 @@
-/**
- * Menu fijo de escritorio. En celular y tableta no se monta: ahi navega
- * MobileNav, que reusa la misma lista desde SidebarNav.
- */
 import { useState } from 'react'
 import { BedDouble, PanelLeftClose } from 'lucide-react'
 

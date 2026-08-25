@@ -12,10 +12,8 @@ dist/
 *.log
 .DS_Store
 
-# Configuracion local del editor / herramientas
 .claude/
 .vscode/
 .idea/
 
-# Certificados TLS: llaves privadas, jamas al repositorio.
 deploy/certs/

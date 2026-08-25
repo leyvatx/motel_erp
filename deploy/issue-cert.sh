@@ -1,10 +1,4 @@
 #!/bin/sh
-# Primera emision del certificado real de Let's Encrypt.
-#
-# Retira el autofirmado unicamente si trae la marca que le puso
-# bootstrap-cert.sh: asi este script no puede borrar un certificado bueno por
-# mas veces que se corra. Las renovaciones posteriores no pasan por aqui, las
-# hace el servicio certbot cada doce horas.
 set -e
 
 : "${CERT_DOMAIN:?falta CERT_DOMAIN en api/.env}"
