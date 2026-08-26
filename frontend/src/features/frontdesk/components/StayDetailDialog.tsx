@@ -34,6 +34,7 @@ import { CartLines, ProductPicker, useCart } from '@/features/sales/ProductCart'
 import { useChargeToRoom, useFolio } from '@/features/sales/hooks'
 import type { FolioCharge } from '@/features/sales/types'
 import { useCountdown } from '@/hooks/useCountdown'
+import { apiErrorMessage } from '@/lib/axios'
 import { formatCountdown, formatDateTime, formatMoney, toNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import type { PaymentMethod } from '@/types/api'
@@ -53,7 +54,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
 ]
 
 export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
-  const { data: stay, isLoading } = useStay(open ? stayId : null)
+  const { data: stay, isLoading, isFetching, error, refetch } = useStay(open ? stayId : null)
   const [panel, setPanel] = useState<Panel>('detail')
   const folio = useFolio(open && stay?.folio_id ? stay.folio_id : null)
 
@@ -64,11 +65,34 @@ export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
-        {isLoading || !stay ? (
-          <div className="space-y-3">
-            <Skeleton className="h-6 w-40" />
+        {isLoading ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Abriendo la renta</DialogTitle>
+            </DialogHeader>
             <Skeleton className="h-32 w-full" />
-          </div>
+          </>
+        ) : !stay ? (
+          /* Sin esta rama el esqueleto era también el estado de error: al
+             fallar la consulta isLoading vuelve a false pero stay se queda en
+             undefined, así que la condición seguía siendo cierta y el diálogo
+             se quedaba cargando para siempre, sin decir qué pasó. */
+          <>
+            <DialogHeader>
+              <DialogTitle>No se pudo abrir la renta</DialogTitle>
+              <DialogDescription>
+                {apiErrorMessage(error, 'La renta no se pudo cargar.')}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Cerrar
+              </Button>
+              <Button loading={isFetching} onClick={() => void refetch()}>
+                Reintentar
+              </Button>
+            </div>
+          </>
         ) : (
           <>
             <DialogHeader>
