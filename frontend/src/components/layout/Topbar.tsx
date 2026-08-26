@@ -21,7 +21,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Separator } from '@/components/ui/separator'
-import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
 import { GlobalSearch } from '@/components/layout/GlobalSearch'
 import { ShiftChip } from '@/features/finances/components/ShiftChip'
 import { NotificationBell } from '@/features/notifications/NotificationBell'
@@ -75,12 +74,6 @@ export function Topbar({ connection, onOpenMenu }: Props) {
       >
         <PiList className="h-5 w-5" />
       </Button>
-
-      <div className="hidden lg:block">
-        <Breadcrumbs />
-      </div>
-
-      <Separator orientation="vertical" className="mx-1 hidden h-5 lg:block" />
 
       {operational ? <GlobalSearch onSelectStay={setStayId} /> : null}
 
