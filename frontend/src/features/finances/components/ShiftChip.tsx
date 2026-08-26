@@ -25,7 +25,7 @@ export function ShiftChip() {
           : 'No puedes cobrar sin turno abierto. Ábrelo aquí.'
       }
       className={cn(
-        'hidden items-center gap-1.5 rounded-full border px-2 py-1 text-2xs font-medium transition-colors sm:flex',
+        'hidden max-w-[13rem] shrink-0 items-center gap-1.5 rounded-full border px-2 py-1 text-2xs font-medium transition-colors sm:flex',
         open
           ? 'text-muted-foreground hover:bg-accent'
           : 'border-status-cleaning/50 text-status-cleaning hover:bg-status-cleaning/10',
@@ -38,7 +38,13 @@ export function ShiftChip() {
         )}
         aria-hidden
       />
-      {open ? `Turno ${shift?.code}` : 'Sin turno'}
+      {/* El folio completo solo donde cabe. Abajo de lg basta con saber que hay
+          turno abierto; el codigo entero aplastaba el topbar y se salia. El
+          title de arriba lo sigue diciendo completo. */}
+      <span className="truncate">
+        {open ? 'Turno' : 'Sin turno'}
+        {open ? <span className="hidden lg:inline"> {shift?.code}</span> : null}
+      </span>
     </button>
   )
 }

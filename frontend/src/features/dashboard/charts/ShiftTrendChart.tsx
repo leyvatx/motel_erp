@@ -1,4 +1,14 @@
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import {
+  Area,
+  Bar,
+  CartesianGrid,
+  ComposedChart,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatMoney } from '@/lib/format'
@@ -43,7 +53,7 @@ export function ShiftTrendChart({ hours, loading }: Props) {
 
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <AreaChart data={hours} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+      <ComposedChart data={hours} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
         <defs>
           <linearGradient id="ventasTurno" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="hsl(var(--brand-accent))" stopOpacity={0.28} />
@@ -61,14 +71,42 @@ export function ShiftTrendChart({ hours, loading }: Props) {
           minTickGap={24}
         />
         <YAxis
+          yAxisId="dinero"
           tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
           tickLine={false}
           axisLine={false}
-          width={56}
-          tickFormatter={(valor: number) => (valor >= 1000 ? `${Math.round(valor / 1000)}k` : `${valor}`)}
+          width={48}
+          tickFormatter={(valor: number) =>
+            valor >= 1000 ? `${Math.round(valor / 1000)}k` : `${valor}`
+          }
+        />
+        <YAxis
+          yAxisId="rentas"
+          orientation="right"
+          tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+          tickLine={false}
+          axisLine={false}
+          width={26}
+          allowDecimals={false}
         />
         <Tooltip content={<Etiqueta />} cursor={{ stroke: 'hsl(var(--border))' }} />
+        <Legend
+          verticalAlign="top"
+          height={22}
+          iconSize={8}
+          wrapperStyle={{ fontSize: 11 }}
+        />
+        <Bar
+          yAxisId="rentas"
+          dataKey="rentals"
+          name="Rentas"
+          fill="hsl(var(--muted-foreground))"
+          fillOpacity={0.25}
+          barSize={10}
+          isAnimationActive={false}
+        />
         <Area
+          yAxisId="dinero"
           type="monotone"
           dataKey={(fila: ShiftTrendHour) => Number(fila.sales)}
           name="Ventas"
@@ -78,7 +116,7 @@ export function ShiftTrendChart({ hours, loading }: Props) {
           isAnimationActive={false}
           dot={false}
         />
-      </AreaChart>
+      </ComposedChart>
     </ResponsiveContainer>
   )
 }

@@ -22,6 +22,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useCurrentShift, usePendingExpenses, useShiftTrend } from '@/features/finances/hooks'
 import { RoomDonut } from '@/features/dashboard/charts/RoomDonut'
 import { ShiftTrendChart } from '@/features/dashboard/charts/ShiftTrendChart'
+import { PaymentMix } from '@/features/dashboard/charts/PaymentMix'
 import { Sparkline } from '@/features/dashboard/charts/Sparkline'
 import {
   useExpiringStays,
@@ -103,12 +104,12 @@ function QuickActions({ actions }: { actions: ReturnType<typeof roleActions> }) 
             asChild
             variant="ghost"
             size="sm"
-            className="h-9 gap-1.5 px-2"
+            className="h-11 shrink-0 gap-1.5 px-2.5 lg:h-9"
             title={action.detail}
           >
             <Link to={action.to}>
               <Icon className="size-4 shrink-0" />
-              <span className="hidden text-xs xl:inline">{action.label}</span>
+              <span className="hidden text-xs lg:inline">{action.label}</span>
             </Link>
           </Button>
         )
@@ -272,7 +273,7 @@ export default function DashboardPage() {
     <PageShell
       title={`${greeting()}, ${displayName}`}
       description={`${user?.motel_name ?? 'Tu motel'} · ${today.format(new Date())}`}
-      className="min-h-0"
+      className="min-h-0 overflow-y-auto pb-1 lg:overflow-hidden lg:pb-0"
     >
       {/*
         Bento de 12 columnas. Las filas son [auto auto 1fr]: la franja del turno
@@ -281,12 +282,12 @@ export default function DashboardPage() {
         falte. En 1080p entra completo sin scroll de página; abajo de lg se apila
         y el scroll natural del móvil hace su trabajo.
       */}
-      <div className="grid min-h-0 grid-cols-1 gap-3 lg:h-full lg:grid-cols-12 lg:grid-rows-[auto_auto_minmax(0,1fr)]">
+      <div className="grid min-h-0 shrink-0 grid-cols-1 gap-3 lg:h-full lg:shrink lg:grid-cols-12 lg:grid-rows-[auto_auto_minmax(0,1fr)]">
         {/* ── Franja del turno + accesos rápidos ─────────────────────────── */}
         <Card className="lg:col-span-12">
-          <CardContent className="flex flex-wrap items-center gap-x-6 gap-y-2 p-3">
+          <CardContent className="flex flex-col gap-3 p-3 lg:flex-row lg:items-center lg:gap-x-6">
             {!isHousekeeping ? (
-              <>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4 lg:flex lg:gap-x-6">
                 <ShiftFigure
                   label="Turno"
                   value={shift.isLoading ? '…' : (shift.data?.code ?? 'Sin turno')}
@@ -300,12 +301,16 @@ export default function DashboardPage() {
                   value={shift.data ? money.format(Number(shift.data.expected_cash)) : '—'}
                 />
                 <ShiftFigure label="Folios" value={String(shift.data?.folios_closed ?? '—')} />
-              </>
+              </div>
             ) : (
               <ShiftFigure label="Tareas activas" value={String(activeCleaning.length)} />
             )}
 
-            <div className="ml-auto">
+            {!isHousekeeping ? (
+              <PaymentMix shift={shift.data} className="lg:w-56 lg:shrink-0" />
+            ) : null}
+
+            <div className="-mx-1 overflow-x-auto scrollbar-thin lg:ml-auto lg:mx-0 lg:overflow-visible">
               <QuickActions actions={roleActions(role)} />
             </div>
           </CardContent>
@@ -412,7 +417,7 @@ export default function DashboardPage() {
             contenido, y veinte alertas de stock empujan el scroll a la página
             entera, que es justo lo que veníamos a arreglar.
           */}
-          <CardContent className="min-h-0 flex-1 space-y-2 overflow-y-auto scrollbar-thin pt-0 max-lg:max-h-72">
+          <CardContent className="max-h-72 min-h-0 space-y-2 overflow-y-auto scrollbar-thin pt-0 lg:max-h-none lg:flex-1">
             {isLoading ? (
               <>
                 <Skeleton className="h-14 w-full" />
@@ -449,7 +454,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* ── Distribución: anillo con la leyenda a la derecha ────────────── */}
-        <Card className="flex min-h-0 flex-col lg:col-span-4">
+        <Card className="flex min-h-0 flex-col lg:col-span-3">
           <CardHeader className="shrink-0 pb-2">
             <CardTitle className="text-base">
               {isHousekeeping ? 'Trabajo del turno' : 'Distribución'}
@@ -458,7 +463,7 @@ export default function DashboardPage() {
               {isHousekeeping ? 'Tareas por estado' : 'Habitaciones ahora'}
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex min-h-0 flex-1 items-center pt-0">
+          <CardContent className="flex h-56 min-h-0 items-center pt-0 lg:h-auto lg:flex-1">
             {isHousekeeping ? (
               <div className="grid w-full grid-cols-3 gap-2">
                 {(
@@ -483,14 +488,14 @@ export default function DashboardPage() {
         </Card>
 
         {/* ── Tendencia del turno ─────────────────────────────────────────── */}
-        <Card className="flex min-h-0 flex-col lg:col-span-4">
+        <Card className="flex min-h-0 flex-col lg:col-span-5">
           <CardHeader className="shrink-0 pb-2">
             <CardTitle className="text-base">Tendencia del turno</CardTitle>
             <CardDescription className="text-xs">
               {trend.data?.shift ? `Ventas por hora · ${trend.data.shift}` : 'Ventas por hora'}
             </CardDescription>
           </CardHeader>
-          <CardContent className="min-h-0 flex-1 pt-0 max-lg:h-48">
+          <CardContent className="h-52 min-h-0 pt-0 lg:h-auto lg:flex-1">
             <ShiftTrendChart hours={trendHours} loading={trend.isLoading} />
           </CardContent>
         </Card>

@@ -14,13 +14,25 @@ interface WsTicket {
 const PING_INTERVAL_MS = 25_000
 const MAX_BACKOFF_MS = 30_000
 
-function resolveWsUrl(path: string): string {
+export function resolveWsUrl(path: string): string {
   const configured = import.meta.env.VITE_WS_URL
   if (configured) {
     const base = /^wss?:\/\//.test(configured)
       ? configured
       : `wss://${configured.replace(/^https?:\/\//, '')}`
     return `${base}${path}`
+  }
+
+  // Sin VITE_WS_URL, el respaldo natural es el host de la API: ahi vive el
+  // servidor de WebSocket. Caer al host de la pagina solo funciona en
+  // desarrollo, donde Vite hace de proxy; en produccion el frontend es un sitio
+  // estatico sin nada que atienda ws://, y el resultado es un "Reconectando"
+  // eterno que no delata su causa.
+  const apiUrl = import.meta.env.VITE_API_URL
+  if (apiUrl) {
+    const host = apiUrl.replace(/^https?:\/\//, '').replace(/\/+$/, '')
+    const protocol = apiUrl.startsWith('http://') ? 'ws://' : 'wss://'
+    return `${protocol}${host}${path}`
   }
 
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'

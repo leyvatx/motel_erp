@@ -59,7 +59,7 @@ export function RoomDonut({ data, total, loading }: Props) {
       {/* Escala con el alto de su celda en vez de quedarse fijo: la fila del
           bento es 1fr y en una pantalla alta un anillo de 128px dejaría un
           hueco muerto alrededor. El max evita el efecto contrario. */}
-      <div className="relative aspect-square h-full max-h-44 min-h-28 shrink-0">
+      <div className="relative aspect-square h-full max-h-44 min-h-28 shrink-0 lg:max-h-72">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
