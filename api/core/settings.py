@@ -367,6 +367,9 @@ PRINT_TICKET_ON_FOLIO_CLOSE = env.bool("PRINT_TICKET_ON_FOLIO_CLOSE", default=Tr
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "filters": {
+        "sin_sondeos": {"()": "common.health.SilenciarSondeos"},
+    },
     "formatters": {
         "verbose": {
             "format": "[{asctime}] {levelname} {name} {process:d} {message}",
@@ -382,6 +385,22 @@ LOGGING = {
     "root": {"handlers": ["console"], "level": "INFO"},
     "loggers": {
         "django.db.backends": {"level": "WARNING", "handlers": ["console"], "propagate": False},
+        # Uvicorn arma su propia bitácora de acceso antes de que Django corra
+        # este dictConfig; con disable_existing_loggers en False el filtro se le
+        # engancha encima. django.server es el equivalente de runserver en
+        # desarrollo.
+        "uvicorn.access": {
+            "level": "INFO",
+            "handlers": ["console"],
+            "filters": ["sin_sondeos"],
+            "propagate": False,
+        },
+        "django.server": {
+            "level": "INFO",
+            "handlers": ["console"],
+            "filters": ["sin_sondeos"],
+            "propagate": False,
+        },
         "apps": {"level": "DEBUG" if DEBUG else "INFO", "handlers": ["console"], "propagate": False},
         "common": {"level": "DEBUG" if DEBUG else "INFO", "handlers": ["console"], "propagate": False},
     },

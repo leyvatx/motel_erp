@@ -14,7 +14,7 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
-from common.health import health
+from common.health import awake, health
 
 api_v1_patterns = [
     path("health/", health, name="health"),
@@ -33,6 +33,9 @@ api_v1_patterns = [
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    # Fuera de /api/v1/: es una sonda de infraestructura, no parte del contrato
+    # de la API. No se versiona porque nada de lo que responde puede cambiar.
+    path("api/health", awake, name="awake"),
     path("api/v1/", include((api_v1_patterns, "api"), namespace="v1")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(

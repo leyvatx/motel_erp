@@ -2,9 +2,11 @@ import axios, {
   AxiosError,
   type AxiosInstance,
   type AxiosRequestConfig,
+  type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from 'axios'
 
+import { useToastStore } from '@/components/ui/toast'
 import { syncServerTime } from '@/lib/serverTime'
 import { authSnapshot, useAuthStore } from '@/store/auth'
 import type { ApiErrorBody, TokenPair } from '@/types/api'
@@ -37,6 +39,91 @@ const plain: AxiosInstance = axios.create({
 
 interface RetriableConfig extends InternalAxiosRequestConfig {
   _retried?: boolean
+  _intentos?: number
+}
+
+const REINTENTOS_MAX = 3
+
+/** Los devuelve el proxy de Render, no Django: el contenedor no estaba arriba. */
+const NUNCA_LLEGO = new Set([502, 503, 504])
+
+const IDEMPOTENTES = new Set(['get', 'head', 'options'])
+
+export function pareceDormido(error: AxiosError): boolean {
+  const status = error.response?.status
+  if (status !== undefined && NUNCA_LLEGO.has(status)) return true
+  return !error.response && (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK')
+}
+
+export function sePuedeRepetir(error: AxiosError): boolean {
+  const status = error.response?.status
+
+  // Un 502/503/504 lo contesta el proxy porque no encontró a quién preguntarle:
+  // la petición nunca tocó Django, así que repetirla no puede duplicar nada.
+  if (status !== undefined && NUNCA_LLEGO.has(status)) return true
+
+  // Aquí no hubo respuesta, y "sin respuesta" no es "sin procesar": el servidor
+  // pudo haber cerrado el folio y habérsenos perdido el regreso. Repetir un
+  // POST a ciegas cobra dos veces o renta el mismo cuarto dos veces, así que
+  // solo se repite lo que no cambia nada. Un cobro fallido lo reintenta el
+  // recepcionista, que sí sabe si el cargo entró.
+  const metodo = (error.config?.method ?? 'get').toLowerCase()
+  return IDEMPOTENTES.has(metodo)
+}
+
+/** 1 s, 2 s, 4 s. El pellizco al azar evita que las seis consultas del grid
+ *  vuelvan todas juntas y le caigan encima al contenedor que apenas despierta. */
+function esperar(intento: number): Promise<void> {
+  const ms = 1000 * 2 ** (intento - 1) + Math.random() * 400
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+// Un solo aviso para todas las peticiones que estén esperando a la vez, con
+// cuenta de referencias: el grid dispara varias y seis avisos iguales apilados
+// son peor que ninguno.
+let esperando = 0
+let avisoId: number | null = null
+
+function abrirAviso(): void {
+  esperando += 1
+  if (avisoId !== null) return
+  avisoId = useToastStore.getState().push({
+    title: 'Despertando servidores',
+    description: 'Esto puede tomar unos segundos.',
+    variant: 'info',
+    // Se quita solo si algo sale mal con la cuenta; lo normal es que lo cierre
+    // cerrarAviso en cuanto la última petición se resuelva.
+    durationMs: 120000,
+  })
+}
+
+function cerrarAviso(): void {
+  esperando = Math.max(0, esperando - 1)
+  if (esperando > 0 || avisoId === null) return
+  useToastStore.getState().dismiss(avisoId)
+  avisoId = null
+}
+
+/** Devuelve la respuesta buena si el reintento sirvió, o null si esto no era
+ *  un servidor dormido. Si se acabaron los intentos, propaga el error. */
+async function reintentarSiDuerme(
+  instancia: AxiosInstance,
+  error: AxiosError,
+): Promise<AxiosResponse | null> {
+  const original = error.config as RetriableConfig | undefined
+  if (!original || !pareceDormido(error) || !sePuedeRepetir(error)) return null
+
+  const intento = (original._intentos ?? 0) + 1
+  if (intento > REINTENTOS_MAX) return null
+  original._intentos = intento
+
+  abrirAviso()
+  try {
+    await esperar(intento)
+    return await instancia.request(original)
+  } finally {
+    cerrarAviso()
+  }
 }
 
 let refreshPromise: Promise<string | null> | null = null
@@ -52,11 +139,24 @@ async function refreshAccessToken(): Promise<string | null> {
       useAuthStore.setState({ refresh: data.refresh })
     }
     return data.access
-  } catch {
-    useAuthStore.getState().clear()
+  } catch (error) {
+    // Solo se cierra la sesión cuando el servidor de verdad rechazó el token.
+    // Un 502 del proxy o un timeout no dicen nada sobre él, y tirar la sesión
+    // ahí significa que cada vez que el contenedor duerme, todo el turno de
+    // recepción amanece en la pantalla de login.
+    const rechazado = axios.isAxiosError(error) && (error.response?.status ?? 0) < 500
+    if (rechazado) useAuthStore.getState().clear()
     return null
   }
 }
+
+// El refresh también tiene que aguantar el arranque: si se rinde, el usuario
+// acaba fuera aunque su sesión estuviera perfectamente viva.
+plain.interceptors.response.use(undefined, async (error: AxiosError) => {
+  const reintento = await reintentarSiDuerme(plain, error)
+  if (reintento) return reintento
+  return Promise.reject(error)
+})
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const access = authSnapshot.access()
@@ -77,6 +177,9 @@ api.interceptors.response.use(
   async (error: AxiosError<ApiErrorBody>) => {
     const original = error.config as RetriableConfig | undefined
 
+    const reintento = await reintentarSiDuerme(api, error)
+    if (reintento) return reintento
+
     if (error.response?.status === 401 && original && !original._retried) {
       original._retried = true
 
@@ -89,7 +192,10 @@ api.interceptors.response.use(
         return api.request(original)
       }
 
-      if (window.location.pathname !== '/login') {
+      // clear() es lo único que borra el refresh: si sigue ahí, la sesión no
+      // terminó, solo no se pudo renovar ahora. El error se propaga y la vista
+      // lo muestra en vez de sacar al usuario a media captura.
+      if (!authSnapshot.refresh() && window.location.pathname !== '/login') {
         window.location.assign('/login')
       }
     }

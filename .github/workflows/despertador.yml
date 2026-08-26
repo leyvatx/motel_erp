@@ -1,12 +1,26 @@
 name: Despertador
 
-# ponytail: mantiene despierto el plan free de Render, que duerme a los 15 min.
-# Si algún día pagas plan starter, borra este archivo.
+# Mantiene despierto el plan free de Render, que duerme a los 15 min sin
+# tráfico. Si algún día pagas plan starter, borra este archivo.
+#
+# OJO: GitHub solo activa `schedule` desde la rama por omisión del repo. En una
+# rama de trabajo este archivo existe pero no dispara nada.
 
 on:
   schedule:
+    # Cada 10, no cada 14. La ventana de Render es de 15 min y el cron de GitHub
+    # es "cuando haya runner": se retrasa de rutina más de lo que dura esa
+    # ventana. A 14 min el margen es de uno; a 10 son cinco, y aun así hay
+    # despertadas. Bajarlo más no ayuda: GitHub descarta los crones muy
+    # seguidos antes que los espaciados.
     - cron: '*/10 * * * *'
   workflow_dispatch:
+
+concurrency:
+  # Si un ping se quedó esperando a que arranque el contenedor, el siguiente no
+  # tiene nada que aportar.
+  group: despertador
+  cancel-in-progress: false
 
 jobs:
   ping:
@@ -14,6 +28,21 @@ jobs:
     steps:
       - name: Despertar la API
         run: |
-          curl -sS --fail --max-time 180 --retry 3 --retry-delay 30 --retry-all-errors \
+          # /api/health es la sonda barata: no toca base ni Redis, así que un
+          # hipo de Redis no manda un correo de fallo que no es de dormirse.
+          # --fail convierte cualquier 4xx/5xx en salida distinta de cero.
+          curl -sS --fail --max-time 180 \
+            --retry 5 --retry-delay 20 --retry-all-errors \
             -o /dev/null -w 'http=%{http_code} total=%{time_total}s\n' \
-            https://motel-erp-api.onrender.com/api/v1/health/
+            https://motel-erp-api.onrender.com/api/health
+
+      - name: Avisar que la API no contesta
+        if: failure()
+        run: |
+          echo "::error title=La API no despertó::Cinco intentos en tres minutos" \
+               "contra /api/health y ninguno pasó. No es el sueño normal del plan" \
+               "free: eso lo cubre el reintento. Revisa el panel de Render."
+          # El job ya viene fallando; esto solo le pone nombre en la interfaz.
+          # GitHub avisa por correo al dueño del repo cuando un workflow
+          # programado falla, así que no hace falta cablear nada más.
+          exit 1

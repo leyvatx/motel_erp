@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import subprocess
 import sys
@@ -12,6 +13,7 @@ from django.core.cache import cache
 from django.test import SimpleTestCase, TestCase, override_settings
 
 from common import ws_tickets
+from common.health import SilenciarSondeos
 
 from apps.settings.models import Motel, _cache_safe
 
@@ -145,3 +147,38 @@ class WsTicketTests(TestCase):
     def test_un_boleto_inventado_no_sirve(self) -> None:
         self.assertIsNone(ws_tickets.redeem("no-existe"))
         self.assertIsNone(ws_tickets.redeem(""))
+
+
+class SondaDeVidaTests(SimpleTestCase):
+    """La sonda contesta sin tocar nada y el filtro calla solo el ruido."""
+
+    def test_awake_no_toca_base_ni_cache(self):
+        """Si la sonda dependiera de algo, dejaría de servir justo al caerse."""
+        with mock.patch("common.health.connection") as conexion, \
+             mock.patch("common.health.cache") as memoria:
+            respuesta = self.client.get("/api/health")
+
+        conexion.cursor.assert_not_called()
+        memoria.set.assert_not_called()
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(respuesta.json()["status"], "awake")
+        self.assertIn("timestamp", respuesta.json())
+
+    def test_filtro_calla_sondeos_pero_no_fallas(self):
+        filtro = SilenciarSondeos()
+
+        def linea(ruta: str, codigo: int) -> logging.LogRecord:
+            return logging.LogRecord(
+                "uvicorn.access", logging.INFO, "", 0,
+                '%s - "%s %s HTTP/%s" %d',
+                ("10.0.0.1:0", "GET", ruta, "1.1", codigo),
+                None,
+            )
+
+        self.assertFalse(filtro.filter(linea("/api/health", 200)))
+        self.assertFalse(filtro.filter(linea("/api/v1/health/", 200)))
+        # Un sondeo que empieza a fallar es exactamente lo que hay que ver.
+        self.assertTrue(filtro.filter(linea("/api/health", 500)))
+        self.assertTrue(filtro.filter(linea("/api/v1/health/", 503)))
+        # El tráfico de verdad no se toca.
+        self.assertTrue(filtro.filter(linea("/api/v1/frontdesk/grid/", 200)))
