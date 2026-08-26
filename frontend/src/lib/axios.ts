@@ -16,16 +16,23 @@ function absolute(value: string | undefined): string {
 
 const BASE_URL = absolute(import.meta.env.VITE_API_URL)
 
+// El plan free de Render duerme el servicio a los 15 min y retiene la primera
+// petición mientras el contenedor vuelve a levantarse. Con 20 s se cortaba
+// justo ahí: el login moría por tiempo de espera en vez de esperar el arranque,
+// y como los mutations no reintentan, parecía que la API no respondía nunca.
+// Bájalo a 20 s el día que la API deje de dormirse.
+const TIMEOUT_MS = 60000
+
 export const api: AxiosInstance = axios.create({
   baseURL: `${BASE_URL}/api/v1`,
   headers: { 'Content-Type': 'application/json' },
-  timeout: 20000,
+  timeout: TIMEOUT_MS,
 })
 
 const plain: AxiosInstance = axios.create({
   baseURL: `${BASE_URL}/api/v1`,
   headers: { 'Content-Type': 'application/json' },
-  timeout: 20000,
+  timeout: TIMEOUT_MS,
 })
 
 interface RetriableConfig extends InternalAxiosRequestConfig {

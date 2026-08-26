@@ -45,8 +45,12 @@ services:
     healthCheckPath: /api/v1/health/
     envVars:
       - fromGroup: motel-erp-comun
+      # Un solo worker: el plan free da 0.1 de CPU y 512 MB, y cada worker de
+      # uvicorn importa Django entero. Dos se pelean la CPU al arrancar y juntos
+      # rozan el techo de memoria. Uvicorn es asíncrono, así que uno atiende de
+      # sobra esta carga. Súbelo cuando el plan tenga CPU que repartir.
       - key: WEB_CONCURRENCY
-        value: "2"
+        value: "1"
       - key: DATABASE_URL
         fromDatabase:
           name: motel-erp-db
