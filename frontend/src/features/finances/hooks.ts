@@ -8,6 +8,18 @@ import type { CloseShiftPayload, ExpensePayload, OpenShiftPayload } from '@/feat
 import { apiErrorMessage } from '@/lib/axios'
 import { queryKeys } from '@/lib/queryClient'
 
+/** Serie por hora del turno abierto. Se refresca sola cada 5 min: la gráfica
+ *  es contexto, no un cronómetro, y no vale una petición por minuto. */
+export function useShiftTrend(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.finances.shiftTrend,
+    queryFn: financesApi.shiftTrend,
+    enabled,
+    staleTime: 5 * 60_000,
+    refetchInterval: 5 * 60_000,
+  })
+}
+
 export function useCurrentShift(enabled = true) {
   return useQuery({
     queryKey: queryKeys.finances.currentShift,

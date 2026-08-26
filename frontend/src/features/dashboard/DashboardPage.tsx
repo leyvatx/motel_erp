@@ -19,7 +19,10 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useCurrentShift, usePendingExpenses } from '@/features/finances/hooks'
+import { useCurrentShift, usePendingExpenses, useShiftTrend } from '@/features/finances/hooks'
+import { RoomDonut } from '@/features/dashboard/charts/RoomDonut'
+import { ShiftTrendChart } from '@/features/dashboard/charts/ShiftTrendChart'
+import { Sparkline } from '@/features/dashboard/charts/Sparkline'
 import {
   useExpiringStays,
   useRoomSummary,
@@ -30,15 +33,6 @@ import { useLowStock } from '@/features/inventory/hooks'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/auth'
 import type { Role, RoomStatus } from '@/types/api'
-
-const roomColors: Partial<Record<RoomStatus, string>> = {
-  AVAILABLE: 'bg-status-available',
-  OCCUPIED: 'bg-status-occupied',
-  CLEANING: 'bg-status-cleaning',
-  RESERVED: 'bg-primary',
-  MAINTENANCE: 'bg-status-maintenance',
-  BLOCKED: 'bg-muted-foreground',
-}
 
 const money = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
 const today = new Intl.DateTimeFormat('es-MX', {
@@ -54,6 +48,7 @@ function MetricCard({
   icon,
   loading,
   tone = 'default',
+  trend,
 }: {
   title: string
   value: string | number
@@ -61,30 +56,64 @@ function MetricCard({
   icon: ReactNode
   loading?: boolean
   tone?: 'default' | 'warning' | 'success'
+  /** Un punto por hora. Solo se pasa donde hay historia real; ver Sparkline. */
+  trend?: number[]
 }) {
   return (
-    <Card>
-      <CardContent className="flex items-start justify-between gap-3 p-5">
-        <div className="min-w-0 space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
+    <Card className="min-w-0">
+      <CardContent className="flex h-full items-center justify-between gap-2 p-3">
+        <div className="min-w-0 flex-1 space-y-0.5">
+          <p className="truncate text-xs font-medium text-muted-foreground">{title}</p>
           {loading ? (
-            <Skeleton className="h-8 w-20" />
+            <Skeleton className="h-7 w-16" />
           ) : (
-            <p className="text-2xl font-bold tracking-tight">{value}</p>
+            <p className="text-xl font-bold leading-tight tracking-tight tabular">{value}</p>
           )}
-          <p className="truncate text-xs text-muted-foreground">{detail}</p>
+          <p className="truncate text-2xs text-muted-foreground">{detail}</p>
         </div>
-        <div
-          className={cn(
-            'rounded-lg bg-muted p-2.5 text-muted-foreground',
-            tone === 'warning' && 'bg-amber-500/10 text-amber-600',
-            tone === 'success' && 'bg-emerald-500/10 text-emerald-600',
-          )}
-        >
-          {icon}
-        </div>
+
+        {trend && trend.length > 1 ? (
+          <Sparkline values={trend} className="h-9 w-14 shrink-0" />
+        ) : (
+          <div
+            className={cn(
+              'shrink-0 rounded-lg bg-muted p-2 text-muted-foreground',
+              tone === 'warning' && 'bg-amber-500/10 text-amber-600',
+              tone === 'success' && 'bg-emerald-500/10 text-emerald-600',
+            )}
+          >
+            {icon}
+          </div>
+        )}
       </CardContent>
     </Card>
+  )
+}
+
+/** Accesos rápidos comprimidos: antes eran cuatro tarjetas del ancho de la
+ *  pantalla al fondo de la página, o sea la razón principal del scroll. */
+function QuickActions({ actions }: { actions: ReturnType<typeof roleActions> }) {
+  return (
+    <div className="flex shrink-0 items-center gap-1">
+      {actions.map((action) => {
+        const Icon = action.icon
+        return (
+          <Button
+            key={action.to}
+            asChild
+            variant="ghost"
+            size="sm"
+            className="h-9 gap-1.5 px-2"
+            title={action.detail}
+          >
+            <Link to={action.to}>
+              <Icon className="size-4 shrink-0" />
+              <span className="hidden text-xs xl:inline">{action.label}</span>
+            </Link>
+          </Button>
+        )
+      })}
+    </div>
   )
 }
 
@@ -166,6 +195,7 @@ export default function DashboardPage() {
   const shift = useCurrentShift(!isHousekeeping)
   const expenses = usePendingExpenses(isManagement)
   const lowStock = useLowStock(isManagement || isHousekeeping)
+  const trend = useShiftTrend(!isHousekeeping)
 
   const counts = Object.fromEntries(
     (rooms.data ?? []).map((item) => [item.status, item.count]),
@@ -180,6 +210,8 @@ export default function DashboardPage() {
   const openMaintenance = maintenance.data?.results ?? []
   const urgentMaintenance = openMaintenance.filter((report) => report.priority === 'URGENT')
   const expiredStays = expiring.data?.results.filter((stay) => stay.remaining_seconds <= 0) ?? []
+  const trendHours = trend.data?.hours ?? []
+  const rentalsPerHour = trendHours.map((hora) => hora.rentals)
 
   const attention: AttentionItem[] = []
   expiredStays.slice(0, 2).forEach((stay) =>
@@ -240,31 +272,68 @@ export default function DashboardPage() {
     <PageShell
       title={`${greeting()}, ${displayName}`}
       description={`${user?.motel_name ?? 'Tu motel'} · ${today.format(new Date())}`}
-      className="overflow-auto pb-2"
+      className="min-h-0"
     >
-      <div className="space-y-5">
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {/*
+        Bento de 12 columnas. Las filas son [auto auto 1fr]: la franja del turno
+        y las métricas piden lo que necesitan, y el resto del alto se lo queda la
+        fila de abajo, que es la que tiene que estirarse para que no sobre ni
+        falte. En 1080p entra completo sin scroll de página; abajo de lg se apila
+        y el scroll natural del móvil hace su trabajo.
+      */}
+      <div className="grid min-h-0 grid-cols-1 gap-3 lg:h-full lg:grid-cols-12 lg:grid-rows-[auto_auto_minmax(0,1fr)]">
+        {/* ── Franja del turno + accesos rápidos ─────────────────────────── */}
+        <Card className="lg:col-span-12">
+          <CardContent className="flex flex-wrap items-center gap-x-6 gap-y-2 p-3">
+            {!isHousekeeping ? (
+              <>
+                <ShiftFigure
+                  label="Turno"
+                  value={shift.isLoading ? '…' : (shift.data?.code ?? 'Sin turno')}
+                />
+                <ShiftFigure
+                  label="Ventas"
+                  value={shift.data ? money.format(Number(shift.data.total_sales)) : '—'}
+                />
+                <ShiftFigure
+                  label="Efectivo esperado"
+                  value={shift.data ? money.format(Number(shift.data.expected_cash)) : '—'}
+                />
+                <ShiftFigure label="Folios" value={String(shift.data?.folios_closed ?? '—')} />
+              </>
+            ) : (
+              <ShiftFigure label="Tareas activas" value={String(activeCleaning.length)} />
+            )}
+
+            <div className="ml-auto">
+              <QuickActions actions={roleActions(role)} />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ── Cuatro métricas ────────────────────────────────────────────── */}
+        <div className="grid grid-cols-2 gap-3 lg:col-span-8 lg:grid-cols-4">
           {isHousekeeping ? (
             <>
               <MetricCard
                 title="Mis tareas activas"
                 value={activeCleaning.length}
                 detail="Pendientes y en proceso"
-                icon={<PiPaintBrush className="size-5" />}
+                icon={<PiPaintBrush className="size-4" />}
                 loading={cleaning.isLoading}
               />
               <MetricCard
                 title="En proceso"
                 value={activeCleaning.filter((task) => task.status === 'IN_PROGRESS').length}
                 detail="Limpiezas iniciadas"
-                icon={<PiClock className="size-5" />}
+                icon={<PiClock className="size-4" />}
                 loading={cleaning.isLoading}
               />
               <MetricCard
                 title="Mantenimiento"
                 value={openMaintenance.length}
                 detail={`${urgentMaintenance.length} urgentes`}
-                icon={<PiWrench className="size-5" />}
+                icon={<PiWrench className="size-4" />}
                 loading={maintenance.isLoading}
                 tone={urgentMaintenance.length ? 'warning' : 'default'}
               />
@@ -272,25 +341,29 @@ export default function DashboardPage() {
                 title="Stock bajo"
                 value={lowStock.data?.count ?? 0}
                 detail="Insumos por reponer"
-                icon={<PiPackage className="size-5" />}
+                icon={<PiPackage className="size-4" />}
                 loading={lowStock.isLoading}
                 tone={(lowStock.data?.count ?? 0) ? 'warning' : 'success'}
               />
             </>
           ) : (
             <>
+              {/* La única con sparkline: rentas por hora es historia de verdad,
+                  el conteo de renglones Stay del turno. Las otras tres son fotos
+                  del momento y nada guarda cómo estaban hace una hora. */}
               <MetricCard
                 title="Ocupación"
                 value={`${occupancy}%`}
-                detail={`${occupied} de ${totalRooms} habitaciones`}
-                icon={<PiBed className="size-5" />}
+                detail={`${occupied} de ${totalRooms} · rentas/hora`}
+                icon={<PiBed className="size-4" />}
                 loading={rooms.isLoading}
+                trend={rentalsPerHour}
               />
               <MetricCard
                 title="Disponibles"
                 value={counts.AVAILABLE ?? 0}
                 detail="Listas para rentar"
-                icon={<PiCheckCircle className="size-5" />}
+                icon={<PiCheckCircle className="size-4" />}
                 loading={rooms.isLoading}
                 tone="success"
               />
@@ -298,7 +371,7 @@ export default function DashboardPage() {
                 title="Por vencer"
                 value={expiring.data?.count ?? 0}
                 detail={`${expiredStays.length} ya vencidas`}
-                icon={<PiClock className="size-5" />}
+                icon={<PiClock className="size-4" />}
                 loading={expiring.isLoading}
                 tone={expiredStays.length ? 'warning' : 'default'}
               />
@@ -306,187 +379,131 @@ export default function DashboardPage() {
                 title="Limpieza"
                 value={activeCleaning.length}
                 detail="Habitaciones en proceso"
-                icon={<PiSparkle className="size-5" />}
+                icon={<PiSparkle className="size-4" />}
                 loading={cleaning.isLoading}
               />
             </>
           )}
         </div>
 
-        <div className="grid gap-5 xl:grid-cols-[1.35fr_1fr]">
-          <Card>
-            <CardHeader>
-              <CardTitle>Estado de la operación</CardTitle>
-              <CardDescription>
-                {isHousekeeping
-                  ? 'Trabajo activo del turno'
-                  : 'Distribución actual de habitaciones'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-2">
-              {isHousekeeping ? (
-                <div className="grid gap-3 sm:grid-cols-3">
-                  {[
-                    [
-                      'Pendientes',
-                      activeCleaning.filter((task) => task.status === 'PENDING').length,
-                    ],
-                    [
-                      'Asignadas',
-                      activeCleaning.filter((task) => task.status === 'ASSIGNED').length,
-                    ],
-                    [
-                      'En proceso',
-                      activeCleaning.filter((task) => task.status === 'IN_PROGRESS').length,
-                    ],
-                  ].map(([label, value]) => (
-                    <div key={label} className="rounded-lg border bg-muted/30 p-4">
-                      <p className="text-2xl font-semibold">{value}</p>
-                      <p className="text-sm text-muted-foreground">{label}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : rooms.isLoading ? (
-                <div className="space-y-3">
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-              ) : totalRooms === 0 ? (
-                <p className="py-8 text-center text-sm text-muted-foreground">
-                  Aún no hay habitaciones configuradas.
-                </p>
-              ) : (
-                (rooms.data ?? []).map((item) => (
-                  <div key={item.status} className="space-y-1.5">
-                    <div className="flex justify-between text-sm">
-                      <span>{item.status_display}</span>
-                      <span className="font-medium">{item.count}</span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className={cn('h-full rounded-full', roomColors[item.status])}
-                        style={{
-                          width: `${Math.max((item.count / totalRooms) * 100, item.count ? 3 : 0)}%`,
-                        }}
-                      />
-                    </div>
+        {/* ── Necesita atención: ocupa las dos filas de la derecha ────────── */}
+        <Card className="flex min-h-0 flex-col lg:col-span-4 lg:row-span-2">
+          <CardHeader className="shrink-0 pb-2">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <CardTitle className="text-base">Necesita atención</CardTitle>
+                <CardDescription className="text-xs">Prioridades para ahora</CardDescription>
+              </div>
+              {attention.length ? (
+                <Badge
+                  variant={attention.some((item) => item.urgent) ? 'destructive' : 'secondary'}
+                >
+                  {attention.length}
+                </Badge>
+              ) : null}
+            </div>
+          </CardHeader>
+
+          {/*
+            El scroll vive aquí y en ningún otro lado. En móvil lo acota max-h,
+            donde la página sí se desplaza; en escritorio el min-h-0 sobre el
+            flex es lo que impide que la tarjeta crezca más allá de su celda.
+            Sin ese min-h-0 un flex-item se niega a encoger por debajo de su
+            contenido, y veinte alertas de stock empujan el scroll a la página
+            entera, que es justo lo que veníamos a arreglar.
+          */}
+          <CardContent className="min-h-0 flex-1 space-y-2 overflow-y-auto scrollbar-thin pt-0 max-lg:max-h-72">
+            {isLoading ? (
+              <>
+                <Skeleton className="h-14 w-full" />
+                <Skeleton className="h-14 w-full" />
+              </>
+            ) : attention.length === 0 ? (
+              <div className="flex h-full flex-col items-center justify-center gap-2 py-6 text-center">
+                <PiCheckCircle className="size-7 text-emerald-600" />
+                <p className="text-sm font-medium">Todo al día</p>
+                <p className="text-xs text-muted-foreground">No hay pendientes críticos.</p>
+              </div>
+            ) : (
+              attention.map((item, index) => (
+                <Link
+                  key={`${item.title}-${index}`}
+                  to={item.to}
+                  className="flex items-center gap-2.5 rounded-lg border p-2.5 transition-colors hover:bg-muted/50"
+                >
+                  <PiWarning
+                    className={cn(
+                      'size-4 shrink-0 text-amber-600',
+                      item.urgent && 'text-destructive',
+                    )}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{item.title}</p>
+                    <p className="truncate text-xs text-muted-foreground">{item.detail}</p>
                   </div>
-                ))
-              )}
-              <Button asChild variant="outline" className="w-full">
-                <Link to={isHousekeeping ? '/housekeeping' : '/frontdesk'}>
-                  Ver operación completa <PiArrowRight className="size-4" />
+                  <PiArrowRight className="size-4 shrink-0 text-muted-foreground" />
                 </Link>
-              </Button>
-            </CardContent>
-          </Card>
+              ))
+            )}
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <CardTitle>Necesita atención</CardTitle>
-                  <CardDescription>Prioridades para resolver ahora</CardDescription>
-                </div>
-                {attention.length ? (
-                  <Badge
-                    variant={attention.some((item) => item.urgent) ? 'destructive' : 'secondary'}
-                  >
-                    {attention.length}
-                  </Badge>
-                ) : null}
+        {/* ── Distribución: anillo con la leyenda a la derecha ────────────── */}
+        <Card className="flex min-h-0 flex-col lg:col-span-4">
+          <CardHeader className="shrink-0 pb-2">
+            <CardTitle className="text-base">
+              {isHousekeeping ? 'Trabajo del turno' : 'Distribución'}
+            </CardTitle>
+            <CardDescription className="text-xs">
+              {isHousekeeping ? 'Tareas por estado' : 'Habitaciones ahora'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex min-h-0 flex-1 items-center pt-0">
+            {isHousekeeping ? (
+              <div className="grid w-full grid-cols-3 gap-2">
+                {(
+                  [
+                    ['Pendientes', 'PENDING'],
+                    ['Asignadas', 'ASSIGNED'],
+                    ['En proceso', 'IN_PROGRESS'],
+                  ] as const
+                ).map(([label, estado]) => (
+                  <div key={estado} className="rounded-lg border bg-muted/30 p-3">
+                    <p className="text-xl font-semibold tabular">
+                      {activeCleaning.filter((task) => task.status === estado).length}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{label}</p>
+                  </div>
+                ))}
               </div>
-            </CardHeader>
-            <CardContent className="space-y-2 pt-2">
-              {isLoading ? (
-                <>
-                  <Skeleton className="h-16 w-full" />
-                  <Skeleton className="h-16 w-full" />
-                </>
-              ) : attention.length === 0 ? (
-                <div className="flex flex-col items-center gap-2 py-8 text-center">
-                  <PiCheckCircle className="size-8 text-emerald-600" />
-                  <p className="font-medium">Todo al día</p>
-                  <p className="text-sm text-muted-foreground">No hay pendientes críticos.</p>
-                </div>
-              ) : (
-                attention.slice(0, 5).map((item, index) => (
-                  <Link
-                    key={`${item.title}-${index}`}
-                    to={item.to}
-                    className="flex items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50"
-                  >
-                    <PiWarning
-                      className={cn(
-                        'size-4 shrink-0 text-amber-600',
-                        item.urgent && 'text-destructive',
-                      )}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{item.title}</p>
-                      <p className="truncate text-xs text-muted-foreground">{item.detail}</p>
-                    </div>
-                    <PiArrowRight className="size-4 shrink-0 text-muted-foreground" />
-                  </Link>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </div>
+            ) : (
+              <RoomDonut data={rooms.data ?? []} total={totalRooms} loading={rooms.isLoading} />
+            )}
+          </CardContent>
+        </Card>
 
-        {!isHousekeeping ? (
-          <Card>
-            <CardContent className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Turno actual</p>
-                <p className="font-semibold">
-                  {shift.isLoading ? 'Cargando…' : (shift.data?.code ?? 'Sin turno abierto')}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Ventas del turno</p>
-                <p className="font-semibold">
-                  {shift.data ? money.format(Number(shift.data.total_sales)) : '—'}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Efectivo esperado</p>
-                <p className="font-semibold">
-                  {shift.data ? money.format(Number(shift.data.expected_cash)) : '—'}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Folios cerrados</p>
-                <p className="font-semibold">{shift.data?.folios_closed ?? '—'}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ) : null}
-
-        <div>
-          <h2 className="mb-3 text-base font-semibold">Accesos rápidos</h2>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {roleActions(role).map((action) => {
-              const Icon = action.icon
-              return (
-                <Card key={action.to} asChild className="transition-colors hover:bg-muted/40">
-                  <Link to={action.to} className="flex-row items-center gap-3 p-4">
-                    <div className="rounded-lg bg-primary/10 p-2.5 text-primary">
-                      <Icon className="size-5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium">{action.label}</p>
-                      <p className="truncate text-xs text-muted-foreground">{action.detail}</p>
-                    </div>
-                    <PiArrowRight className="size-4 text-muted-foreground" />
-                  </Link>
-                </Card>
-              )
-            })}
-          </div>
-        </div>
+        {/* ── Tendencia del turno ─────────────────────────────────────────── */}
+        <Card className="flex min-h-0 flex-col lg:col-span-4">
+          <CardHeader className="shrink-0 pb-2">
+            <CardTitle className="text-base">Tendencia del turno</CardTitle>
+            <CardDescription className="text-xs">
+              {trend.data?.shift ? `Ventas por hora · ${trend.data.shift}` : 'Ventas por hora'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="min-h-0 flex-1 pt-0 max-lg:h-48">
+            <ShiftTrendChart hours={trendHours} loading={trend.isLoading} />
+          </CardContent>
+        </Card>
       </div>
     </PageShell>
+  )
+}
+
+function ShiftFigure({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-2xs uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="truncate text-sm font-semibold tabular">{value}</p>
+    </div>
   )
 }

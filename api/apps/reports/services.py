@@ -4,7 +4,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
 from django.db.models import Avg, Count, DecimalField, ExpressionWrapper, F, Q, Sum
-from django.db.models.functions import Coalesce, TruncDate
+from django.db.models.functions import Coalesce, TruncDate, TruncHour
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
@@ -109,3 +109,63 @@ def housekeeping_report(params) -> dict:
         "summary": {"tasks": tasks.count(), "average_seconds": tasks.aggregate(value=Avg("duration_seconds"))["value"] or 0, "issues": tasks.filter(found_issues=True).count(), "maintenance": maintenance.count(), "maintenance_resolved": resolved.count()},
         "employees": list(employees),
     }
+
+
+def shift_trend_report(turno) -> dict:
+    """Serie por hora de un turno: ventas cobradas y rentas iniciadas.
+
+    Existe porque el panel necesitaba una tendencia y el turno solo guardaba
+    totales. Los dos números salen de contar renglones reales -- pagos por
+    ``paid_at`` y rentas por ``check_in_at`` -- y no de estimar nada: una
+    gráfica inventada en un panel de caja es peor que no tener gráfica.
+
+    Recibe el turno ya resuelto en vez de buscarlo. Quien llama es el viewset de
+    turnos, cuyo ``get_queryset`` ya restringe a los propios cuando quien
+    pregunta no es gerencia; buscar aquí el turno abierto se saltaría esa regla
+    y le enseñaría a un recepcionista la caja de su compañero.
+    """
+    if turno is None:
+        return {"shift": None, "hours": []}
+
+    tz = business_tz()
+    desde = turno.opened_at.astimezone(tz).replace(minute=0, second=0, microsecond=0)
+    hasta = (turno.closed_at or timezone.now()).astimezone(tz)
+
+    ventas = {
+        fila["hora"]: fila["total"]
+        for fila in Payment.objects.filter(
+            shift=turno, status=PaymentStatus.APPLIED, paid_at__gte=desde
+        )
+        .annotate(hora=TruncHour("paid_at", tzinfo=tz))
+        .values("hora")
+        .annotate(total=Coalesce(Sum("amount"), ZERO, output_field=MONEY))
+    }
+
+    rentas = {
+        fila["hora"]: fila["total"]
+        for fila in Stay.objects.filter(check_in_at__gte=desde, check_in_at__lte=hasta)
+        .exclude(status=StayStatus.CANCELLED)
+        .annotate(hora=TruncHour("check_in_at", tzinfo=tz))
+        .values("hora")
+        .annotate(total=Count("id"))
+    }
+
+    # Las horas vacías se rellenan en cero en vez de omitirse. Sin esto una hora
+    # sin ventas desaparece, la línea une las dos vecinas y dibuja una pendiente
+    # continua donde en realidad no pasó nada.
+    horas = []
+    cursor = desde
+    # Tope duro de 24: un turno que lleva días abierto es un error de operación,
+    # no una razón para devolver mil puntos que nadie puede leer.
+    while cursor <= hasta and len(horas) < 24:
+        horas.append(
+            {
+                "hour": cursor.isoformat(),
+                "label": cursor.strftime("%H:%M"),
+                "sales": ventas.get(cursor, ZERO),
+                "rentals": rentas.get(cursor, 0),
+            }
+        )
+        cursor += timedelta(hours=1)
+
+    return {"shift": turno.code, "hours": horas}

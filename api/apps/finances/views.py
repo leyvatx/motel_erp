@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from common.exceptions import DomainError
 
 from apps.finances import services
+from apps.reports import services as reports
 from apps.users.constants import PermissionCode
 from apps.finances.constants import ExpenseStatus, ShiftStatus
 from apps.finances.models import CashCount, CashMovement, Expense, Shift
@@ -95,6 +96,18 @@ class ShiftViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Ge
         if shift is None:
             return Response({"detail": "Sin turno abierto."}, status=status.HTTP_404_NOT_FOUND)
         return Response(ShiftSerializer(shift).data)
+
+    @action(detail=False, methods=["get"])
+    def trend(self, request) -> Response:
+        """Serie por hora del turno abierto de quien pregunta.
+
+        Cuelga de aquí y no de ``/reports/`` a propósito: ahí dentro todo exige
+        ``REPORT_VIEW``, que recepción no tiene, y el panel es justo lo que
+        recepción mira todo el día. Al ser GET cae en la clave ``read`` de la
+        matriz, o sea ``SHIFT_OPEN``, y ``get_open_shift`` solo devuelve el
+        turno de quien pregunta. Nadie ve la caja del compañero.
+        """
+        return Response(reports.shift_trend_report(services.get_open_shift(request.user)))
 
     @extend_schema(request=CloseShiftSerializer, responses=ShiftSerializer)
     @action(detail=True, methods=["post"])

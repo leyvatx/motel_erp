@@ -7,10 +7,13 @@ import type {
   ExpensePayload,
   OpenShiftPayload,
   Shift,
+  ShiftTrend,
 } from '@/features/finances/types'
 
 export const financesApi = {
   currentShift: (): Promise<Shift> => get<Shift>('/finances/shifts/current/'),
+
+  shiftTrend: (): Promise<ShiftTrend> => get<ShiftTrend>('/finances/shifts/trend/'),
 
   shifts: (params?: ListParams & { status?: string }): Promise<PaginatedResponse<Shift>> =>
     get<PaginatedResponse<Shift>>('/finances/shifts/', { params }),

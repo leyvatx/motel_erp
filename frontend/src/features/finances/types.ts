@@ -95,3 +95,15 @@ export interface ExpensePayload {
   supplier?: string
   receipt_reference?: string
 }
+
+export interface ShiftTrendHour {
+  hour: string
+  label: string
+  sales: string
+  rentals: number
+}
+
+export interface ShiftTrend {
+  shift: string | null
+  hours: ShiftTrendHour[]
+}

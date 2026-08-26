@@ -69,6 +69,7 @@ export const queryKeys = {
   },
   finances: {
     currentShift: ['finances', 'shift', 'current'] as const,
+    shiftTrend: ['finances', 'shift', 'trend'] as const,
     shifts: (params?: unknown) => ['finances', 'shifts', params ?? {}] as const,
     shift: (id: number) => ['finances', 'shift', id] as const,
     expenses: (params?: unknown) => ['finances', 'expenses', params ?? {}] as const,
