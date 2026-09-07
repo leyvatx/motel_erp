@@ -6,7 +6,10 @@ acceso sepa a cuál de los cincuenta entrar sin preguntar de más.
 
 from __future__ import annotations
 
+from io import StringIO
+
 from django.core.cache import cache
+from django.core.management import CommandError, call_command
 from django.test import TestCase
 from rest_framework.test import APIClient
 
@@ -283,3 +286,103 @@ class SesionesTests(MotelUsersTestCase):
         self.assertEqual(salida.status_code, 204)
         self.assertIsNotNone(UserSession.objects.get(user=self.dueno_arcos).revoked_at)
         self.assertEqual(cliente.get(ME_URL).status_code, 401)
+
+
+class CrearAdminDelClienteTests(TestCase):
+    """La cuenta con la que un cliente estrena el sistema.
+
+    Lo que se cuida aquí es que mande sobre una sucursal y no sobre la
+    plataforma: un superusuario sin sucursal ve el alta de sucursales y nada
+    más, así que no puede rentar ni llega nunca al asistente de alta.
+    """
+
+    def setUp(self) -> None:
+        """Sistema recién entregado: sin ninguna sucursal.
+
+        La migración inicial siembra una a partir de BUSINESS_NAME, así que una
+        base nueva nunca está del todo vacía. El caso que se prueba aquí es el
+        de después de retirarla con reset_tenant, que es como queda un sistema
+        listo para entregar.
+        """
+        cache.clear()
+        # all_objects es un Manager llano, así que este borrado es el de verdad.
+        Motel.all_objects.all().delete()
+
+    def correr(self, **opciones) -> str:
+        salida = StringIO()
+        call_command("create_client_admin", stdout=salida, **opciones)
+        return salida.getvalue()
+
+    def test_el_punto_de_partida_es_un_sistema_sin_sucursales(self) -> None:
+        """Deja claro contra qué corren las demás.
+
+        Una base recién migrada sí trae una sucursal, sembrada por la migración
+        inicial a partir de BUSINESS_NAME. El estado de aquí es el de después de
+        retirarla, que es como queda un sistema listo para entregar.
+        """
+        self.assertEqual(Motel.all_objects.count(), 0)
+
+    def test_crea_la_sucursal_cuando_no_hay_ninguna(self) -> None:
+        self.correr(email="admin@cliente.com", password=PASSWORD)
+
+        usuario = User.all_objects.get(username="admin")
+        self.assertEqual(usuario.role, Role.SUPERADMIN)
+        self.assertIsNotNone(usuario.motel_id)
+        self.assertEqual(usuario.motel.name, "Mi negocio")
+
+    def test_la_cuenta_manda_en_su_sucursal_y_no_en_la_plataforma(self) -> None:
+        """Es la diferencia con createsuperuser, y la razón de que exista esto."""
+        self.correr(email="admin@cliente.com", password=PASSWORD)
+
+        usuario = User.all_objects.get(username="admin")
+        self.assertFalse(usuario.is_platform_admin)
+        self.assertTrue(usuario.is_superadmin)
+
+    def test_la_cuenta_recien_creada_puede_entrar(self) -> None:
+        self.correr(email="admin@cliente.com", password=PASSWORD)
+
+        respuesta = APIClient().post(
+            LOGIN_URL, {"username": "admin", "password": PASSWORD}
+        )
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertFalse(respuesta.data["user"]["is_platform_admin"])
+
+    def test_se_suma_a_la_sucursal_que_ya_existe(self) -> None:
+        arcos = Motel.objects.create(name="Arcos Prueba")
+
+        self.correr(email="gerencia@cliente.com", password=PASSWORD)
+
+        usuario = User.all_objects.get(username="gerencia")
+        self.assertEqual(usuario.motel_id, arcos.pk)
+        self.assertEqual(Motel.objects.count(), 1)
+
+    def test_con_varias_sucursales_exige_elegir(self) -> None:
+        Motel.objects.create(name="Arcos Prueba")
+        Motel.objects.create(name="Palmas Prueba")
+
+        with self.assertRaises(CommandError) as fallo:
+            self.correr(email="admin@cliente.com", password=PASSWORD)
+
+        self.assertIn("--sucursal", str(fallo.exception))
+
+    def test_no_pisa_una_clave_ya_ocupada(self) -> None:
+        self.correr(email="admin@cliente.com", password=PASSWORD)
+
+        with self.assertRaises(CommandError):
+            self.correr(email="admin@otro.com", password=PASSWORD)
+
+        self.assertEqual(User.all_objects.filter(username="admin").count(), 1)
+
+    def test_rechaza_una_contrasena_debil_antes_de_crear_nada(self) -> None:
+        with self.assertRaises(CommandError):
+            self.correr(email="admin@cliente.com", password="12345678")
+
+        self.assertFalse(User.all_objects.filter(username="admin").exists())
+        self.assertFalse(Motel.all_objects.exists())
+
+    def test_rechaza_un_correo_que_no_da_una_clave_valida(self) -> None:
+        with self.assertRaises(CommandError) as fallo:
+            self.correr(email="a@cliente.com", password=PASSWORD)
+
+        self.assertIn("--username", str(fallo.exception))
