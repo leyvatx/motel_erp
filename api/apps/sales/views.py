@@ -81,7 +81,7 @@ class FolioViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Ge
         return FolioListSerializer if self.action == "list" else FolioSerializer
 
     def get_queryset(self):
-        if self.action in {"list"}:
+        if self.action in {"list", "open_folios"}:
             return super().get_queryset()
         return folio_detail_queryset()
 
@@ -185,8 +185,14 @@ class FolioViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Ge
     @extend_schema(responses=FolioSerializer)
     @action(detail=False, methods=["get"], url_path="open")
     def open_folios(self, request) -> Response:
-        """Cuentas abiertas: lo que recepción tiene pendiente de cobrar."""
-        queryset = self.queryset.filter(status=FolioStatus.OPEN).order_by("-opened_at")
+        """Cuentas abiertas: lo que recepción tiene pendiente de cobrar.
+
+        Va por ``get_queryset()`` y no por ``self.queryset``: el atributo de
+        clase se construyó al importar el módulo, cuando todavia no habia
+        petición ni motel, así que filtrar sobre él saca las cuentas abiertas
+        de toda la plataforma.
+        """
+        queryset = self.get_queryset().filter(status=FolioStatus.OPEN).order_by("-opened_at")
         page = self.paginate_queryset(queryset)
         return self.get_paginated_response(FolioListSerializer(page, many=True).data)
 

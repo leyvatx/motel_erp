@@ -17,6 +17,7 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
 
+from common.managers import TenantManager
 from common.models import BaseModel, ImmutableModel, TenantModel
 from common.utils import ZERO
 
@@ -274,7 +275,14 @@ class WarehouseStock(TenantModel):
 
     No se borra ni se versiona: es el estado actual. El histórico esta en el
     Kardex (``StockMovement``).
+
+    Hereda de ``TenantModel`` a secas -- no lleva baja lógica -- así que le
+    toca declarar su propio manager acotado. Sin él, ``objects`` seria el de
+    Django y las existencias de todos los moteles saldrian en la misma lista.
     """
+
+    objects = TenantManager()
+    all_objects = models.Manager()
 
     product = models.ForeignKey(
         Product, verbose_name="Producto", on_delete=models.PROTECT, related_name="stocks"
