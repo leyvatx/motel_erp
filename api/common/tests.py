@@ -161,8 +161,18 @@ class SondaDeVidaTests(SimpleTestCase):
         conexion.cursor.assert_not_called()
         memoria.set.assert_not_called()
         self.assertEqual(respuesta.status_code, 200)
-        self.assertEqual(respuesta.json()["status"], "awake")
+        self.assertEqual(respuesta.json()["status"], "ok")
         self.assertIn("timestamp", respuesta.json())
+
+    def test_healthz_es_la_misma_sonda(self):
+        """Los monitores externos buscan /healthz; el despertador, /api/health."""
+        with mock.patch("common.health.connection") as conexion,              mock.patch("common.health.cache") as memoria:
+            respuesta = self.client.get("/healthz")
+
+        conexion.cursor.assert_not_called()
+        memoria.set.assert_not_called()
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(respuesta.json()["status"], "ok")
 
     def test_filtro_calla_sondeos_pero_no_fallas(self):
         filtro = SilenciarSondeos()

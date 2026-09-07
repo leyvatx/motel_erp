@@ -33,8 +33,11 @@ api_v1_patterns = [
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    # Fuera de /api/v1/: es una sonda de infraestructura, no parte del contrato
-    # de la API. No se versiona porque nada de lo que responde puede cambiar.
+    # Fuera de /api/v1/: son una sonda de infraestructura, no parte del
+    # contrato de la API. No se versionan porque nada de lo que responden puede
+    # cambiar. Son la misma vista con dos ligas: `/healthz` es el nombre que
+    # buscan los monitores externos y `/api/health` la que ya estaba publicada.
+    path("healthz", awake, name="healthz"),
     path("api/health", awake, name="awake"),
     path("api/v1/", include((api_v1_patterns, "api"), namespace="v1")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),

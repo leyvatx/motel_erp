@@ -60,13 +60,18 @@ class SilenciarSondeos(logging.Filter):
 def awake(request) -> JsonResponse:
     """Sonda de vida: contesta que el proceso está en pie y nada más.
 
+    Se sirve en ``/healthz`` y en ``/api/health``. La primera es el nombre que
+    esperan los monitores externos; la segunda ya estaba publicada y la usan el
+    despertador y ``scripts/keep_alive.ps1``, así que se conserva en vez de
+    romperles la liga.
+
     Aparte a propósito de ``health``. Aquella pregunta si el servicio puede
     trabajar y contesta 503 cuando Redis parpadea; esta solo pregunta si el
     contenedor despertó. Mezclarlas rompe las dos cosas: el despertador fallaría
     por un hipo de Redis que no tiene nada que ver con estar dormido, y sondear
     la base cada diez minutos no hace nada por nadie.
     """
-    return JsonResponse({"status": "awake", "timestamp": timezone.now().isoformat()})
+    return JsonResponse({"status": "ok", "timestamp": timezone.now().isoformat()})
 
 
 def _probe(operation) -> str:
