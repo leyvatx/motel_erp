@@ -29,6 +29,7 @@ import {
   useRoomSummary,
   useUpcomingReservations,
 } from '@/features/frontdesk/hooks'
+import { useBrand } from '@/features/config/hooks'
 import { useCleaningBoard, useOpenMaintenance } from '@/features/housekeeping/hooks'
 import { SetupChecklist } from '@/features/onboarding/SetupChecklist'
 import { useLowStock } from '@/features/inventory/hooks'
@@ -268,12 +269,13 @@ export default function DashboardPage() {
     )
 
   const displayName = user?.full_name?.split(' ')[0] || user?.username || ''
+  const { name: businessName } = useBrand()
   const isLoading = rooms.isLoading || cleaning.isLoading
 
   return (
     <PageShell
       title={`${greeting()}, ${displayName}`}
-      description={`${user?.motel_name ?? 'Tu sucursal'} · ${today.format(new Date())}`}
+      description={`${businessName || user?.motel_name || 'Tu sucursal'} · ${today.format(new Date())}`}
       className="min-h-0 overflow-y-auto pb-1 lg:overflow-hidden lg:pb-0"
     >
       {/*
