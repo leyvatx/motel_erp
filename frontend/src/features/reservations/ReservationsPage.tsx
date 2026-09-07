@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { PiCalendarPlus, PiMagnifyingGlass, PiSignIn, PiUserMinus, PiXCircle } from 'react-icons/pi'
 
 import { PageShell, TableScroll } from '@/components/layout/PageShell'
@@ -58,6 +59,7 @@ export default function ReservationsPage() {
   initialEnd.setDate(initialEnd.getDate() + 30)
   const [createOpen, setCreateOpen] = useState(false)
   const [checkingIn, setCheckingIn] = useState<Reservation | null>(null)
+  const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('active')
   const [page, setPage] = useState(1)
@@ -74,6 +76,20 @@ export default function ReservationsPage() {
     to: to ? new Date(`${to}T23:59:59`).toISOString() : undefined,
     ordering: 'scheduled_start',
   })
+  // El buscador global manda aquí con ?buscar=<código o nombre>. Se abre el
+  // rango de fechas y el estado: quien busca un código concreto lo quiere ver
+  // aunque sea de hace un mes o esté cancelado.
+  const pedido = searchParams.get('buscar')
+  useEffect(() => {
+    if (!pedido) return
+    setSearch(pedido)
+    setStatus('all')
+    setFrom('')
+    setTo('')
+    setPage(1)
+    setSearchParams({}, { replace: true })
+  }, [pedido, setSearchParams])
+
   const cancel = useCancelReservation()
   const noShow = useMarkReservationNoShow()
   const allRows = reservations.data?.results ?? []

@@ -119,7 +119,9 @@ class RoomViewSet(viewsets.ModelViewSet):
     }
     pagination_class = LargePagination
     filterset_fields = ["status", "room_type", "floor", "is_active", "has_garage"]
-    search_fields = ["number", "zone"]
+    # room_type__name para que el buscador global encuentre por lo que la gente
+    # dice en voz alta -- "el jacuzzi", "una suite" -- y no solo por número.
+    search_fields = ["number", "zone", "room_type__name"]
     ordering_fields = ["number", "floor", "status"]
 
     def perform_destroy(self, instance: Room) -> None:

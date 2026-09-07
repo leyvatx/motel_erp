@@ -166,6 +166,12 @@ class FolioSerializer(serializers.ModelSerializer):
 class FolioListSerializer(serializers.ModelSerializer):
     balance = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     room_number = serializers.CharField(source="room.number", read_only=True, default=None)
+    # stay y status_display los pide el buscador global: sin el primero, un folio
+    # encontrado no sabe llevar a su renta y solo puede mandar a Caja; sin el
+    # segundo, el renglón sale sin estado. El queryset ya trae stay por
+    # select_related, así que no cuestan consulta.
+    stay_code = serializers.CharField(source="stay.code", read_only=True, default=None)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
 
     class Meta:
         model = Folio
@@ -174,6 +180,9 @@ class FolioListSerializer(serializers.ModelSerializer):
             "code",
             "folio_type",
             "status",
+            "status_display",
+            "stay",
+            "stay_code",
             "room",
             "room_number",
             "opened_at",

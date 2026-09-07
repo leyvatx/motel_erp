@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import {
   PiArrowsClockwise,
   PiBed,
@@ -45,6 +45,7 @@ import { formatCountdown } from '@/lib/format'
 import { secondsUntil } from '@/lib/serverTime'
 
 export default function FrontDeskPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
   const [rentRoom, setRentRoom] = useState<RoomGridItem | null>(null)
   const [actionsRoom, setActionsRoom] = useState<RoomGridItem | null>(null)
@@ -166,6 +167,17 @@ export default function FrontDeskPage() {
     }
     setActionsRoom(room)
   }
+
+  // El buscador global manda aquí con ?habitacion=101. Se espera a que la
+  // cuadrícula cargue -- antes no hay dónde buscar el número -- y se limpia el
+  // parámetro pase lo que pase, para que recargar no vuelva a abrir el diálogo.
+  const pedida = searchParams.get('habitacion')
+  useEffect(() => {
+    if (!pedida || grid.isPending) return
+    const room = allRooms.find((item) => item.number === pedida)
+    if (room) handleSelect(room)
+    setSearchParams({}, { replace: true })
+  }, [pedida, grid.isPending, allRooms, setSearchParams])
 
   const alerts = (expiring.data?.results ?? []).filter(
     (stay) => secondsUntil(stay.expires_at) <= 15 * 60,

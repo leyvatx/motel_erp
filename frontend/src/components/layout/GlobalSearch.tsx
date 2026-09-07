@@ -1,12 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { PiMagnifyingGlass } from 'react-icons/pi'
 
+import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { frontdeskApi } from '@/features/frontdesk/api'
-import { formatCountdown } from '@/lib/format'
-import { queryKeys } from '@/lib/queryClient'
-import { secondsUntil } from '@/lib/serverTime'
+import { MINIMO_CARACTERES, useGlobalSearch } from '@/features/search/hooks'
+import type { SearchHit } from '@/features/search/types'
 import { cn } from '@/lib/utils'
 
 interface Props {
@@ -14,15 +13,42 @@ interface Props {
 }
 
 export function GlobalSearch({ onSelectStay }: Props) {
+  const navigate = useNavigate()
   const inputRef = useRef<HTMLInputElement>(null)
   const [term, setTerm] = useState('')
   const [debounced, setDebounced] = useState('')
   const [focused, setFocused] = useState(false)
+  const [activo, setActivo] = useState(0)
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebounced(term.trim()), 300)
     return () => window.clearTimeout(timer)
   }, [term])
+
+  const { data, isFetching } = useGlobalSearch(debounced)
+  const grupos = useMemo(() => data ?? [], [data])
+  const planos = useMemo(() => grupos.flatMap((grupo) => grupo.hits), [grupos])
+
+  useEffect(() => setActivo(0), [debounced])
+
+  const cerrar = (): void => {
+    setTerm('')
+    setDebounced('')
+    inputRef.current?.blur()
+  }
+
+  const elegir = (hit: SearchHit): void => {
+    if (hit.stayId !== undefined) {
+      onSelectStay(hit.stayId)
+    } else if (hit.kind === 'room' && hit.roomNumber) {
+      navigate(`/frontdesk?habitacion=${encodeURIComponent(hit.roomNumber)}`)
+    } else if ((hit.kind === 'reservation' || hit.kind === 'guest') && hit.query) {
+      navigate(`/reservations?buscar=${encodeURIComponent(hit.query)}`)
+    } else if (hit.kind === 'folio') {
+      navigate('/finances')
+    }
+    cerrar()
+  }
 
   useEffect(() => {
     const handler = (event: KeyboardEvent): void => {
@@ -30,20 +56,32 @@ export function GlobalSearch({ onSelectStay }: Props) {
         event.preventDefault()
         inputRef.current?.focus()
       }
-      if (event.key === 'Escape') inputRef.current?.blur()
+      if (event.key === 'Escape') cerrar()
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
-  const { data, isFetching } = useQuery({
-    queryKey: queryKeys.frontdesk.stays({ search: debounced }),
-    queryFn: () => frontdeskApi.stays({ search: debounced, status: 'ACTIVE', page_size: 8 }),
-    enabled: debounced.length >= 2,
-  })
+  const mostrarPanel = focused && debounced.length >= MINIMO_CARACTERES
 
-  const results = data?.results ?? []
-  const showPanel = focused && debounced.length >= 2
+  const enTeclado = (event: React.KeyboardEvent<HTMLInputElement>): void => {
+    if (!mostrarPanel || planos.length === 0) return
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      setActivo((indice) => (indice + 1) % planos.length)
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      setActivo((indice) => (indice - 1 + planos.length) % planos.length)
+    }
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      const hit = planos[activo]
+      if (hit) elegir(hit)
+    }
+  }
+
+  let indiceGlobal = -1
 
   return (
     <div className="relative w-full max-w-sm">
@@ -57,9 +95,13 @@ export function GlobalSearch({ onSelectStay }: Props) {
         onChange={(event) => setTerm(event.target.value)}
         onFocus={() => setFocused(true)}
         onBlur={() => window.setTimeout(() => setFocused(false), 150)}
-        placeholder="Buscar placas, cuarto o folio..."
+        onKeyDown={enTeclado}
+        placeholder="Buscar cuarto, huésped, placas o folio..."
         className="bg-muted/50 pl-8 pr-14 shadow-none"
         aria-label="Buscador global"
+        role="combobox"
+        aria-expanded={mostrarPanel}
+        aria-controls="resultados-busqueda"
       />
       <kbd
         className={cn(
@@ -70,42 +112,62 @@ export function GlobalSearch({ onSelectStay }: Props) {
         Ctrl K
       </kbd>
 
-      {showPanel ? (
-        <div className="absolute left-0 right-0 top-11 z-50 overflow-hidden rounded-lg border bg-popover shadow-md">
-          {isFetching ? (
-            <p className="px-3 py-6 text-center text-sm text-muted-foreground">Buscando...</p>
-          ) : results.length === 0 ? (
+      {mostrarPanel ? (
+        <div
+          id="resultados-busqueda"
+          role="listbox"
+          className="absolute left-0 right-0 top-11 z-50 max-h-[70vh] overflow-y-auto scrollbar-thin rounded-lg border bg-popover shadow-md"
+        >
+          {planos.length === 0 ? (
             <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-              Sin coincidencias activas.
+              {isFetching ? 'Buscando...' : 'Sin coincidencias.'}
             </p>
           ) : (
-            <ul className="p-1">
-              {results.map((stay) => (
-                <li key={stay.id}>
-                  <button
-                    type="button"
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => {
-                      onSelectStay(stay.id)
-                      setTerm('')
-                    }}
-                    className="flex w-full items-center justify-between gap-3 rounded-md px-2.5 py-2 text-left text-sm transition-colors hover:bg-accent"
-                  >
-                    <span className="flex min-w-0 items-center gap-2">
-                      <span className="font-medium">Hab. {stay.room_number}</span>
-                      {stay.vehicle_plate ? (
-                        <span className="truncate text-xs text-muted-foreground">
-                          {stay.vehicle_plate}
-                        </span>
-                      ) : null}
-                    </span>
-                    <span className="shrink-0 font-mono text-xs tabular text-muted-foreground">
-                      {formatCountdown(secondsUntil(stay.expires_at))}
-                    </span>
-                  </button>
-                </li>
+            <div className="p-1">
+              {grupos.map((grupo) => (
+                <div key={grupo.kind} className="pb-1 last:pb-0">
+                  <p className="px-2.5 pb-1 pt-2 text-2xs font-medium uppercase tracking-wider text-muted-foreground">
+                    {grupo.label}
+                  </p>
+                  <ul>
+                    {grupo.hits.map((hit) => {
+                      indiceGlobal += 1
+                      const indice = indiceGlobal
+                      return (
+                        <li key={hit.key}>
+                          <button
+                            type="button"
+                            role="option"
+                            aria-selected={indice === activo}
+                            onMouseDown={(event) => event.preventDefault()}
+                            onMouseEnter={() => setActivo(indice)}
+                            onClick={() => elegir(hit)}
+                            className={cn(
+                              'flex w-full items-center justify-between gap-3 rounded-md px-2.5 py-2 text-left text-sm transition-colors',
+                              indice === activo ? 'bg-accent' : 'hover:bg-accent/60',
+                            )}
+                          >
+                            <span className="flex min-w-0 flex-col">
+                              <span className="truncate font-medium">{hit.title}</span>
+                              {hit.subtitle ? (
+                                <span className="truncate text-xs text-muted-foreground">
+                                  {hit.subtitle}
+                                </span>
+                              ) : null}
+                            </span>
+                            {hit.badge ? (
+                              <Badge variant="secondary" className="shrink-0 text-2xs">
+                                {hit.badge}
+                              </Badge>
+                            ) : null}
+                          </button>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
         </div>
       ) : null}
