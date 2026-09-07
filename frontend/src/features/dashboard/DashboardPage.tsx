@@ -30,6 +30,7 @@ import {
   useUpcomingReservations,
 } from '@/features/frontdesk/hooks'
 import { useCleaningBoard, useOpenMaintenance } from '@/features/housekeeping/hooks'
+import { SetupChecklist } from '@/features/onboarding/SetupChecklist'
 import { useLowStock } from '@/features/inventory/hooks'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/auth'
@@ -272,7 +273,7 @@ export default function DashboardPage() {
   return (
     <PageShell
       title={`${greeting()}, ${displayName}`}
-      description={`${user?.motel_name ?? 'Tu motel'} · ${today.format(new Date())}`}
+      description={`${user?.motel_name ?? 'Tu sucursal'} · ${today.format(new Date())}`}
       className="min-h-0 overflow-y-auto pb-1 lg:overflow-hidden lg:pb-0"
     >
       {/*
@@ -282,7 +283,11 @@ export default function DashboardPage() {
         falte. En 1080p entra completo sin scroll de página; abajo de lg se apila
         y el scroll natural del móvil hace su trabajo.
       */}
-      <div className="grid min-h-0 shrink-0 grid-cols-1 gap-3 lg:h-full lg:shrink lg:grid-cols-12 lg:grid-rows-[auto_auto_minmax(0,1fr)]">
+      <div className="mb-3 shrink-0 empty:mb-0">
+        <SetupChecklist />
+      </div>
+
+      <div className="grid min-h-0 shrink-0 grid-cols-1 gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-12 lg:grid-rows-[auto_auto_minmax(0,1fr)]">
         {/* ── Franja del turno + accesos rápidos ─────────────────────────── */}
         <Card className="lg:col-span-12">
           <CardContent className="flex flex-col gap-3 p-3 lg:flex-row lg:items-center lg:gap-x-6">
