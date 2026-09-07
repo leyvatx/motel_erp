@@ -7,6 +7,7 @@ CLEANING (evento de dominio, no polling). Los tiempos se miden con los sellos
 
 from __future__ import annotations
 
+from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.utils import timezone
 
@@ -14,6 +15,7 @@ from common.models import BaseModel, ImmutableModel
 from common.utils import ZERO
 
 from apps.housekeeping.constants import (
+    EVIDENCE_EXTENSIONS,
     CleaningTaskStatus,
     CleaningTaskType,
     MaintenanceCategory,
@@ -164,6 +166,13 @@ class MaintenanceReport(BaseModel):
         "Deja la habitación fuera de servicio",
         default=False,
         help_text="Si se marca, la habitación pasa a mantenimiento hasta resolverse.",
+    )
+    photo = models.FileField(
+        "Foto",
+        upload_to="mantenimiento/",
+        blank=True,
+        validators=[FileExtensionValidator(EVIDENCE_EXTENSIONS)],
+        help_text="Evidencia opcional que toma quien reporta desde su telefono.",
     )
 
     reported_by = models.ForeignKey(

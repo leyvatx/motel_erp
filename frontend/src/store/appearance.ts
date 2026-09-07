@@ -75,6 +75,21 @@ function readableForeground(hex: string): string {
   return (red * 299 + green * 587 + blue * 114) / 1000 > 155 ? '240 10% 4%' : '0 0% 98%'
 }
 
+/** Lo que el arranque en frío necesita saber antes de pintar el primer pixel.
+ *
+ *  Se guarda ya resuelto -- variables CSS calculadas, no colores en hex ni
+ *  preferencias que haya que interpretar -- para que el guion en línea de
+ *  `index.html` pueda aplicarlo sin cargar nada de esto. Ese guion corre antes
+ *  del primer pintado; si tuviera que esperar a React, el usuario vería la
+ *  aplicación en claro y después el salto a oscuro, en cada recarga. */
+export const CLAVE_TEMA_PREPINTADO = 'erp-tema-resuelto'
+
+export interface TemaResuelto {
+  dark: boolean
+  density: Density
+  vars: Record<string, string>
+}
+
 export function applyAppearance(
   themePreference: ThemePreference,
   densityPreference: DensityPreference,
@@ -84,19 +99,32 @@ export function applyAppearance(
   const theme = themePreference === 'business' ? negocio.default_theme : themePreference
   const density = densityPreference === 'business' ? negocio.default_density : densityPreference
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-  root.classList.toggle('dark', theme === 'dark' || (theme === 'system' && prefersDark))
+  const dark = theme === 'dark' || (theme === 'system' && prefersDark)
 
   const primary = hexToHsl(negocio.brand_primary_color)
-  root.style.setProperty('--primary', primary)
-  root.style.setProperty('--primary-foreground', readableForeground(negocio.brand_primary_color))
-  root.style.setProperty('--brand-accent', primary)
-  root.style.setProperty('--ring', primary)
-  root.style.setProperty('--status-available', hexToHsl(negocio.status_available_color))
-  root.style.setProperty('--status-occupied', hexToHsl(negocio.status_occupied_color))
-  root.style.setProperty('--status-cleaning', hexToHsl(negocio.status_cleaning_color))
-  root.style.setProperty('--status-maintenance', hexToHsl(negocio.status_maintenance_color))
-
   const radii = { square: '0.125rem', medium: '0.375rem', rounded: '0.75rem' }
-  root.style.setProperty('--radius', radii[negocio.border_radius])
+
+  const vars: Record<string, string> = {
+    '--primary': primary,
+    '--primary-foreground': readableForeground(negocio.brand_primary_color),
+    '--brand-accent': primary,
+    '--ring': primary,
+    '--status-available': hexToHsl(negocio.status_available_color),
+    '--status-occupied': hexToHsl(negocio.status_occupied_color),
+    '--status-cleaning': hexToHsl(negocio.status_cleaning_color),
+    '--status-maintenance': hexToHsl(negocio.status_maintenance_color),
+    '--radius': radii[negocio.border_radius],
+  }
+
+  root.classList.toggle('dark', dark)
+  for (const [nombre, valor] of Object.entries(vars)) root.style.setProperty(nombre, valor)
   root.dataset.density = density
+
+  const resuelto: TemaResuelto = { dark, density, vars }
+  try {
+    localStorage.setItem(CLAVE_TEMA_PREPINTADO, JSON.stringify(resuelto))
+  } catch {
+    // Modo privado o almacenamiento lleno: se pierde el pre-pintado del
+    // siguiente arranque, no la apariencia de esta sesión.
+  }
 }

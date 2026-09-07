@@ -5,7 +5,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { Skeleton } from '@/components/ui/skeleton'
 import { registrarNavegador } from '@/lib/navigation'
-import { ForbiddenPage, NotFoundPage } from '@/pages/ErrorPages'
+import { ForbiddenPage, NotFoundPage, RouteErrorPage } from '@/pages/ErrorPages'
 import { defaultRouteFor, useAuthStore } from '@/store/auth'
 
 const LandingPage = lazy(() => import('@/features/marketing/LandingPage'))
@@ -54,9 +54,10 @@ function Lazy({ children }: { children: React.ReactNode }) {
 }
 
 const routes: RouteObject[] = [
-  { path: '/', element: <Inicio /> },
+  { path: '/', element: <Inicio />, errorElement: <RouteErrorPage /> },
   {
     path: '/login',
+    errorElement: <RouteErrorPage />,
     element: (
       <Lazy>
         <LoginPage />
@@ -65,6 +66,7 @@ const routes: RouteObject[] = [
   },
   {
     path: '/registro',
+    errorElement: <RouteErrorPage />,
     element: (
       <Lazy>
         <RegisterPage />
@@ -75,6 +77,7 @@ const routes: RouteObject[] = [
   {
     // Ruta de layout sin `path`: sus hijos siguen resolviéndose desde la raíz
     // (`dashboard` -> `/dashboard`) y la raíz a secas queda libre para `Inicio`.
+    errorElement: <RouteErrorPage />,
     element: (
       <ProtectedRoute>
         <AppLayout />

@@ -72,3 +72,14 @@ CLEANING_TRANSITIONS: dict[str, frozenset[str]] = {
     CleaningTaskStatus.VERIFIED: frozenset(),
     CleaningTaskStatus.CANCELLED: frozenset(),
 }
+
+
+# Evidencia fotografica de un reporte de mantenimiento.
+#
+# Se toma con el telefono del personal de limpieza, que sube por datos moviles:
+# 4 MB es lo que pesa una foto de camara sin comprimir y sigue siendo razonable
+# para una sola imagen. El formato se limita a lo que cualquier navegador
+# produce con `capture="environment"`.
+EVIDENCE_EXTENSIONS = ["png", "jpg", "jpeg", "webp", "heic"]
+
+EVIDENCE_MAX_BYTES = 4 * 1024 * 1024

@@ -6,6 +6,7 @@ from django.db.models import Avg, Count, Prefetch, Q, Sum
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
 from common.serializers import ReasonSerializer
@@ -175,6 +176,9 @@ class MaintenanceReportViewSet(
         "room", "reported_by", "assigned_to", "resolved_by"
     )
     serializer_class = MaintenanceReportSerializer
+    # La foto viaja como multipart desde el telefono de quien reporta; el resto
+    # de la API sigue hablando JSON y esta vista acepta las dos formas.
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     required_permissions = {"write": [PermissionCode.MAINTENANCE_REPORT]}
     filterset_fields = ["status", "priority", "category", "room", "blocks_room", "assigned_to"]
     search_fields = ["folio", "title", "description", "room__number"]

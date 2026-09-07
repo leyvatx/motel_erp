@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { PiCheckCircle, PiEye, PiPlay, PiUserCheck, PiWrench } from 'react-icons/pi'
 
+import { ModuleHelp } from '@/components/layout/ModuleHelp'
 import { PageShell, TableScroll } from '@/components/layout/PageShell'
 import { StatStrip } from '@/components/layout/StatStrip'
 import { Badge } from '@/components/ui/badge'
@@ -18,6 +19,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useEsMovil } from '@/hooks/useMediaQuery'
+import { CleaningQueue } from '@/features/housekeeping/components/CleaningQueue'
 import { MaintenanceDetailDialog } from '@/features/housekeeping/components/MaintenanceDetailDialog'
 import { ReportMaintenanceDialog } from '@/features/housekeeping/components/ReportMaintenanceDialog'
 import {
@@ -50,6 +53,7 @@ const PRIORITY_STYLES: Record<string, string> = {
 
 export default function HousekeepingPage() {
   const role = useAuthStore((state) => state.user?.role)
+  const esMovil = useEsMovil()
   const [mine, setMine] = useState(role === 'HOUSEKEEPING')
   const [reporting, setReporting] = useState(false)
   const [detail, setDetail] = useState<MaintenanceReport | null>(null)
@@ -64,6 +68,14 @@ export default function HousekeepingPage() {
   const openContextMenu = useRowContextMenu()
 
   const tasks = board.data?.results ?? []
+
+  /** Quién ve la cola de tarjetas en vez de la tabla.
+   *
+   *  Ama de llaves siempre: es su trabajo, y una tabla de seis columnas con
+   *  menús de tres puntos no se opera de pie. Supervisión y gerencia ven la
+   *  tabla en escritorio -- ahí sí sirve comparar tiempos y responsables -- y
+   *  la misma cola en el teléfono, donde la tabla obligaría a hacer zoom. */
+  const colaTactil = role === 'HOUSEKEEPING' || esMovil
   const inProgress = tasks.filter((task) => task.status === 'IN_PROGRESS').length
   const reports = maintenance.data?.results ?? []
   const openReports = reports.filter((report) =>
@@ -99,13 +111,19 @@ export default function HousekeepingPage() {
       description="Tareas de limpieza y reportes de mantenimiento."
       actions={
         <>
-          <Button variant="outline" size="sm" onClick={() => setMine(!mine)}>
+          <ModuleHelp modulo="limpieza" />
+          <Button
+            variant="outline"
+            className="h-11 sm:h-9"
+            size="sm"
+            onClick={() => setMine(!mine)}
+          >
             <PiUserCheck />
             {mine ? 'Ver todas' : 'Solo las mías'}
           </Button>
-          <Button size="sm" onClick={() => setReporting(true)}>
+          <Button className="h-11 sm:h-9" size="sm" onClick={() => setReporting(true)}>
             <PiWrench />
-            Reportar falla
+            Reportar problema
           </Button>
         </>
       }
@@ -144,70 +162,78 @@ export default function HousekeepingPage() {
         </TabsList>
 
         <TabsContent value="board" className="flex min-h-0 flex-1 flex-col">
-          <Card className="min-h-0 flex-1">
-            <CardContent className="flex min-h-0 flex-1 flex-col p-0">
-              <TableScroll>
-                <Table>
-                  <TableHeader className="sticky top-0 z-10 bg-card">
-                    <TableRow>
-                      <TableHead>Habitación</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Asignada a</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead>Tiempo</TableHead>
-                      <TableHead className="w-[52px]" />
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {tasks.length === 0 ? (
-                      <TableEmpty
-                        colSpan={6}
-                        message="No hay habitaciones pendientes de limpieza."
-                      />
-                    ) : (
-                      tasks.map((task) => (
-                        <TableRow
-                          key={task.id}
-                          onContextMenu={openContextMenu(
-                            `Habitación ${task.room_number}`,
-                            taskActions(task),
-                          )}
-                          className={cn(
-                            'cursor-context-menu',
-                            task.status === 'IN_PROGRESS' && 'bg-status-cleaning/5',
-                          )}
-                        >
-                          <TableCell className="font-medium tabular">{task.room_number}</TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {task.task_type_display}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {task.assigned_to_name ?? 'Sin asignar'}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={TASK_VARIANT[task.status] ?? 'secondary'}>
-                              {task.status_display}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-xs text-muted-foreground">
-                            {task.started_at
-                              ? `Inició ${formatRelative(task.started_at)}`
-                              : `En espera ${formatRelative(task.created_at)}`}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <RowActions
-                              items={taskActions(task)}
-                              label={`habitación ${task.room_number}`}
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </TableScroll>
-            </CardContent>
-          </Card>
+          {colaTactil ? (
+            <div className="min-h-0 flex-1 overflow-auto scrollbar-thin">
+              <CleaningQueue tasks={tasks} isLoading={board.isLoading} />
+            </div>
+          ) : (
+            <Card className="min-h-0 flex-1">
+              <CardContent className="flex min-h-0 flex-1 flex-col p-0">
+                <TableScroll>
+                  <Table>
+                    <TableHeader className="sticky top-0 z-10 bg-card">
+                      <TableRow>
+                        <TableHead>Habitación</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>Asignada a</TableHead>
+                        <TableHead>Estado</TableHead>
+                        <TableHead>Tiempo</TableHead>
+                        <TableHead className="w-[52px]" />
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {tasks.length === 0 ? (
+                        <TableEmpty
+                          colSpan={6}
+                          message="Nada pendiente. Cuando salga un huésped, su cuarto aparece aquí solo."
+                        />
+                      ) : (
+                        tasks.map((task) => (
+                          <TableRow
+                            key={task.id}
+                            onContextMenu={openContextMenu(
+                              `Habitación ${task.room_number}`,
+                              taskActions(task),
+                            )}
+                            className={cn(
+                              'cursor-context-menu',
+                              task.status === 'IN_PROGRESS' && 'bg-status-cleaning/5',
+                            )}
+                          >
+                            <TableCell className="font-medium tabular">
+                              {task.room_number}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {task.task_type_display}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {task.assigned_to_name ?? 'Sin asignar'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={TASK_VARIANT[task.status] ?? 'secondary'}>
+                                {task.status_display}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {task.started_at
+                                ? `Inició ${formatRelative(task.started_at)}`
+                                : `En espera ${formatRelative(task.created_at)}`}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <RowActions
+                                items={taskActions(task)}
+                                label={`habitación ${task.room_number}`}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableScroll>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="maintenance" className="flex min-h-0 flex-1 flex-col">
@@ -227,7 +253,10 @@ export default function HousekeepingPage() {
                   </TableHeader>
                   <TableBody>
                     {reports.length === 0 ? (
-                      <TableEmpty colSpan={6} message="Sin reportes registrados." />
+                      <TableEmpty
+                        colSpan={6}
+                        message="Ningún problema reportado. Los que se levanten desde el teléfono llegan aquí con folio y foto."
+                      />
                     ) : (
                       reports.map((report) => (
                         <MaintenanceRow
@@ -260,7 +289,10 @@ export default function HousekeepingPage() {
                   </TableHeader>
                   <TableBody>
                     {(performance.data ?? []).length === 0 ? (
-                      <TableEmpty colSpan={5} message="Aún no hay limpiezas terminadas." />
+                      <TableEmpty
+                        colSpan={5}
+                        message="Aún no se cierra ninguna limpieza. El rendimiento se calcula con las tareas terminadas."
+                      />
                     ) : (
                       (performance.data ?? []).map((row) => (
                         <TableRow key={row.employee_id ?? 'sin-asignar'}>

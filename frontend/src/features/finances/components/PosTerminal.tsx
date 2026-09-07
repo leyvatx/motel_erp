@@ -137,7 +137,12 @@ export function PosTerminal() {
             )}
           </div>
 
-          <ProductPicker catalog={products?.results ?? []} isLoading={isLoading} cart={cart} />
+          <ProductPicker
+            catalog={products?.results ?? []}
+            isLoading={isLoading}
+            cart={cart}
+            allowCreate
+          />
         </CardContent>
       </Card>
 

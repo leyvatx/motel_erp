@@ -15,6 +15,7 @@ import {
   PiWrench,
 } from 'react-icons/pi'
 
+import { ModuleHelp } from '@/components/layout/ModuleHelp'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -27,6 +28,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/ui/states'
 import { useAuthStore } from '@/store/auth'
 import { RentRoomDialog } from '@/features/frontdesk/components/RentRoomDialog'
 import { RoomActionsDialog } from '@/features/frontdesk/components/RoomActionsDialog'
@@ -268,6 +270,8 @@ export default function FrontDeskPage() {
 
           <RelojOperativo />
 
+          <ModuleHelp modulo="recepcion" />
+
           {/* Sin texto donde no cabe: el icono se queda y la palabra vuelve en
               pantallas anchas. El área de toque no baja de 44 px. */}
           <Button
@@ -351,7 +355,11 @@ export default function FrontDeskPage() {
       ) : null}
 
       <p className="text-xs text-muted-foreground">
-        {rooms.length} de {allRooms.length} habitaciones · clic derecho para más acciones
+        {rooms.length} de {allRooms.length} habitaciones
+        {/* El clic derecho quedó como atajo de quien opera con mouse todo el
+            día; el mismo menú está en el botón ⋯ de cada tarjeta, que es lo
+            único que existe en una tableta. */}
+        <span className="hidden lg:inline"> · clic derecho o ⋯ para más acciones</span>
       </p>
 
       {grid.isLoading ? (
@@ -362,12 +370,40 @@ export default function FrontDeskPage() {
         </div>
       ) : rooms.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center gap-1 py-16 text-center">
-            <p className="text-sm font-medium">Sin habitaciones que mostrar</p>
-            <p className="text-sm text-muted-foreground">
-              Ningún cuarto coincide con el filtro seleccionado.
-            </p>
-          </CardContent>
+          <EmptyState
+            title={
+              allRooms.length === 0
+                ? 'Todavía no hay habitaciones dadas de alta'
+                : 'Ningún cuarto coincide con lo que buscas'
+            }
+            description={
+              allRooms.length === 0
+                ? 'Las habitaciones se dan de alta en Configuración. Sin ellas no se puede rentar nada.'
+                : 'Prueba con otro piso, otro tipo, o borra lo que escribiste en el buscador.'
+            }
+            icon={<PiBed className="h-8 w-8" aria-hidden />}
+            action={
+              allRooms.length === 0 ? (
+                canConfigure ? (
+                  <Button asChild>
+                    <Link to="/config?seccion=habitaciones">Dar de alta habitaciones</Link>
+                  </Button>
+                ) : null
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setBusqueda('')
+                    setFloorFilter('all')
+                    setTypeFilter('all')
+                    setStatusFilter(null)
+                  }}
+                >
+                  Quitar filtros
+                </Button>
+              )
+            }
+          />
         </Card>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-2.5 sm:grid-cols-[repeat(auto-fill,minmax(190px,1fr))]">
@@ -378,6 +414,7 @@ export default function FrontDeskPage() {
             >
               <RoomCard
                 room={room}
+                actions={roomActions(room)}
                 onSelect={handleSelect}
                 onRent={setRentRoom}
                 onCheckout={(item) => item.current_stay && setStayId(item.current_stay.id)}

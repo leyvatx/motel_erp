@@ -4,9 +4,12 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+from django.core.validators import FileExtensionValidator
 from rest_framework import serializers
 
 from apps.housekeeping.constants import (
+    EVIDENCE_EXTENSIONS,
+    EVIDENCE_MAX_BYTES,
     CleaningTaskType,
     MaintenanceCategory,
     MaintenancePriority,
@@ -72,6 +75,38 @@ class MaintenanceUpdateSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class EvidenceField(serializers.FileField):
+    """Foto de un reporte, con tope de peso.
+
+    Declarar el campo a mano en el serializador de entrada descarta los
+    validadores del modelo, asi que la lista de extensiones se vuelve a colgar
+    aqui. El tope existe porque la sube el personal de limpieza desde su
+    telefono, con datos moviles y a veces con mala señal: una foto de 12 MB no
+    llega y el reporte se pierde con ella.
+    """
+
+    def __init__(self, **kwargs):
+        kwargs.setdefault("validators", [FileExtensionValidator(EVIDENCE_EXTENSIONS)])
+        super().__init__(**kwargs)
+
+    def to_internal_value(self, data):
+        archivo = super().to_internal_value(data)
+        if archivo.size > EVIDENCE_MAX_BYTES:
+            raise serializers.ValidationError(
+                f"La foto pesa {archivo.size // 1024 // 1024} MB; el limite es "
+                f"{EVIDENCE_MAX_BYTES // 1024 // 1024} MB."
+            )
+        return archivo
+
+
+def _evidence_url(report) -> str | None:
+    """Ruta relativa al sitio, igual que el logotipo del negocio."""
+    if not report.photo:
+        return None
+    url = report.photo.url
+    return url if url.startswith(("http://", "https://", "/")) else f"/{url}"
+
+
 class MaintenanceReportSerializer(serializers.ModelSerializer):
     room_number = serializers.CharField(source="room.number", read_only=True, default=None)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
@@ -82,6 +117,7 @@ class MaintenanceReportSerializer(serializers.ModelSerializer):
         source="assigned_to.full_name", read_only=True, default=None
     )
     updates = MaintenanceUpdateSerializer(many=True, read_only=True)
+    photo_url = serializers.SerializerMethodField()
 
     class Meta:
         model = MaintenanceReport
@@ -100,6 +136,7 @@ class MaintenanceReportSerializer(serializers.ModelSerializer):
             "status",
             "status_display",
             "blocks_room",
+            "photo_url",
             "reported_by",
             "reported_by_name",
             "assigned_to",
@@ -113,11 +150,20 @@ class MaintenanceReportSerializer(serializers.ModelSerializer):
             "created_at",
             "updates",
         )
+
+    def get_photo_url(self, report: MaintenanceReport) -> str | None:
+        return _evidence_url(report)
         read_only_fields = fields
 
 
 class MaintenanceReportListSerializer(serializers.ModelSerializer):
     room_number = serializers.CharField(source="room.number", read_only=True, default=None)
+    # La tabla de mantenimiento pinta la etiqueta legible, no la clave: sin
+    # estos tres campos las columnas Prioridad, Estado y Costo salian vacias.
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    priority_display = serializers.CharField(source="get_priority_display", read_only=True)
+    category_display = serializers.CharField(source="get_category_display", read_only=True)
+    photo_url = serializers.SerializerMethodField()
 
     class Meta:
         model = MaintenanceReport
@@ -126,15 +172,24 @@ class MaintenanceReportListSerializer(serializers.ModelSerializer):
             "folio",
             "room",
             "room_number",
+            "area",
             "title",
             "category",
+            "category_display",
             "priority",
+            "priority_display",
             "status",
+            "status_display",
             "blocks_room",
+            "cost",
+            "photo_url",
             "created_at",
             "resolved_at",
         )
         read_only_fields = fields
+
+    def get_photo_url(self, report: MaintenanceReport) -> str | None:
+        return _evidence_url(report)
 
 
 class CleaningTaskInputSerializer(serializers.Serializer):
@@ -168,6 +223,7 @@ class MaintenanceInputSerializer(serializers.Serializer):
     )
     blocks_room = serializers.BooleanField(default=False)
     cleaning_task_id = serializers.IntegerField(required=False, allow_null=True)
+    photo = EvidenceField(required=False, allow_null=True)
 
 
 class MaintenanceTransitionSerializer(serializers.Serializer):

@@ -9,6 +9,7 @@ import {
   PiTrash,
 } from 'react-icons/pi'
 
+import { ModuleHelp } from '@/components/layout/ModuleHelp'
 import { PageShell, TableScroll } from '@/components/layout/PageShell'
 import { StatStrip } from '@/components/layout/StatStrip'
 import { Pagination } from '@/components/ui/pagination'
@@ -41,7 +42,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useEsMovil } from '@/hooks/useMediaQuery'
 import { MovementDialog, type MovementMode } from '@/features/inventory/components/MovementDialog'
+import { StockCards } from '@/features/inventory/components/StockCards'
 import { CatalogPanel } from '@/features/inventory/components/CatalogPanel'
 import { ProductDetailDialog } from '@/features/inventory/components/ProductDetailDialog'
 import { PurchasingPanel, SuppliersPanel } from '@/features/inventory/components/PurchasingPanel'
@@ -56,6 +59,7 @@ type Section = 'stock' | 'purchases' | 'suppliers' | 'catalogs'
 
 export default function InventoryPage() {
   const user = useAuthStore((state) => state.user)
+  const esMovil = useEsMovil()
   const canManagePurchases = user?.role === 'SUPERADMIN' || user?.role === 'MANAGER'
   const [movement, setMovement] = useState<MovementMode | null>(null)
   const [detail, setDetail] = useState<WarehouseStock | null>(null)
@@ -132,36 +136,41 @@ export default function InventoryPage() {
       description="Existencias por almacén, con lo crítico al frente."
       actions={
         section === 'stock' ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm">
-                <PiPlus />
-                Registrar movimiento
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem onSelect={() => setMovement('entry')}>
-                <PiPackage />
-                Entrada de mercancía
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setMovement('transfer')}>
-                <PiArrowsLeftRight />
-                Traspaso entre almacenes
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setMovement('adjust')}>
-                <PiClipboardText />
-                Ajuste por conteo físico
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onSelect={() => setMovement('waste')}
-                className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-              >
-                <PiTrash />
-                Merma o caducidad
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : undefined
+          <>
+            <ModuleHelp modulo="inventario" />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm">
+                  <PiPlus />
+                  Registrar movimiento
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onSelect={() => setMovement('entry')}>
+                  <PiPackage />
+                  Entrada de mercancía
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setMovement('transfer')}>
+                  <PiArrowsLeftRight />
+                  Traspaso entre almacenes
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setMovement('adjust')}>
+                  <PiClipboardText />
+                  Ajuste por conteo físico
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => setMovement('waste')}
+                  className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                >
+                  <PiTrash />
+                  Merma o caducidad
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
+        ) : (
+          <ModuleHelp modulo="inventario" />
+        )
       }
       toolbar={
         section === 'stock' ? (
@@ -243,13 +252,30 @@ export default function InventoryPage() {
                   </Button>
                 ) : null}
 
-                <span className="ml-auto text-xs text-muted-foreground">
-                  Clic derecho sobre un renglón para sus acciones
+                <span className="ml-auto hidden text-xs text-muted-foreground lg:inline">
+                  Clic derecho o el botón ⋮ de cada renglón para sus acciones
                 </span>
               </div>
 
               {view === 'expiring' ? (
                 <ExpiringTable rows={lots.data?.results ?? []} isLoading={lots.isLoading} />
+              ) : esMovil ? (
+                <div className="min-h-0 flex-1 overflow-auto scrollbar-thin">
+                  <StockCards
+                    rows={rows}
+                    isLoading={stocks.isLoading}
+                    emptyTitle={
+                      view === 'low' ? 'Nada bajo mínimo' : 'Sin existencias que coincidan'
+                    }
+                    emptyDescription={
+                      view === 'low'
+                        ? 'Todos los productos están por encima de su mínimo. No hay nada que resurtir.'
+                        : 'Prueba con otro nombre, otro almacén, o registra la entrada de mercancía que falta.'
+                    }
+                    onDetail={setDetail}
+                    actionsFor={actionsFor}
+                  />
+                </div>
               ) : stocks.isLoading ? (
                 <Skeleton className="min-h-0 flex-1 rounded-lg" />
               ) : (
@@ -271,8 +297,8 @@ export default function InventoryPage() {
                             colSpan={5}
                             message={
                               view === 'low'
-                                ? 'Ningún producto está bajo su mínimo.'
-                                : 'Sin existencias que coincidan con la búsqueda.'
+                                ? 'Ningún producto está bajo su mínimo: no hay nada que resurtir.'
+                                : 'Nada coincide. Prueba con otro nombre, otro almacén, o registra la entrada que falta.'
                             }
                           />
                         ) : (
@@ -311,10 +337,11 @@ export default function InventoryPage() {
                                 {formatQuantity(row.quantity)}
                                 {row.is_below_minimum ? (
                                   <span className="ml-2 text-2xs font-normal text-status-occupied">
-                                    faltan{' '}
-                                    {formatQuantity(
-                                      toNumber(row.min_stock) - toNumber(row.quantity),
-                                    )}
+                                    {toNumber(row.min_stock) - toNumber(row.quantity) > 0
+                                      ? `faltan ${formatQuantity(
+                                          toNumber(row.min_stock) - toNumber(row.quantity),
+                                        )}`
+                                      : 'en el mínimo'}
                                   </span>
                                 ) : null}
                               </TableCell>
@@ -402,7 +429,10 @@ function ExpiringTable({
         </TableHeader>
         <TableBody>
           {rows.length === 0 ? (
-            <TableEmpty colSpan={5} message="Sin lotes próximos a caducar." />
+            <TableEmpty
+              colSpan={5}
+              message="Nada caduca en los próximos 15 días. Solo aparecen aquí los productos con control de caducidad."
+            />
           ) : (
             rows.map((lot) => (
               <TableRow key={lot.id}>

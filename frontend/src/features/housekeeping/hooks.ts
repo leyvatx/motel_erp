@@ -32,6 +32,19 @@ export function useMaintenanceReports(status?: string, enabled = true) {
   })
 }
 
+/** La ficha completa de un reporte.
+ *
+ *  El listado devuelve una versión corta -- sin descripción ni seguimiento --
+ *  porque son cientos de renglones. El detalle se pide al abrirlo: sin esto el
+ *  diálogo intentaba recorrer un historial que nunca venía en la lista. */
+export function useMaintenanceReport(reportId: number | null) {
+  return useQuery({
+    queryKey: queryKeys.housekeeping.maintenance({ id: reportId }),
+    queryFn: () => housekeepingApi.maintenanceDetail(reportId as number),
+    enabled: reportId !== null,
+  })
+}
+
 export function useOpenMaintenance(enabled = true) {
   return useQuery({
     queryKey: queryKeys.housekeeping.maintenance({ open: true }),

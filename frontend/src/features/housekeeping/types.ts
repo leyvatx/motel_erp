@@ -58,6 +58,7 @@ export interface MaintenanceReport {
   status: MaintenanceStatus
   status_display: string
   blocks_room: boolean
+  photo_url: string | null
   reported_by: number
   reported_by_name: string
   assigned_to: number | null
@@ -90,6 +91,8 @@ export interface MaintenancePayload {
   priority?: MaintenancePriority
   blocks_room?: boolean
   cleaning_task_id?: number | null
+  /** Evidencia opcional. Viaja como multipart, no como JSON. */
+  photo?: File | null
 }
 
 export interface MaintenanceTransitionPayload {

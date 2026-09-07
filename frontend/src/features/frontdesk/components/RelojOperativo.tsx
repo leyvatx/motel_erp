@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react'
 import { LuClock } from 'react-icons/lu'
 
-import { serverNow } from '@/lib/serverTime'
+import { useServerClock } from '@/hooks/useCountdown'
 
 /** La hora del servidor, no la del equipo del mostrador.
  *
@@ -10,16 +9,12 @@ import { serverNow } from '@/lib/serverTime'
  *  están -- y este reloj tiene que salir de la misma fuente. Si no, recepción
  *  ve una hora arriba y otra en las tarjetas, y la que se cuestiona es la
  *  correcta.
+ *
+ *  Late con el mismo temporizador compartido que las tarjetas, así que marcan
+ *  el mismo segundo sin costar un `setInterval` extra.
  */
 export function RelojOperativo() {
-  const [ahora, setAhora] = useState(() => serverNow())
-
-  useEffect(() => {
-    const id = window.setInterval(() => setAhora(serverNow()), 1000)
-    return () => window.clearInterval(id)
-  }, [])
-
-  const fecha = new Date(ahora)
+  const fecha = new Date(useServerClock())
   const hora = fecha.toLocaleTimeString('es-MX', {
     hour: '2-digit',
     minute: '2-digit',

@@ -1,16 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { PiCamera, PiTrash } from 'react-icons/pi'
 
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import {
   Select,
   SelectContent,
@@ -22,25 +17,28 @@ import { Textarea } from '@/components/ui/textarea'
 import { useReportMaintenance } from '@/features/housekeeping/hooks'
 import type { MaintenancePriority } from '@/features/housekeeping/types'
 import { frontdeskApi } from '@/features/frontdesk/api'
-import { useQuery } from '@tanstack/react-query'
+import { apiFieldErrors } from '@/lib/axios'
 import { queryKeys } from '@/lib/queryClient'
+import { cn } from '@/lib/utils'
 
 const CATEGORIES = [
-  { value: 'PLUMBING', label: 'Plomería' },
-  { value: 'ELECTRICAL', label: 'Electricidad' },
+  { value: 'PLUMBING', label: 'Agua o drenaje' },
+  { value: 'ELECTRICAL', label: 'Luz o contactos' },
   { value: 'AIR_CONDITIONING', label: 'Clima' },
-  { value: 'FURNITURE', label: 'Mobiliario' },
-  { value: 'ELECTRONICS', label: 'Televisión / electrónicos' },
-  { value: 'STRUCTURE', label: 'Obra civil' },
-  { value: 'OTHER', label: 'Otro' },
+  { value: 'FURNITURE', label: 'Mueble roto' },
+  { value: 'ELECTRONICS', label: 'Televisión o aparatos' },
+  { value: 'STRUCTURE', label: 'Puerta, ventana o pared' },
+  { value: 'OTHER', label: 'Otra cosa' },
 ] as const
 
-const PRIORITIES: { value: MaintenancePriority; label: string }[] = [
-  { value: 'LOW', label: 'Baja' },
-  { value: 'MEDIUM', label: 'Media' },
-  { value: 'HIGH', label: 'Alta' },
-  { value: 'URGENT', label: 'Urgente' },
+const PRIORITIES: { value: MaintenancePriority; label: string; ayuda: string }[] = [
+  { value: 'LOW', label: 'Puede esperar', ayuda: 'No estorba para rentar' },
+  { value: 'MEDIUM', label: 'Normal', ayuda: 'Hay que arreglarlo pronto' },
+  { value: 'HIGH', label: 'Urgente', ayuda: 'Molesta al huésped' },
+  { value: 'URGENT', label: 'No se puede usar', ayuda: 'El cuarto no sirve así' },
 ]
+
+const MAX_BYTES = 4 * 1024 * 1024
 
 interface Props {
   open: boolean
@@ -48,8 +46,18 @@ interface Props {
   defaultRoomId?: number | null
 }
 
+/**
+ * Reportar un problema, pensado para quien lo encuentra: alguien de pie en la
+ * habitación, con el teléfono en la mano y guantes puestos.
+ *
+ * Por eso es hoja inferior en el móvil y no un modal centrado, los campos
+ * preguntan en lenguaje de limpieza ("Agua o drenaje", no "Plomería") y la foto
+ * abre la cámara trasera directamente: describir una fuga por escrito cuesta
+ * más que enseñarla.
+ */
 export function ReportMaintenanceDialog({ open, onOpenChange, defaultRoomId }: Props) {
   const report = useReportMaintenance()
+  const archivoRef = useRef<HTMLInputElement>(null)
   const { data: rooms } = useQuery({
     queryKey: queryKeys.frontdesk.rooms({ page_size: 200 }),
     queryFn: () => frontdeskApi.rooms({ page_size: 200 }),
@@ -62,8 +70,47 @@ export function ReportMaintenanceDialog({ open, onOpenChange, defaultRoomId }: P
   const [category, setCategory] = useState<string>('OTHER')
   const [priority, setPriority] = useState<MaintenancePriority>('MEDIUM')
   const [blocksRoom, setBlocksRoom] = useState(false)
+  const [foto, setFoto] = useState<File | null>(null)
+  const [vistaPrevia, setVistaPrevia] = useState<string | null>(null)
+  const [errorFoto, setErrorFoto] = useState<string | null>(null)
 
+  useEffect(() => {
+    if (defaultRoomId) setRoomId(String(defaultRoomId))
+  }, [defaultRoomId])
+
+  // La miniatura es un blob del navegador: se revoca al cambiarla o al cerrar,
+  // porque una foto de cámara ocupa varios MB en memoria hasta que se suelta.
+  useEffect(() => {
+    if (!foto) {
+      setVistaPrevia(null)
+      return
+    }
+    const url = URL.createObjectURL(foto)
+    setVistaPrevia(url)
+    return () => URL.revokeObjectURL(url)
+  }, [foto])
+
+  const errores = apiFieldErrors(report.error)
   const isValid = title.trim().length >= 5 && description.trim().length >= 5
+
+  const elegirFoto = (archivo: File | undefined): void => {
+    if (!archivo) return
+    if (archivo.size > MAX_BYTES) {
+      setErrorFoto('La foto pesa más de 4 MB. Toma una nueva sin acercar tanto.')
+      return
+    }
+    setErrorFoto(null)
+    setFoto(archivo)
+  }
+
+  const limpiar = (): void => {
+    setTitle('')
+    setDescription('')
+    setBlocksRoom(false)
+    setFoto(null)
+    setErrorFoto(null)
+    if (archivoRef.current) archivoRef.current.value = ''
+  }
 
   const submit = (): void => {
     report.mutate(
@@ -74,12 +121,11 @@ export function ReportMaintenanceDialog({ open, onOpenChange, defaultRoomId }: P
         category,
         priority,
         blocks_room: blocksRoom,
+        photo: foto,
       },
       {
         onSuccess: () => {
-          setTitle('')
-          setDescription('')
-          setBlocksRoom(false)
+          limpiar()
           onOpenChange(false)
         },
       },
@@ -87,81 +133,126 @@ export function ReportMaintenanceDialog({ open, onOpenChange, defaultRoomId }: P
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Reportar mantenimiento</DialogTitle>
-          <DialogDescription>
-            El reporte queda con seguimiento hasta que alguien lo cierre.
-          </DialogDescription>
-        </DialogHeader>
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Reportar un problema"
+      description="Queda con folio y seguimiento hasta que alguien lo cierre."
+      className="sm:max-w-lg"
+      footer={
+        <>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button disabled={!isValid} loading={report.isPending} onClick={submit}>
+            Enviar reporte
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="title">¿Qué pasa?</Label>
+          <Input
+            id="title"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="Gotea la regadera"
+            className="h-11"
+          />
+          {errores.title ? <p className="text-xs text-destructive">{errores.title}</p> : null}
+        </div>
 
-        <div className="space-y-3">
-          <div className="space-y-2">
-            <Label htmlFor="title">Titulo</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="Fuga de agua en regadera"
-            />
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="description">Cuéntalo con detalle</Label>
+          <Textarea
+            id="description"
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            placeholder="Gotea sin parar y ya mojó el piso del baño."
+            rows={3}
+          />
+          {errores.description ? (
+            <p className="text-xs text-destructive">{errores.description}</p>
+          ) : null}
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Descripción</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              placeholder="Gotea constante y moja el piso del bano."
-            />
-          </div>
+        {/* La cámara trasera, directo. `capture` es lo que evita el paseo por la
+            galería; en escritorio el navegador lo ignora y abre el explorador
+            de archivos, que ahí es justo lo que se espera. */}
+        <div className="space-y-2">
+          <Label>Foto (opcional)</Label>
+          <input
+            ref={archivoRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="sr-only"
+            id="foto-reporte"
+            onChange={(event) => elegirFoto(event.target.files?.[0])}
+          />
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="room">Habitación</Label>
-              <Select value={roomId} onValueChange={setRoomId}>
-                <SelectTrigger id="room">
-                  <SelectValue placeholder="Área común" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(rooms?.results ?? []).map((room) => (
-                    <SelectItem key={room.id} value={String(room.id)}>
-                      Habitación {room.number}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {vistaPrevia ? (
+            <div className="flex items-center gap-3 rounded-lg border p-2">
+              <img
+                src={vistaPrevia}
+                alt="Foto del problema"
+                className="h-16 w-16 shrink-0 rounded-md object-cover"
+              />
+              <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{foto?.name}</p>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11 shrink-0 text-destructive"
+                aria-label="Quitar la foto"
+                onClick={() => {
+                  setFoto(null)
+                  if (archivoRef.current) archivoRef.current.value = ''
+                }}
+              >
+                <PiTrash />
+              </Button>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="category">Categoría</Label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger id="category">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="priority">Prioridad</Label>
-            <Select
-              value={priority}
-              onValueChange={(value) => setPriority(value as MaintenancePriority)}
+          ) : (
+            <Button
+              variant="outline"
+              className="h-12 w-full justify-start gap-2"
+              onClick={() => archivoRef.current?.click()}
             >
-              <SelectTrigger id="priority">
+              <PiCamera className="h-5 w-5" />
+              Tomar una foto
+            </Button>
+          )}
+
+          {errorFoto ? <p className="text-xs text-destructive">{errorFoto}</p> : null}
+          {errores.photo ? <p className="text-xs text-destructive">{errores.photo}</p> : null}
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="room">¿Dónde?</Label>
+            <Select value={roomId} onValueChange={setRoomId}>
+              <SelectTrigger id="room" className="h-11">
+                <SelectValue placeholder="Área común" />
+              </SelectTrigger>
+              <SelectContent>
+                {(rooms?.results ?? []).map((room) => (
+                  <SelectItem key={room.id} value={String(room.id)}>
+                    Habitación {room.number}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="category">¿De qué es?</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger id="category" className="h-11">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {PRIORITIES.map((option) => (
+                {CATEGORIES.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
@@ -169,32 +260,49 @@ export function ReportMaintenanceDialog({ open, onOpenChange, defaultRoomId }: P
               </SelectContent>
             </Select>
           </div>
-
-          <label className="flex items-start gap-2 rounded-md bg-accent/50 p-3 text-sm">
-            <input
-              type="checkbox"
-              checked={blocksRoom}
-              onChange={(event) => setBlocksRoom(event.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-input"
-            />
-            <span>
-              Dejar la habitación fuera de servicio
-              <span className="block text-xs text-muted-foreground">
-                No se podrá rentar hasta que el reporte se cierre.
-              </span>
-            </span>
-          </label>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-          <Button disabled={!isValid} loading={report.isPending} onClick={submit}>
-            Reportar
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        {/* Botones y no un desplegable: la urgencia es la decisión que cambia
+            si alguien va corriendo o no, y merece verse entera de un vistazo. */}
+        <fieldset className="space-y-2">
+          <legend className="text-sm font-medium">¿Qué tan urgente es?</legend>
+          <div className="grid grid-cols-2 gap-2">
+            {PRIORITIES.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setPriority(option.value)}
+                aria-pressed={priority === option.value}
+                className={cn(
+                  'min-h-[3rem] rounded-lg border px-3 py-2 text-left transition-colors',
+                  'focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40',
+                  priority === option.value
+                    ? 'border-foreground/30 bg-accent'
+                    : 'hover:bg-accent/50',
+                )}
+              >
+                <span className="block text-sm font-medium">{option.label}</span>
+                <span className="block text-2xs text-muted-foreground">{option.ayuda}</span>
+              </button>
+            ))}
+          </div>
+        </fieldset>
+
+        <label className="flex items-start gap-2.5 rounded-lg bg-accent/50 p-3 text-sm">
+          <input
+            type="checkbox"
+            checked={blocksRoom}
+            onChange={(event) => setBlocksRoom(event.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-input"
+          />
+          <span>
+            El cuarto no se puede rentar así
+            <span className="block text-xs text-muted-foreground">
+              Queda fuera de servicio hasta que el reporte se cierre.
+            </span>
+          </span>
+        </label>
+      </div>
+    </ResponsiveDialog>
   )
 }

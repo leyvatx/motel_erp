@@ -14,9 +14,12 @@ interface UiState {
   soundAlerts: boolean
   navGroups: Record<string, boolean>
   setupDismissed: boolean
+  /** Módulos cuya ayuda ya se abrió sola una vez en este navegador. */
+  ayudaVista: Record<string, boolean>
   toggleSidebar: () => void
   setSoundAlerts: (enabled: boolean) => void
   toggleNavGroup: (id: string) => void
+  marcarAyudaVista: (modulo: string) => void
   dismissSetup: () => void
   reopenSetup: () => void
 }
@@ -28,12 +31,15 @@ export const useUiStore = create<UiState>()(
       soundAlerts: import.meta.env.VITE_ENABLE_SOUND_ALERTS !== 'false',
       navGroups: GRUPOS_INICIALES,
       setupDismissed: false,
+      ayudaVista: {},
       toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
       setSoundAlerts: (soundAlerts) => set({ soundAlerts }),
       toggleNavGroup: (id) =>
         set((state) => ({
           navGroups: { ...state.navGroups, [id]: !(state.navGroups[id] ?? true) },
         })),
+      marcarAyudaVista: (modulo) =>
+        set((state) => ({ ayudaVista: { ...state.ayudaVista, [modulo]: true } })),
       dismissSetup: () => set({ setupDismissed: true }),
       reopenSetup: () => set({ setupDismissed: false }),
     }),

@@ -199,6 +199,7 @@ def report_maintenance(
     priority: str = "",
     blocks_room: bool = False,
     cleaning_task_id: int | None = None,
+    photo=None,
 ) -> MaintenanceReport:
     """Levanta un reporte y, si procede, saca la habitación de servicio."""
     from apps.housekeeping.constants import MaintenanceCategory, MaintenancePriority
@@ -221,6 +222,7 @@ def report_maintenance(
         category=category or MaintenanceCategory.OTHER,
         priority=priority or MaintenancePriority.MEDIUM,
         blocks_room=blocks_room,
+        photo=photo or "",
         reported_by=actor,
         cleaning_task_id=cleaning_task_id,
         created_by=actor,

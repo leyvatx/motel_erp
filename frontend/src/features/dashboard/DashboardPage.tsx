@@ -20,10 +20,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCurrentShift, usePendingExpenses, useShiftTrend } from '@/features/finances/hooks'
-import { RoomDonut } from '@/features/dashboard/charts/RoomDonut'
-import { ShiftTrendChart } from '@/features/dashboard/charts/ShiftTrendChart'
-import { PaymentMix } from '@/features/dashboard/charts/PaymentMix'
-import { Sparkline } from '@/features/dashboard/charts/Sparkline'
+import { PaymentMix, RoomDonut, ShiftTrendChart, Sparkline } from '@/features/dashboard/charts/lazy'
 import {
   useExpiringStays,
   useRoomSummary,

@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 
 import { MobileNav } from '@/components/layout/MobileNav'
+import { MobileTabBar } from '@/components/layout/MobileTabBar'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Topbar } from '@/components/layout/Topbar'
 import { sectionTitle } from '@/components/layout/navigation'
-import { useCurrentUser } from '@/features/auth/hooks'
 import { OpenShiftDialog } from '@/features/finances/components/OpenShiftDialog'
 import { SetupWizard } from '@/features/onboarding/SetupWizard'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
@@ -16,7 +16,6 @@ export function AppLayout() {
   const { state } = useRealtime()
   const { pathname } = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
-  useCurrentUser()
 
   useDocumentTitle(sectionTitle(pathname))
 
@@ -43,6 +42,8 @@ export function AppLayout() {
             <Outlet />
           </div>
         </main>
+
+        <MobileTabBar />
       </div>
 
       <OpenShiftDialog />

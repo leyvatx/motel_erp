@@ -122,7 +122,7 @@ export default function RegisterPage() {
                 id="business_name"
                 autoFocus
                 autoComplete="organization"
-                placeholder="Motel Las Palmas"
+                placeholder="Hospedaje Las Palmas"
                 aria-invalid={Boolean(errors.business_name)}
                 {...register('business_name')}
               />

@@ -149,7 +149,11 @@ export default function CorporatePage() {
 
         <TabsContent value="overview" className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard label="Sucursales visibles" value={totals?.motels ?? '—'} icon={PiBuildings} />
+            <MetricCard
+              label="Sucursales visibles"
+              value={totals?.motels ?? '—'}
+              icon={PiBuildings}
+            />
             <MetricCard label="Habitaciones" value={totals?.rooms ?? '—'} icon={PiDoorOpen} />
             <MetricCard label="Ocupadas ahora" value={totals?.occupied ?? '—'} icon={PiBuildings} />
             <MetricCard
@@ -272,7 +276,7 @@ export default function CorporatePage() {
                       <p className="font-medium">{group.name}</p>
                       <p className="text-xs text-muted-foreground">{group.code}</p>
                     </div>
-                    <Badge variant="secondary">{group.motel_count} moteles</Badge>
+                    <Badge variant="secondary">{group.motel_count} sucursales</Badge>
                   </div>
                 ))}
               </div>
@@ -338,7 +342,7 @@ export default function CorporatePage() {
                         {region.group_name} · {region.code}
                       </p>
                     </div>
-                    <Badge variant="secondary">{region.motel_count} moteles</Badge>
+                    <Badge variant="secondary">{region.motel_count} sucursales</Badge>
                   </div>
                 ))}
               </div>

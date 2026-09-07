@@ -42,11 +42,37 @@ export const housekeepingApi = {
   ): Promise<PaginatedResponse<MaintenanceReport>> =>
     get<PaginatedResponse<MaintenanceReport>>('/housekeeping/maintenance/', { params }),
 
+  maintenanceDetail: (reportId: number): Promise<MaintenanceReport> =>
+    get<MaintenanceReport>(`/housekeeping/maintenance/${reportId}/`),
+
   openMaintenance: (): Promise<PaginatedResponse<MaintenanceReport>> =>
     get<PaginatedResponse<MaintenanceReport>>('/housekeeping/maintenance/open/'),
 
-  report: (payload: MaintenancePayload): Promise<MaintenanceReport> =>
-    post<MaintenanceReport, MaintenancePayload>('/housekeeping/maintenance/', payload),
+  /** Levanta un reporte, con o sin foto.
+   *
+   *  Cuando trae imagen se manda como multipart -- un `File` no cabe en JSON --
+   *  y axios pone el `Content-Type` con su frontera; forzarlo a mano rompe el
+   *  cuerpo. Sin foto sigue viajando como JSON, igual que el resto de la API. */
+  report: (payload: MaintenancePayload): Promise<MaintenanceReport> => {
+    const { photo, ...campos } = payload
+    if (!photo) {
+      return post<MaintenanceReport, Omit<MaintenancePayload, 'photo'>>(
+        '/housekeeping/maintenance/',
+        campos,
+      )
+    }
+
+    const cuerpo = new FormData()
+    for (const [clave, valor] of Object.entries(campos)) {
+      if (valor === undefined || valor === null) continue
+      cuerpo.append(clave, typeof valor === 'boolean' ? String(valor) : String(valor))
+    }
+    cuerpo.append('photo', photo)
+
+    return post<MaintenanceReport, FormData>('/housekeeping/maintenance/', cuerpo, {
+      headers: { 'Content-Type': undefined },
+    })
+  },
 
   transition: (
     reportId: number,

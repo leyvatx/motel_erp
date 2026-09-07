@@ -111,10 +111,13 @@ export function Topbar({ connection, onOpenMenu }: Props) {
               {online ? 'En línea' : 'Reconectando'}
             </span>
 
+            {/* Sonido y tema son ajustes, no operación: en 375 px la franja
+                no da para nueve controles y acababa cortando el menú del
+                usuario. Abajo de `sm` viven dentro de ese menú. */}
             <Button
               variant="ghost"
               size="icon-sm"
-              className="h-11 w-11 lg:h-8 lg:w-8"
+              className="hidden h-11 w-11 sm:inline-flex lg:h-8 lg:w-8"
               onClick={() => setSoundAlerts(!soundAlerts)}
               aria-label={soundAlerts ? 'Silenciar alertas' : 'Activar alertas sonoras'}
               title={soundAlerts ? 'Alertas sonoras activas' : 'Alertas sonoras silenciadas'}
@@ -131,7 +134,7 @@ export function Topbar({ connection, onOpenMenu }: Props) {
         <Button
           variant="ghost"
           size="icon-sm"
-          className="h-11 w-11 lg:h-8 lg:w-8"
+          className="hidden h-11 w-11 sm:inline-flex lg:h-8 lg:w-8"
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           aria-label="Cambiar tema"
         >
@@ -141,9 +144,11 @@ export function Topbar({ connection, onOpenMenu }: Props) {
         {operational ? (
           <>
             <NotificationBell />
-            <Separator orientation="vertical" className="mx-1 h-5" />
-            <TeamPresence />
-            <Separator orientation="vertical" className="mx-1 h-5" />
+            <Separator orientation="vertical" className="mx-1 hidden h-5 sm:block" />
+            <span className="hidden sm:contents">
+              <TeamPresence />
+            </span>
+            <Separator orientation="vertical" className="mx-1 hidden h-5 sm:block" />
           </>
         ) : null}
 
@@ -166,6 +171,19 @@ export function Topbar({ connection, onOpenMenu }: Props) {
               <p className="text-xs text-muted-foreground">{user?.username}</p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="sm:hidden"
+              onSelect={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            >
+              {theme === 'dark' ? <PiSun /> : <PiMoon />}
+              {theme === 'dark' ? 'Tema claro' : 'Tema oscuro'}
+            </DropdownMenuItem>
+            {operational ? (
+              <DropdownMenuItem className="sm:hidden" onSelect={() => setSoundAlerts(!soundAlerts)}>
+                {soundAlerts ? <PiSpeakerSlash /> : <PiSpeakerHigh />}
+                {soundAlerts ? 'Silenciar alertas' : 'Activar alertas'}
+              </DropdownMenuItem>
+            ) : null}
             <DropdownMenuItem onSelect={() => setPasswordOpen(true)}>
               <PiKey />
               Cambiar contraseña

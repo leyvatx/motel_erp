@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react'
+import { PiLock } from 'react-icons/pi'
 
+import { ModuleHelp } from '@/components/layout/ModuleHelp'
 import { PageShell, TableScroll } from '@/components/layout/PageShell'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { EmptyState } from '@/components/ui/states'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
@@ -14,6 +18,7 @@ import {
 } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ExpensesPanel } from '@/features/finances/components/ExpensesPanel'
+import { openShiftDialog } from '@/features/finances/components/OpenShiftDialog'
 import { OpenShiftScreen } from '@/features/finances/components/OpenShiftScreen'
 import { PosTerminal } from '@/features/finances/components/PosTerminal'
 import { ShiftBar } from '@/features/finances/components/ShiftBar'
@@ -32,26 +37,28 @@ export default function FinancesPage() {
 
   if (isLoading) {
     return (
-      <PageShell title="Finanzas" description="Punto de venta, turno de caja y gastos.">
+      <PageShell title="Caja" description="Punto de venta, turno de caja y gastos.">
         <Skeleton className="min-h-0 flex-1 rounded-xl" />
-      </PageShell>
-    )
-  }
-
-  if (!shift) {
-    return (
-      <PageShell title="Finanzas" description="Abre tu turno para empezar a cobrar.">
-        <OpenShiftScreen />
       </PageShell>
     )
   }
 
   return (
     <PageShell
-      title="Finanzas"
-      description="Punto de venta, turno de caja y gastos operativos."
+      title="Caja"
+      description={
+        shift
+          ? 'Punto de venta, turno de caja y gastos operativos.'
+          : 'Tu turno está cerrado. Puedes consultar cortes anteriores mientras tanto.'
+      }
+      actions={<ModuleHelp modulo="caja" />}
       toolbar={
-        <ShiftBar shift={shift} onRegisterExpense={() => setExpenseIntent((value) => value + 1)} />
+        shift ? (
+          <ShiftBar
+            shift={shift}
+            onRegisterExpense={() => setExpenseIntent((value) => value + 1)}
+          />
+        ) : undefined
       }
     >
       <Tabs value={tab} onValueChange={setTab} className="flex min-h-0 flex-1 flex-col">
@@ -61,12 +68,30 @@ export default function FinancesPage() {
           <TabsTrigger value="history">Cortes anteriores</TabsTrigger>
         </TabsList>
 
+        {/* Sin turno no se cobra ni se gasta, pero los cortes anteriores sí se
+            consultan: son historia cerrada, no dependen de la caja de hoy.
+            Antes la falta de turno reemplazaba la página entera y quien venía a
+            revisar el corte de ayer tenía que abrir una caja para verlo. La
+            regla general es la misma en todas partes: se bloquea lo que de
+            verdad necesita el requisito, y el bloqueo trae el botón que lo
+            resuelve. */}
         <TabsContent value="pos" className="min-h-0 flex-1 overflow-auto scrollbar-thin">
-          <PosTerminal />
+          {shift ? <PosTerminal /> : <OpenShiftScreen />}
         </TabsContent>
 
         <TabsContent value="expenses" className="flex min-h-0 flex-1 flex-col">
-          <ExpensesPanel openIntent={expenseIntent} />
+          {shift ? (
+            <ExpensesPanel openIntent={expenseIntent} />
+          ) : (
+            <Card className="min-h-0 flex-1">
+              <EmptyState
+                title="Los gastos se registran contra un turno"
+                description="Un gasto sin turno no tendría a qué corte pertenecer. Abre el tuyo y quedará ligado a tu usuario."
+                icon={<PiLock className="h-8 w-8" aria-hidden />}
+                action={<Button onClick={openShiftDialog}>Abrir turno de caja</Button>}
+              />
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="history" className="flex min-h-0 flex-1 flex-col">
@@ -99,7 +124,10 @@ function ShiftHistory() {
               {isLoading ? (
                 <TableEmpty colSpan={6} message="Cargando..." />
               ) : (data?.results ?? []).length === 0 ? (
-                <TableEmpty colSpan={6} message="Sin turnos registrados." />
+                <TableEmpty
+                  colSpan={6}
+                  message="Todavía no se ha cerrado ningún turno. El primer corte aparecerá aquí en cuanto alguien cierre su caja."
+                />
               ) : (
                 (data?.results ?? []).map((row) => {
                   const difference = toNumber(row.difference)

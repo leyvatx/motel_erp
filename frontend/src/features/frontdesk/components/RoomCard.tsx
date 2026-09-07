@@ -1,5 +1,6 @@
 import { LuCar, LuClock, LuLogIn, LuLogOut, LuSparkles, LuUser } from 'react-icons/lu'
 
+import { RowActions, type RowAction } from '@/components/ui/row-actions'
 import { useCountdown } from '@/hooks/useCountdown'
 import { formatCountdown, formatMoney, formatTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -86,6 +87,10 @@ interface Props {
   onRequestCleaning: (room: RoomGridItem) => void
   /** Marca terminada la limpieza y devuelve el cuarto a disponible. */
   onFinishCleaning: (room: RoomGridItem) => void
+  /** Todo lo demás -- extender, mantenimiento, ver la cuenta -- bajo un menú
+   *  visible. El clic derecho abre el mismo juego, pero como atajo: en una
+   *  tableta de mostrador el clic derecho no existe. */
+  actions?: RowAction[]
   busy?: boolean
   warningMinutes?: number
 }
@@ -97,6 +102,7 @@ export function RoomCard({
   onCheckout,
   onRequestCleaning,
   onFinishCleaning,
+  actions = [],
   busy = false,
   warningMinutes = 15,
 }: Props) {
@@ -250,6 +256,7 @@ export function RoomCard({
       <AccionesRapidas
         room={room}
         busy={busy}
+        actions={actions}
         onRent={onRent}
         onCheckout={onCheckout}
         onRequestCleaning={onRequestCleaning}
@@ -268,6 +275,7 @@ export function RoomCard({
 function AccionesRapidas({
   room,
   busy,
+  actions,
   onRent,
   onCheckout,
   onRequestCleaning,
@@ -275,6 +283,7 @@ function AccionesRapidas({
 }: {
   room: RoomGridItem
   busy: boolean
+  actions: RowAction[]
   onRent: (room: RoomGridItem) => void
   onCheckout: (room: RoomGridItem) => void
   onRequestCleaning: (room: RoomGridItem) => void
@@ -321,7 +330,7 @@ function AccionesRapidas({
     }
   })()
 
-  if (acciones.length === 0) return null
+  if (acciones.length === 0 && actions.length === 0) return null
 
   return (
     <div className="flex divide-x divide-border/60 border-t border-border/60">
@@ -332,7 +341,8 @@ function AccionesRapidas({
           disabled={busy}
           onClick={accion.onClick}
           className={cn(
-            'flex flex-1 items-center justify-center gap-1.5 px-2 py-2 text-2xs font-medium',
+            // 40 px de alto real en el teléfono: el dedo cae aquí todo el turno.
+            'flex flex-1 items-center justify-center gap-1.5 px-2 py-2.5 text-2xs font-medium sm:py-2',
             'text-muted-foreground transition-colors duration-150',
             'hover:bg-accent hover:text-foreground',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
@@ -343,6 +353,14 @@ function AccionesRapidas({
           {accion.label}
         </button>
       ))}
+
+      {/* El resto de acciones, visible. El clic derecho sigue abriendo el mismo
+          menú, pero ya no es la única puerta: en una tableta no la hay. */}
+      {actions.length > 0 ? (
+        <div className="flex shrink-0 items-center justify-center px-1">
+          <RowActions items={actions} label={`la habitación ${room.number}`} />
+        </div>
+      ) : null}
     </div>
   )
 }

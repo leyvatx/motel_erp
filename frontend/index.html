@@ -2,7 +2,7 @@
 <html lang="es-MX">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -11,6 +11,36 @@
       rel="stylesheet"
     />
     <title>Sistema de gestión</title>
+
+    <!--
+      Tema antes del primer pintado.
+
+      Sin esto la aplicación arranca en claro -- lo que dice el CSS por defecto
+      -- y salta a oscuro cuando React monta y corre el efecto de apariencia.
+      En una recarga eso es un destello blanco de pantalla completa, y en un
+      turno de noche es lo primero que se nota.
+
+      Lee lo que la sesión anterior dejó ya resuelto (`erp-tema-resuelto`, que
+      escribe `applyAppearance`): clase, densidad y variables CSS calculadas.
+      No decide nada por su cuenta, así que no puede desincronizarse de la
+      lógica de marca blanca; en la primera visita simplemente no hay nada que
+      aplicar y se cae al valor por defecto del CSS.
+    -->
+    <script>
+      ;(function () {
+        try {
+          var crudo = localStorage.getItem('erp-tema-resuelto')
+          if (!crudo) return
+          var tema = JSON.parse(crudo)
+          var raiz = document.documentElement
+          if (tema.dark) raiz.classList.add('dark')
+          if (tema.density) raiz.dataset.density = tema.density
+          for (var nombre in tema.vars) raiz.style.setProperty(nombre, tema.vars[nombre])
+        } catch (e) {
+          /* Almacenamiento bloqueado o dato corrupto: arranca en claro, como antes. */
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>
