@@ -13,21 +13,24 @@ centinela que hace que el asistente pida el nombre real en el primer acceso.
 La contraseña se puede pasar por argumento, pero se lee mejor de
 ``CLIENT_ADMIN_PASSWORD``: lo que va en la línea de comandos queda en el
 historial del shell y a la vista de cualquiera que liste procesos en esa
-máquina.
+máquina. Mejor todavía es ``--generar-clave``, que la inventa aquí y la enseña
+una sola vez: así no pasa por el historial, ni por el chat, ni por el correo de
+quien la teclea.
 
 Ejemplos::
 
+    python manage.py create_client_admin --email admin@sucliente.com \\
+        --nombre "Ana Torres" --generar-clave
+
     CLIENT_ADMIN_PASSWORD='...' python manage.py create_client_admin \\
         --email admin@sucliente.com
-
-    python manage.py create_client_admin --email admin@sucliente.com \\
-        --username gerencia --nombre "Ana Torres" --password '...'
 """
 
 from __future__ import annotations
 
 import os
 import re
+import secrets
 
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -49,6 +52,15 @@ FORMATO_USUARIO = re.compile(r"^[a-z0-9._-]{3,40}$")
 # asistente de alta lee como "este negocio todavía no se ha presentado".
 NOMBRE_SEMBRADO = "Mi negocio"
 
+# Sin l, I, 1, O ni 0: esta contraseña se dicta por teléfono o se copia de una
+# pantalla, y confundir dos caracteres cuesta una llamada de soporte.
+ALFABETO = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+
+def clave_generada() -> str:
+    """Tres grupos de cuatro. Fácil de dictar, imposible de adivinar."""
+    return "-".join("".join(secrets.choice(ALFABETO) for _ in range(4)) for _ in range(3))
+
 
 class Command(BaseCommand):
     help = "Crea el super administrador de una sucursal, listo para el asistente de alta."
@@ -61,6 +73,11 @@ class Command(BaseCommand):
             help="Clave de acceso. Si se omite, sale de la parte izquierda del correo.",
         )
         parser.add_argument("--password", default="", help=f"Mejor usa {VARIABLE_CLAVE}.")
+        parser.add_argument(
+            "--generar-clave",
+            action="store_true",
+            help="Inventa una contraseña segura y la muestra una sola vez al terminar.",
+        )
         parser.add_argument("--nombre", default="", help="Nombre completo para la interfaz.")
         parser.add_argument(
             "--sucursal",
@@ -78,10 +95,16 @@ class Command(BaseCommand):
         username = (options["username"].strip() or self._usuario_desde(email)).lower()
         nombre = options["nombre"].strip() or email.split("@")[0].replace(".", " ").title()
         password = options["password"] or os.environ.get(VARIABLE_CLAVE, "")
+        generada = ""
+
+        if options["generar_clave"]:
+            if password:
+                raise CommandError("--generar-clave no va junto con una contraseña dada.")
+            generada = password = clave_generada()
 
         if not password:
             raise CommandError(
-                f"Falta la contraseña. Pásala en {VARIABLE_CLAVE} o con --password."
+                f"Falta la contraseña. Usa --generar-clave, {VARIABLE_CLAVE} o --password."
             )
         if not FORMATO_USUARIO.match(username):
             raise CommandError(
@@ -123,7 +146,7 @@ class Command(BaseCommand):
                 usuario.must_change_password = options["exigir_cambio"]
                 usuario.save(update_fields=["email", "must_change_password", "updated_at"])
 
-        self._reporte(usuario, motel, creada=creada)
+        self._reporte(usuario, motel, creada=creada, generada=generada)
 
     def _usuario_desde(self, email: str) -> str:
         """La clave de acceso sale del correo, limpiando lo que el modelo no admite."""
@@ -165,7 +188,9 @@ class Command(BaseCommand):
             raise CommandError(f"Hay más de una sucursal activa. Elige con --sucursal: {slugs}…")
         return activas[0] if activas else None
 
-    def _reporte(self, usuario: User, motel: Motel, *, creada: bool) -> None:
+    def _reporte(
+        self, usuario: User, motel: Motel, *, creada: bool, generada: str
+    ) -> None:
         self.stdout.write(self.style.SUCCESS("\nCuenta lista."))
         self.stdout.write(f"  Usuario:   {usuario.username}")
         self.stdout.write(f"  Correo:    {usuario.email or '—'}")
@@ -186,8 +211,17 @@ class Command(BaseCommand):
                 "pedir el nombre; sí el resto de lo que falte."
             )
 
-        self.stdout.write(
-            self.style.WARNING(
-                "\nLa contraseña no se imprime a propósito. Compártela por un canal aparte."
+        if generada:
+            self.stdout.write(self.style.SUCCESS(f"\n  Contraseña: {generada}"))
+            self.stdout.write(
+                self.style.WARNING(
+                    "\nSe muestra una sola vez y no queda guardada en ningún lado. Cópiala\n"
+                    "ahora y compártela por un canal distinto al del nombre de usuario."
+                )
             )
-        )
+        else:
+            self.stdout.write(
+                self.style.WARNING(
+                    "\nLa contraseña no se imprime a propósito. Compártela por un canal aparte."
+                )
+            )

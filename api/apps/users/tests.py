@@ -6,6 +6,7 @@ acceso sepa a cuál de los cincuenta entrar sin preguntar de más.
 
 from __future__ import annotations
 
+import re
 from io import StringIO
 
 from django.core.cache import cache
@@ -380,6 +381,28 @@ class CrearAdminDelClienteTests(TestCase):
 
         self.assertFalse(User.all_objects.filter(username="admin").exists())
         self.assertFalse(Motel.all_objects.exists())
+
+    def test_la_clave_generada_sirve_para_entrar(self) -> None:
+        """La contraseña que inventa el comando tiene que funcionar de verdad.
+
+        Se lee de la salida porque es el único lugar donde aparece: no se
+        guarda en ningún lado, que es justamente el punto.
+        """
+        salida = self.correr(email="admin@cliente.com", generar_clave=True)
+
+        clave = re.search(r"Contraseña: (\S+)", salida)
+        self.assertIsNotNone(clave, f"la salida no trae la contraseña: {salida}")
+
+        respuesta = APIClient().post(
+            LOGIN_URL, {"username": "admin", "password": clave.group(1)}
+        )
+        self.assertEqual(respuesta.status_code, 200)
+
+    def test_la_clave_generada_no_se_mezcla_con_una_dada(self) -> None:
+        with self.assertRaises(CommandError):
+            self.correr(email="admin@cliente.com", password=PASSWORD, generar_clave=True)
+
+        self.assertFalse(User.all_objects.filter(username="admin").exists())
 
     def test_rechaza_un_correo_que_no_da_una_clave_valida(self) -> None:
         with self.assertRaises(CommandError) as fallo:
