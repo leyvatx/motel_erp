@@ -3,13 +3,6 @@ import { PiBasket, PiBed, PiClock, PiCreditCard, PiPlus, PiProhibit } from 'reac
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -20,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
+import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   useCancelStay,
@@ -62,49 +56,51 @@ export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
     if (open) setPanel('detail')
   }, [open, stayId])
 
+  // El encabezado lo pone el contenedor, así que el título de cada rama se
+  // decide aquí arriba en vez de repetirse dentro de cada una.
+  const titulo = isLoading ? (
+    'Abriendo la renta'
+  ) : !stay ? (
+    'No se pudo abrir la renta'
+  ) : (
+    <span className="flex items-center gap-2">
+      Habitación {stay.room_number}
+      <Badge variant="occupied">{stay.status_display}</Badge>
+    </span>
+  )
+
+  const descripcion = isLoading
+    ? undefined
+    : !stay
+      ? apiErrorMessage(error, 'La renta no se pudo cargar.')
+      : `${stay.code} - ${stay.room_type_name} / ${stay.tariff_block_name}`
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={titulo}
+      description={descripcion}
+      className="max-w-xl"
+    >
+      <div className="space-y-4">
         {isLoading ? (
-          <>
-            <DialogHeader>
-              <DialogTitle>Abriendo la renta</DialogTitle>
-            </DialogHeader>
-            <Skeleton className="h-32 w-full" />
-          </>
+          <Skeleton className="h-32 w-full" />
         ) : !stay ? (
           /* Sin esta rama el esqueleto era también el estado de error: al
              fallar la consulta isLoading vuelve a false pero stay se queda en
              undefined, así que la condición seguía siendo cierta y el diálogo
              se quedaba cargando para siempre, sin decir qué pasó. */
-          <>
-            <DialogHeader>
-              <DialogTitle>No se pudo abrir la renta</DialogTitle>
-              <DialogDescription>
-                {apiErrorMessage(error, 'La renta no se pudo cargar.')}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Cerrar
-              </Button>
-              <Button loading={isFetching} onClick={() => void refetch()}>
-                Reintentar
-              </Button>
-            </div>
-          </>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cerrar
+            </Button>
+            <Button loading={isFetching} onClick={() => void refetch()}>
+              Reintentar
+            </Button>
+          </div>
         ) : (
           <>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                Habitación {stay.room_number}
-                <Badge variant="occupied">{stay.status_display}</Badge>
-              </DialogTitle>
-              <DialogDescription>
-                {stay.code} - {stay.room_type_name} / {stay.tariff_block_name}
-              </DialogDescription>
-            </DialogHeader>
-
             <StayTimer expiresAt={stay.expires_at} />
 
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
@@ -197,8 +193,8 @@ export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
             ) : null}
           </>
         )}
-      </DialogContent>
-    </Dialog>
+      </div>
+    </ResponsiveDialog>
   )
 }
 
