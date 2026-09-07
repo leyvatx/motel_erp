@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { ForbiddenPage, NotFoundPage } from '@/pages/ErrorPages'
 import { defaultRouteFor, useAuthStore } from '@/store/auth'
 
+const LandingPage = lazy(() => import('@/features/marketing/LandingPage'))
 const LoginPage = lazy(() => import('@/features/auth/LoginPage'))
 const RegisterPage = lazy(() => import('@/features/auth/RegisterPage'))
 const DashboardPage = lazy(() => import('@/features/dashboard/DashboardPage'))
@@ -22,9 +23,20 @@ const ReportsPage = lazy(() => import('@/features/reports/ReportsPage'))
 const ReservationsPage = lazy(() => import('@/features/reservations/ReservationsPage'))
 const CorporatePage = lazy(() => import('@/features/corporate/CorporatePage'))
 
-function HomeRedirect() {
+/** `/` es la puerta pública para quien llega sin sesión y el atajo al tablero
+ *  para quien ya entró. Vive fuera de `ProtectedRoute` -- que manda al acceso
+ *  cuando no hay sesión -- justo para que un visitante pueda ver la página del
+ *  producto en vez de una pantalla de contraseña. */
+function Inicio() {
+  const access = useAuthStore((state) => state.access)
   const user = useAuthStore((state) => state.user)
-  return <Navigate to={defaultRouteFor(user)} replace />
+
+  if (access) return <Navigate to={defaultRouteFor(user)} replace />
+  return (
+    <Lazy>
+      <LandingPage />
+    </Lazy>
+  )
 }
 
 function PageFallback() {
@@ -41,6 +53,7 @@ function Lazy({ children }: { children: React.ReactNode }) {
 }
 
 const routes: RouteObject[] = [
+  { path: '/', element: <Inicio /> },
   {
     path: '/login',
     element: (
@@ -59,14 +72,14 @@ const routes: RouteObject[] = [
   },
   { path: '/sin-acceso', element: <ForbiddenPage /> },
   {
-    path: '/',
+    // Ruta de layout sin `path`: sus hijos siguen resolviéndose desde la raíz
+    // (`dashboard` -> `/dashboard`) y la raíz a secas queda libre para `Inicio`.
     element: (
       <ProtectedRoute>
         <AppLayout />
       </ProtectedRoute>
     ),
     children: [
-      { index: true, element: <HomeRedirect /> },
       {
         path: 'dashboard',
         element: (
