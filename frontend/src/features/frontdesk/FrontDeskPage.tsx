@@ -35,6 +35,7 @@ import { StayDetailDialog } from '@/features/frontdesk/components/StayDetailDial
 import {
   useExpiringStays,
   useFinishCleaning,
+  useRequestCleaning,
   useRoomGrid,
   useRoomSummary,
   useUpcomingReservations,
@@ -59,6 +60,7 @@ export default function FrontDeskPage() {
   const expiring = useExpiringStays()
   const upcomingReservations = useUpcomingReservations()
   const finishCleaning = useFinishCleaning()
+  const requestCleaning = useRequestCleaning()
   const openContextMenu = useRowContextMenu()
   const canConfigure = useAuthStore(
     (state) => state.user?.role === 'MANAGER' || state.user?.role === 'SUPERADMIN',
@@ -333,7 +335,15 @@ export default function FrontDeskPage() {
               key={room.id}
               onContextMenu={openContextMenu(`Habitación ${room.number}`, roomActions(room))}
             >
-              <RoomCard room={room} onSelect={handleSelect} />
+              <RoomCard
+                room={room}
+                onSelect={handleSelect}
+                onRent={setRentRoom}
+                onCheckout={(item) => item.current_stay && setStayId(item.current_stay.id)}
+                onRequestCleaning={(item) => requestCleaning.mutate(item.id)}
+                onFinishCleaning={(item) => finishCleaning.mutate(item.id)}
+                busy={requestCleaning.isPending || finishCleaning.isPending}
+              />
             </div>
           ))}
         </div>

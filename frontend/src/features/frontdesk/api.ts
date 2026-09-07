@@ -52,6 +52,11 @@ export const frontdeskApi = {
   finishCleaning: (roomId: number): Promise<Room> =>
     post<Room>(`/frontdesk/rooms/${roomId}/finish-cleaning/`),
 
+  // Vive en housekeeping, pero se dispara desde la tarjeta de recepción: quien
+  // ve el cuarto sucio es quien está en el mostrador.
+  requestCleaning: (roomId: number): Promise<unknown> =>
+    post<unknown, { room_id: number }>('/housekeeping/cleaning-tasks/', { room_id: roomId }),
+
   outOfService: (roomId: number, reason: string, blocked = false): Promise<Room> =>
     post<Room, { reason: string; blocked: boolean }>(`/frontdesk/rooms/${roomId}/out-of-service/`, {
       reason,

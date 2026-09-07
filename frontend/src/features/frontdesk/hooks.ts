@@ -224,6 +224,21 @@ export function useFinishCleaning() {
   })
 }
 
+export function useRequestCleaning() {
+  const invalidate = useFrontdeskInvalidation()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (roomId: number) => frontdeskApi.requestCleaning(roomId),
+    onSuccess: () => {
+      invalidate()
+      void queryClient.invalidateQueries({ queryKey: queryKeys.housekeeping.board() })
+      toast.success('Limpieza solicitada', 'La tarea ya está en el tablero de ama de llaves.')
+    },
+    onError: (error) => toast.error('No se pudo pedir la limpieza', apiErrorMessage(error)),
+  })
+}
+
 export function useSetOutOfService() {
   const invalidate = useFrontdeskInvalidation()
 

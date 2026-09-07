@@ -10,14 +10,14 @@ export default {
     extend: {
       colors: {
         'brand-dark': '#0f172a',
-        'brand-accent': 'hsl(var(--brand-accent))',
+        'brand-accent': 'hsl(var(--brand-accent) / <alpha-value>)',
 
-        'status-available': 'hsl(var(--status-available))',
-        'status-occupied': 'hsl(var(--status-occupied))',
-        'status-cleaning': 'hsl(var(--status-cleaning))',
-        'status-maintenance': 'hsl(var(--status-maintenance))',
+        'status-available': 'hsl(var(--status-available) / <alpha-value>)',
+        'status-occupied': 'hsl(var(--status-occupied) / <alpha-value>)',
+        'status-cleaning': 'hsl(var(--status-cleaning) / <alpha-value>)',
+        'status-maintenance': 'hsl(var(--status-maintenance) / <alpha-value>)',
 
-        border: 'hsl(var(--border))',
+        border: 'hsl(var(--border) / <alpha-value>)',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
         background: 'hsl(var(--background))',
