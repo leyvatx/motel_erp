@@ -108,7 +108,7 @@ class RegionViewSet(CorporateScopeMixin, viewsets.ModelViewSet):
         wanted = set(payload.validated_data["motel_ids"])
         if not request.user.is_platform_admin and wanted - accessible_motel_ids(request.user):
             return Response(
-                {"error": {"code": "outside_scope", "message": "Hay moteles fuera de tu alcance."}},
+                {"error": {"code": "outside_scope", "message": "Hay sucursales fuera de tu alcance."}},
                 status=status.HTTP_403_FORBIDDEN,
             )
         with transaction.atomic():
@@ -284,13 +284,13 @@ class BulkConfigView(CorporateScopeMixin, APIView):
         forbidden = target_ids - allowed
         if forbidden:
             return Response(
-                {"error": {"code": "outside_scope", "message": "Hay moteles fuera de tu alcance.", "motel_ids": sorted(forbidden)}},
+                {"error": {"code": "outside_scope", "message": "Hay sucursales fuera de tu alcance.", "motel_ids": sorted(forbidden)}},
                 status=status.HTTP_403_FORBIDDEN,
             )
         targets = list(Motel.objects.filter(pk__in=target_ids).order_by("name"))
         if len(targets) != len(target_ids):
             return Response(
-                {"error": {"code": "invalid_targets", "message": "Uno o más moteles no existen o están suspendidos."}},
+                {"error": {"code": "invalid_targets", "message": "Una o más sucursales no existen o están suspendidas."}},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         validated = []

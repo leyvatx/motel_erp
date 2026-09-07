@@ -92,7 +92,7 @@ class UserWriteSerializer(serializers.ModelSerializer):
         if self.instance is not None:
             repetido = repetido.exclude(pk=self.instance.pk)
         if repetido.exists():
-            raise serializers.ValidationError("Ese usuario ya existe en este motel.")
+            raise serializers.ValidationError("Ese usuario ya existe en esta sucursal.")
         return username
 
     def validate(self, attrs: dict) -> dict:
@@ -108,7 +108,7 @@ class UserWriteSerializer(serializers.ModelSerializer):
             ).exclude(pk=instance.pk).exists()
         ):
             raise serializers.ValidationError(
-                {"role": "El motel debe conservar al menos un super administrador activo."}
+                {"role": "La sucursal debe conservar al menos un super administrador activo."}
             )
         return attrs
 
@@ -140,7 +140,7 @@ class MotelTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     motel = serializers.CharField(
         required=False, allow_blank=True, write_only=True, max_length=140,
-        help_text="Identificador del motel. Solo hace falta si la clave se repite.",
+        help_text="Identificador de la sucursal. Solo hace falta si la clave se repite.",
     )
 
     @classmethod
@@ -168,7 +168,7 @@ class MotelTokenObtainPairSerializer(TokenObtainPairSerializer):
             )
             if motel_id is None:
                 raise DomainError(
-                    "Ese motel no existe o está suspendido.", code="motel_desconocido"
+                    "Esa sucursal no existe o está suspendida.", code="motel_desconocido"
                 )
             return motel_id
 
@@ -177,7 +177,7 @@ class MotelTokenObtainPairSerializer(TokenObtainPairSerializer):
         )
         if len(candidatos) > 1:
             raise DomainError(
-                "Esa clave de empleado se usa en varios moteles. Indica cuál es el tuyo.",
+                "Esa clave de empleado se usa en varias sucursales. Indica cuál es la tuya.",
                 code="motel_requerido",
             )
         return candidatos[0] if candidatos else None

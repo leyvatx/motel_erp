@@ -14,7 +14,7 @@ envVarGroups:
       - key: BUSINESS_CURRENCY
         value: MXN
       - key: BUSINESS_NAME
-        value: Motel Demo
+        value: Negocio Demo
       - key: EXPIRATION_WARNING_MINUTES
         value: "15"
       - key: EXPENSE_APPROVAL_THRESHOLD

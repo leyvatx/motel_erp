@@ -31,8 +31,8 @@ export default function PlatformPage() {
 
   return (
     <PageShell
-      title="Moteles"
-      description="Administración central de las propiedades registradas en la plataforma."
+      title="Sucursales"
+      description="Administración central de las sucursales registradas en la plataforma."
       toolbar={
         <Input
           value={search}
@@ -42,7 +42,7 @@ export default function PlatformPage() {
           }}
           placeholder="Buscar por nombre, razón social o RFC"
           className="max-w-md"
-          aria-label="Buscar moteles"
+          aria-label="Buscar sucursales"
         />
       }
     >
@@ -51,7 +51,7 @@ export default function PlatformPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Motel</TableHead>
+                <TableHead>Sucursal</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead>Usuarios</TableHead>
                 <TableHead>Habitaciones</TableHead>
@@ -87,7 +87,7 @@ export default function PlatformPage() {
                   </TableRow>
                 ))
               ) : (
-                <TableEmpty colSpan={6} message="No se encontraron moteles." />
+                <TableEmpty colSpan={6} message="No se encontraron sucursales." />
               )}
             </TableBody>
           </Table>

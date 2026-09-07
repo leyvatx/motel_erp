@@ -101,7 +101,7 @@ export function UserFormDialog({
         <DialogHeader>
           <DialogTitle>{user ? `Editar ${user.full_name}` : 'Nuevo usuario'}</DialogTitle>
           <DialogDescription>
-            Define sus datos de acceso y el rol que tendrá dentro de este motel.
+            Define sus datos de acceso y el rol que tendrá dentro de esta sucursal.
           </DialogDescription>
         </DialogHeader>
 

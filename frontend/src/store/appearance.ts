@@ -1,12 +1,14 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+import { migrateStorageKey } from '@/lib/storage'
+
 export type ThemeMode = 'light' | 'dark' | 'system'
 export type Density = 'comfortable' | 'compact'
-export type ThemePreference = ThemeMode | 'motel'
-export type DensityPreference = Density | 'motel'
+export type ThemePreference = ThemeMode | 'business'
+export type DensityPreference = Density | 'business'
 
-export interface MotelAppearance {
+export interface BusinessAppearance {
   brand_primary_color: string
   brand_sidebar_color: string
   status_available_color: string
@@ -26,18 +28,20 @@ interface AppearanceState {
   setDensity: (density: DensityPreference) => void
 }
 
+migrateStorageKey('motel-erp-appearance', 'erp-appearance')
+
 export const useAppearanceStore = create<AppearanceState>()(
   persist(
     (set) => ({
-      theme: 'motel',
-      density: 'motel',
+      theme: 'business',
+      density: 'business',
       setTheme: (theme) => set({ theme }),
       setDensity: (density) => set({ density }),
     }),
     {
-      name: 'motel-erp-appearance',
-      version: 3,
-      migrate: () => ({ theme: 'motel', density: 'motel' }),
+      name: 'erp-appearance',
+      version: 4,
+      migrate: () => ({ theme: 'business', density: 'business' }),
     },
   ),
 )
@@ -74,25 +78,25 @@ function readableForeground(hex: string): string {
 export function applyAppearance(
   themePreference: ThemePreference,
   densityPreference: DensityPreference,
-  motel: MotelAppearance,
+  negocio: BusinessAppearance,
 ): void {
   const root = document.documentElement
-  const theme = themePreference === 'motel' ? motel.default_theme : themePreference
-  const density = densityPreference === 'motel' ? motel.default_density : densityPreference
+  const theme = themePreference === 'business' ? negocio.default_theme : themePreference
+  const density = densityPreference === 'business' ? negocio.default_density : densityPreference
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
   root.classList.toggle('dark', theme === 'dark' || (theme === 'system' && prefersDark))
 
-  const primary = hexToHsl(motel.brand_primary_color)
+  const primary = hexToHsl(negocio.brand_primary_color)
   root.style.setProperty('--primary', primary)
-  root.style.setProperty('--primary-foreground', readableForeground(motel.brand_primary_color))
+  root.style.setProperty('--primary-foreground', readableForeground(negocio.brand_primary_color))
   root.style.setProperty('--brand-accent', primary)
   root.style.setProperty('--ring', primary)
-  root.style.setProperty('--status-available', hexToHsl(motel.status_available_color))
-  root.style.setProperty('--status-occupied', hexToHsl(motel.status_occupied_color))
-  root.style.setProperty('--status-cleaning', hexToHsl(motel.status_cleaning_color))
-  root.style.setProperty('--status-maintenance', hexToHsl(motel.status_maintenance_color))
+  root.style.setProperty('--status-available', hexToHsl(negocio.status_available_color))
+  root.style.setProperty('--status-occupied', hexToHsl(negocio.status_occupied_color))
+  root.style.setProperty('--status-cleaning', hexToHsl(negocio.status_cleaning_color))
+  root.style.setProperty('--status-maintenance', hexToHsl(negocio.status_maintenance_color))
 
   const radii = { square: '0.125rem', medium: '0.375rem', rounded: '0.75rem' }
-  root.style.setProperty('--radius', radii[motel.border_radius])
+  root.style.setProperty('--radius', radii[negocio.border_radius])
   root.dataset.density = density
 }

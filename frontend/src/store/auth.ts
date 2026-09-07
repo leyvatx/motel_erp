@@ -1,7 +1,10 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+import { migrateStorageKey } from '@/lib/storage'
 import type { LoginResponse, Role, User } from '@/types/api'
+
+migrateStorageKey('motel-erp-auth', 'erp-auth')
 
 interface AuthState {
   user: User | null
@@ -54,7 +57,7 @@ export const useAuthStore = create<AuthState>()(
           activeRole: null,
         }),
     }),
-    { name: 'motel-erp-auth' },
+    { name: 'erp-auth' },
   ),
 )
 

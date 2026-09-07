@@ -1,8 +1,8 @@
-import type { MotelAppearance } from '@/store/appearance'
+import type { BusinessAppearance } from '@/store/appearance'
 
 export type PrinterBackend = 'dummy' | 'network' | 'usb' | 'file'
 
-export interface PublicBusinessProfile extends MotelAppearance {
+export interface PublicBusinessProfile extends BusinessAppearance {
   name: string
   logo_url: string | null
   currency: string

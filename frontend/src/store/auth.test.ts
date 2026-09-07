@@ -28,7 +28,7 @@ function user(role: Role, platform = false): User {
 }
 
 describe('acceso por rol', () => {
-  it('envía al personal del motel a su dashboard', () => {
+  it('envía al personal de la sucursal a su dashboard', () => {
     expect(defaultRouteFor(user('RECEPTION'))).toBe('/dashboard')
     expect(defaultRouteFor(user('HOUSEKEEPING'))).toBe('/dashboard')
   })
@@ -47,7 +47,7 @@ describe('acceso por rol', () => {
     expect(canAccessSection(reception, 'reservations')).toBe(true)
   })
 
-  it('mantiene al usuario corporativo en el panel hasta seleccionar un motel', () => {
+  it('mantiene al usuario corporativo en el panel hasta seleccionar una sucursal', () => {
     const corporate = {
       ...user('MANAGER'),
       motel: null,

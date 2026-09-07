@@ -1,6 +1,10 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+import { migrateStorageKey } from '@/lib/storage'
+
+migrateStorageKey('motel-erp-ui', 'erp-ui')
+
 interface UiState {
   sidebarCollapsed: boolean
   soundAlerts: boolean
@@ -16,6 +20,6 @@ export const useUiStore = create<UiState>()(
       toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
       setSoundAlerts: (soundAlerts) => set({ soundAlerts }),
     }),
-    { name: 'motel-erp-ui' },
+    { name: 'erp-ui' },
   ),
 )

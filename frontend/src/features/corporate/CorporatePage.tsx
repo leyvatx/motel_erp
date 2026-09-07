@@ -109,7 +109,7 @@ export default function CorporatePage() {
     onSuccess: (data) => {
       setPreview(data)
       if (data.applied) {
-        toast.success('Configuración aplicada', `${data.target_count} moteles actualizados.`)
+        toast.success('Configuración aplicada', `${data.target_count} sucursales actualizadas.`)
         void queryClient.invalidateQueries({ queryKey: ['corporate'] })
       }
     },
@@ -149,7 +149,7 @@ export default function CorporatePage() {
 
         <TabsContent value="overview" className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard label="Moteles visibles" value={totals?.motels ?? '—'} icon={PiBuildings} />
+            <MetricCard label="Sucursales visibles" value={totals?.motels ?? '—'} icon={PiBuildings} />
             <MetricCard label="Habitaciones" value={totals?.rooms ?? '—'} icon={PiDoorOpen} />
             <MetricCard label="Ocupadas ahora" value={totals?.occupied ?? '—'} icon={PiBuildings} />
             <MetricCard
@@ -160,7 +160,7 @@ export default function CorporatePage() {
           </div>
           <Card>
             <CardHeader>
-              <CardTitle>Operación por motel</CardTitle>
+              <CardTitle>Operación por sucursal</CardTitle>
               <CardDescription>
                 Selecciona una propiedad para entrar a su operación sin cerrar sesión.
               </CardDescription>
@@ -224,7 +224,7 @@ export default function CorporatePage() {
                     message={
                       dashboard.isLoading
                         ? 'Cargando operación…'
-                        : 'No hay moteles dentro de tu alcance.'
+                        : 'No hay sucursales dentro de tu alcance.'
                     }
                   />
                 )}
@@ -348,7 +348,7 @@ export default function CorporatePage() {
             <CardHeader>
               <CardTitle>Asignar propiedades a una región</CardTitle>
               <CardDescription>
-                Cada motel pertenece a una sola región; al moverlo se actualiza automáticamente.
+                Cada sucursal pertenece a una sola región; al moverla se actualiza automáticamente.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -496,7 +496,7 @@ export default function CorporatePage() {
             <CardHeader>
               <CardTitle>Asignar acceso regional</CardTitle>
               <CardDescription>
-                El usuario verá automáticamente todos los moteles vigentes de la región.
+                El usuario verá automáticamente todas las sucursales vigentes de la región.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -637,7 +637,7 @@ export default function CorporatePage() {
                   </p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {preview.targets.map((target) => target.name).join(', ') ||
-                      'La región no contiene moteles.'}
+                      'La región no contiene sucursales.'}
                   </p>
                 </div>
               ) : null}
@@ -653,7 +653,7 @@ export default function CorporatePage() {
                   disabled={!preview || preview.target_count === 0 || bulk.isPending}
                   onClick={() => bulk.mutate(bulkPayload(false))}
                 >
-                  Aplicar a {preview?.target_count ?? 0} moteles
+                  Aplicar a {preview?.target_count ?? 0} sucursales
                 </Button>
               </div>
             </CardContent>

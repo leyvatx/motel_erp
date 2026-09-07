@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { applyAppearance, type MotelAppearance } from '@/store/appearance'
+import { applyAppearance, type BusinessAppearance } from '@/store/appearance'
 
-const motel: MotelAppearance = {
+const negocio: BusinessAppearance = {
   brand_primary_color: '#7C3AED',
   brand_sidebar_color: '#111827',
   status_available_color: '#22C55E',
@@ -15,7 +15,7 @@ const motel: MotelAppearance = {
   font_family: 'system',
 }
 
-describe('personalización por motel', () => {
+describe('personalización por negocio', () => {
   beforeEach(() => {
     vi.stubGlobal(
       'matchMedia',
@@ -25,8 +25,8 @@ describe('personalización por motel', () => {
     document.documentElement.removeAttribute('style')
   })
 
-  it('aplica la identidad y los valores predeterminados del motel', () => {
-    applyAppearance('motel', 'motel', motel)
+  it('aplica la identidad y los valores predeterminados del negocio', () => {
+    applyAppearance('business', 'business', negocio)
 
     expect(document.documentElement).toHaveClass('dark')
     expect(document.documentElement.dataset.density).toBe('compact')
@@ -34,8 +34,8 @@ describe('personalización por motel', () => {
     expect(document.documentElement.style.getPropertyValue('--radius')).toBe('0.75rem')
   })
 
-  it('no repinta el chasis con el color del motel', () => {
-    applyAppearance('motel', 'motel', motel)
+  it('no repinta el chasis con el color del negocio', () => {
+    applyAppearance('business', 'business', negocio)
 
     const estilo = document.documentElement.style
     expect(estilo.getPropertyValue('--sidebar')).toBe('')
@@ -45,7 +45,7 @@ describe('personalización por motel', () => {
   })
 
   it('respeta las preferencias locales sin cambiar la paleta', () => {
-    applyAppearance('light', 'comfortable', motel)
+    applyAppearance('light', 'comfortable', negocio)
 
     expect(document.documentElement).not.toHaveClass('dark')
     expect(document.documentElement.dataset.density).toBe('comfortable')

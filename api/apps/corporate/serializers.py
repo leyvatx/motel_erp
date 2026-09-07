@@ -46,7 +46,7 @@ class AssignMotelsSerializer(serializers.Serializer):
         found = set(Motel.objects.filter(pk__in=ids).values_list("pk", flat=True))
         missing = set(ids) - found
         if missing:
-            raise serializers.ValidationError(f"Moteles inexistentes o inactivos: {sorted(missing)}")
+            raise serializers.ValidationError(f"Sucursales inexistentes o inactivas: {sorted(missing)}")
         return ids
 
 
@@ -128,7 +128,7 @@ class CorporateAccessSerializer(serializers.ModelSerializer):
         region = attrs.get("region", getattr(self.instance, "region", None))
         motel = attrs.get("motel", getattr(self.instance, "motel", None))
         if (region is None) == (motel is None):
-            raise serializers.ValidationError("Selecciona una región o un motel, no ambos.")
+            raise serializers.ValidationError("Selecciona una región o una sucursal, no ambas.")
         return attrs
 
     @transaction.atomic
@@ -169,7 +169,7 @@ class BulkConfigSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if bool(attrs.get("motel_ids")) == bool(attrs.get("region_id")):
-            raise serializers.ValidationError("Selecciona una región o una lista de moteles.")
+            raise serializers.ValidationError("Selecciona una región o una lista de sucursales.")
         unknown = set(attrs["changes"]) - set(BULK_CONFIG_FIELDS)
         if unknown:
             raise serializers.ValidationError(

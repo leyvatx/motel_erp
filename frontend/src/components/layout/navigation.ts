@@ -30,7 +30,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
   {
     label: 'Plataforma',
     items: [
-      { section: 'platform', to: '/platform', label: 'Moteles', icon: PiBuildings },
+      { section: 'platform', to: '/platform', label: 'Sucursales', icon: PiBuildings },
       { section: 'corporate', to: '/corporate', label: 'Corporativo', icon: PiTreeStructure },
     ],
   },

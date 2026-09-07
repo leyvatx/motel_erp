@@ -194,7 +194,7 @@ class Motel(TimeStampedModel, AuthorStampedModel, SoftDeleteModel):
         return result
 
     def _build_slug(self) -> str:
-        base = slugify(self.name)[:120] or "motel"
+        base = slugify(self.name)[:120] or "negocio"
         candidate = base
         counter = 2
         while type(self).all_objects.filter(slug=candidate).exclude(pk=self.pk).exists():
@@ -210,7 +210,7 @@ class Motel(TimeStampedModel, AuthorStampedModel, SoftDeleteModel):
         sin esto, cualquier proceso que pida la configuración reventaria.
         """
         return cls(
-            name=getattr(django_settings, "BUSINESS_NAME", "Motel"),
+            name=getattr(django_settings, "BUSINESS_NAME", "Mi negocio"),
             address=getattr(django_settings, "BUSINESS_ADDRESS", ""),
             currency=getattr(django_settings, "BUSINESS_CURRENCY", "MXN"),
             time_zone=getattr(django_settings, "BUSINESS_TIME_ZONE", "America/Mexico_City"),

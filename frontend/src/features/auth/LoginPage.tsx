@@ -11,6 +11,7 @@ import { useLogin } from '@/features/auth/hooks'
 import { usePublicBusinessProfile, useBrand } from '@/features/config/hooks'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { apiErrorMessage } from '@/lib/axios'
+import { APP_FALLBACK_NAME } from '@/lib/brand'
 import { defaultRouteFor, useAuthStore } from '@/store/auth'
 
 const loginSchema = z.object({
@@ -59,7 +60,7 @@ export default function LoginPage() {
           </div>
           <div className="space-y-1.5">
             <h1 className="text-2xl font-semibold tracking-tightest">
-              {businessName || 'Motel ERP'}
+              {businessName || APP_FALLBACK_NAME}
             </h1>
             <p className="text-sm leading-relaxed text-muted-foreground">
               {publicProfile.data?.login_message ||
@@ -103,7 +104,7 @@ export default function LoginPage() {
 
             {askForMotel ? (
               <div className="space-y-2">
-                <Label htmlFor="motel">Motel</Label>
+                <Label htmlFor="motel">Sucursal</Label>
                 <Input
                   id="motel"
                   placeholder="arcos-del-sur"
@@ -111,7 +112,7 @@ export default function LoginPage() {
                   {...register('motel')}
                 />
                 <p className="text-xs leading-relaxed text-muted-foreground">
-                  Solo si trabajas en otro motel: escribe su identificador.
+                  Solo si trabajas en otra sucursal: escribe su identificador.
                 </p>
               </div>
             ) : null}

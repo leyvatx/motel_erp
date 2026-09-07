@@ -15,7 +15,7 @@ from celery.schedules import crontab
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
 
-app = Celery("motel_erp")
+app = Celery("erp")
 app.config_from_object("django.conf:settings", namespace="CELERY")
 app.autodiscover_tasks()
 

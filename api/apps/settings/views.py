@@ -100,7 +100,7 @@ class BusinessProfileView(APIView):
         motel = Motel.all_objects.filter(pk=motel_id).first()
         if motel is None:
             return Response(
-                {"error": {"code": "no_motel", "message": "Tu usuario no pertenece a un motel."}},
+                {"error": {"code": "no_motel", "message": "Tu usuario no pertenece a una sucursal."}},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

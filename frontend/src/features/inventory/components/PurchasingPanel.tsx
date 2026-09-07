@@ -352,7 +352,7 @@ function SupplierDialog({
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Nuevo proveedor</DialogTitle>
-          <DialogDescription>Este catálogo es independiente para cada motel.</DialogDescription>
+          <DialogDescription>Este catálogo es independiente para cada sucursal.</DialogDescription>
         </DialogHeader>
         <form
           onSubmit={(event) => {

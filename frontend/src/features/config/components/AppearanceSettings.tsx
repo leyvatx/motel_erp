@@ -103,9 +103,9 @@ export function AppearanceSettings() {
     <div className="space-y-4 pb-4">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card p-4">
         <div>
-          <p className="font-medium">Identidad compartida del motel</p>
+          <p className="font-medium">Identidad compartida del negocio</p>
           <p className="text-xs text-muted-foreground">
-            Estos cambios se aplican a todos los usuarios y terminales de esta propiedad.
+            Estos cambios se aplican a todos los usuarios y terminales de esta sucursal.
           </p>
         </div>
         <Button size="sm" loading={update.isPending} onClick={() => update.mutate(form)}>
@@ -116,7 +116,7 @@ export function AppearanceSettings() {
       <div className="grid gap-4 xl:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Paleta del motel</CardTitle>
+            <CardTitle className="text-base">Paleta del negocio</CardTitle>
             <CardDescription>Colores libres en formato hexadecimal.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
@@ -230,7 +230,7 @@ export function AppearanceSettings() {
         <CardHeader>
           <CardTitle className="text-base">Mis preferencias en esta computadora</CardTitle>
           <CardDescription>
-            Puedes respetar el estilo del motel o sobrescribir solo tu pantalla.
+            Puedes respetar el estilo del negocio o sobrescribir solo tu pantalla.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-5 lg:grid-cols-3">
@@ -239,7 +239,7 @@ export function AppearanceSettings() {
             value={theme}
             onChange={(value) => setTheme(value as ThemePreference)}
             options={[
-              ['motel', 'Del motel', PiMonitor],
+              ['business', 'Del negocio', PiMonitor],
               ['light', 'Claro', PiSun],
               ['dark', 'Oscuro', PiMoon],
             ]}
@@ -249,7 +249,7 @@ export function AppearanceSettings() {
             value={density}
             onChange={(value) => setDensity(value as DensityPreference)}
             options={[
-              ['motel', 'Del motel', PiMonitor],
+              ['business', 'Del negocio', PiMonitor],
               ['comfortable', 'Cómoda', PiRows],
               ['compact', 'Compacta', PiRows],
             ]}

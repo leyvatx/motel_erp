@@ -64,6 +64,7 @@ env = environ.Env(
     BUSINESS_CURRENCY=(str, "MXN"),
     EXPIRATION_WARNING_MINUTES=(int, 15),
     EXPENSE_APPROVAL_THRESHOLD=(str, "1000.00"),
+    APP_NAME=(str, "Sistema de gestión"),
     LOGIN_THROTTLE_RATE=(str, "20/min"),
     REPORT_THROTTLE_RATE=(str, "60/min"),
 )
@@ -84,6 +85,8 @@ def _como_origen(valor: str) -> str:
     return valor if valor.startswith(("http://", "https://")) else f"https://{valor}"
 
 
+APP_NAME = env("APP_NAME")
+
 SECRET_KEY = env("DJANGO_SECRET_KEY", default=INSECURE_SECRET_KEY)
 DEBUG = env("DJANGO_DEBUG")
 ALLOWED_HOSTS = env("DJANGO_ALLOWED_HOSTS")
@@ -97,9 +100,9 @@ CSRF_TRUSTED_ORIGINS = [_como_origen(o) for o in env("DJANGO_CSRF_TRUSTED_ORIGIN
 
 if not DEBUG and SECRET_KEY == INSECURE_SECRET_KEY:
     raise ImproperlyConfigured(
-        "Falta DJANGO_SECRET_KEY. Esa llave firma los JWT de todos los moteles: "
+        "Falta DJANGO_SECRET_KEY. Esa llave firma los JWT de todas las sucursales: "
         "con la de desarrollo cualquiera puede fabricarse una sesión de cualquier "
-        "motel. Genera una con: python -c \"from django.core.management.utils "
+        "sucursal. Genera una con: python -c \"from django.core.management.utils "
         "import get_random_secret_key as k; print(k())\""
     )
 
@@ -303,7 +306,7 @@ SIMPLE_JWT = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Motel ERP API",
+    "TITLE": f"{APP_NAME} API",
     "DESCRIPTION": (
         "API del sistema integral de administración: recepción, inventarios, "
         "ama de llaves, finanzas y auditoría."
@@ -373,7 +376,7 @@ CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": env("CACHE_URL", default="redis://localhost:6379/2"),
-        "KEY_PREFIX": "motel_erp",
+        "KEY_PREFIX": env("CACHE_KEY_PREFIX", default="erp"),
         "OPTIONS": {"socket_connect_timeout": 1, "socket_timeout": 2},
     }
 }
@@ -395,7 +398,7 @@ CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 EXPIRATION_WARNING_MINUTES = env("EXPIRATION_WARNING_MINUTES")
 EXPENSE_APPROVAL_THRESHOLD = env("EXPENSE_APPROVAL_THRESHOLD")
 
-BUSINESS_NAME = env("BUSINESS_NAME", default="Motel")
+BUSINESS_NAME = env("BUSINESS_NAME", default="Mi negocio")
 BUSINESS_ADDRESS = env("BUSINESS_ADDRESS", default="")
 TICKET_FOOTER = env("TICKET_FOOTER", default="Gracias por su visita")
 

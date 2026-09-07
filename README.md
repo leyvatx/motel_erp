@@ -58,6 +58,8 @@ python -m venv api/.venv && api/.venv/Scripts/activate && pip install -r api/req
 | `REPORT_THROTTLE_RATE` | Consultas de reportes por minuto |
 | `BUSINESS_TIME_ZONE` | Zona horaria del negocio |
 | `BUSINESS_CURRENCY` | Moneda de los importes |
+| `APP_NAME` | Nombre del producto: título de la documentación de la API |
+| `CACHE_KEY_PREFIX` | Prefijo de las claves en Redis |
 | `BUSINESS_NAME` | Nombre que sale en el ticket |
 | `BUSINESS_ADDRESS` | Dirección que sale en el ticket |
 | `TICKET_FOOTER` | Pie del ticket |
@@ -145,6 +147,7 @@ host se crea `frontend/.env.local`, que tampoco se versiona:
 
 | Variable | Para qué sirve |
 | --- | --- |
+| `VITE_APP_NAME` | Nombre de respaldo mientras la API no dice cuál es el negocio |
 | `VITE_API_URL` | URL de la API. Vacía usa el proxy de Vite |
 | `VITE_WS_URL` | URL del WebSocket. Vacía usa el proxy de Vite |
 | `VITE_ENABLE_SOUND_ALERTS` | Alertas sonoras del tablero de recepción |
@@ -525,17 +528,42 @@ orden enviada puede recibirse, y una recepción parcial permanece abierta hasta
 completar sus partidas. Todo el flujo pertenece al motel activo y requiere el
 permiso `inventory.purchase`.
 
-## Personalización por motel
+## Personalización por sucursal
 
-Cada propiedad conserva en el servidor su nombre, logotipo, paleta principal,
+Cada sucursal conserva en el servidor su nombre, logotipo, paleta principal,
 color del menú, colores operativos, tipografía, redondeo, tema y densidad
 predeterminados, además del mensaje de bienvenida del acceso. La misma marca se
 aplica al login, navegación, botones, estados de habitaciones, alertas y tablas.
 
-Los cambios se publican por WebSocket únicamente a las terminales del motel
-modificado. Cada computadora puede respetar los valores del motel o elegir su
+Los cambios se publican por WebSocket únicamente a las terminales de la sucursal
+modificada. Cada computadora puede respetar los valores del negocio o elegir su
 propio tema y densidad; esas dos preferencias locales no alteran la identidad
 compartida. No existe ningún nivel de membresía ni campo bloqueado.
+
+### Marca blanca
+
+El sistema no nombra ningún rubro. Lo que ve un usuario sale siempre de la base
+de datos, y hay dos respaldos configurables para cuando todavía no hay respuesta
+del servidor:
+
+| Dónde | Variable | Cuándo se ve |
+| --- | --- | --- |
+| Pestaña del navegador | — | El `<title>` de `index.html`, solo hasta que React monta |
+| Interfaz | `VITE_APP_NAME` | Arranque en frío, terminal nueva, red caída |
+| Documentación de la API | `APP_NAME` | Siempre, en `/api/docs/` |
+
+El nombre del negocio se edita en **Configuración → Negocio** y viaja al título
+de la pestaña como `Sección · Negocio` sin recargar. No hace falta
+`react-helmet-async`: `useDocumentTitle` lo resuelve en un solo punto desde
+`AppLayout`, y meter un provider más para escribir una etiqueta sería cambiar
+una línea por una dependencia.
+
+En la interfaz, cada negocio dado de alta se llama **sucursal**, y **negocio**
+es el propio. Dentro del código el modelo raíz sigue llamándose `Motel`, con su
+llave foránea `motel`, el header `X-Motel-Id` y las rutas `/corporate/motels/`:
+son el contrato de la API y el esquema de 51 migraciones, y renombrarlos es un
+trabajo aparte con su ventana de mantenimiento. La abstracción es de cara al
+cliente; el núcleo no cambió.
 
 ## Administración corporativa
 

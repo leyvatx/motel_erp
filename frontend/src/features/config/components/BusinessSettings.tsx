@@ -184,7 +184,7 @@ export function BusinessSettings() {
                 id="business-name"
                 value={draft.name}
                 onChange={(event) => set('name', event.target.value)}
-                placeholder="Motel Los Arcos"
+                placeholder="Sucursal Centro"
               />
             </Field>
 

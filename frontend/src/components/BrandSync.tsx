@@ -4,9 +4,9 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useBusinessProfile, usePublicBusinessProfile } from '@/features/config/hooks'
 import { setFavicon } from '@/lib/favicon'
 import { configureFormatting } from '@/lib/format'
-import { applyAppearance, useAppearanceStore, type MotelAppearance } from '@/store/appearance'
+import { applyAppearance, useAppearanceStore, type BusinessAppearance } from '@/store/appearance'
 
-const FALLBACK_APPEARANCE: MotelAppearance = {
+const FALLBACK_APPEARANCE: BusinessAppearance = {
   brand_primary_color: '#3B82F6',
   brand_sidebar_color: '#0F172A',
   status_available_color: '#10B981',

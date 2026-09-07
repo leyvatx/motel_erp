@@ -290,7 +290,7 @@ export default function ReportsPage() {
   return (
     <PageShell
       title="Reportes"
-      description="Indicadores gerenciales de este motel."
+      description="Indicadores gerenciales de esta sucursal."
       actions={
         <Button variant="outline" onClick={download} loading={exporting} disabled={!report.data}>
           <PiDownloadSimple />

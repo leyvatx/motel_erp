@@ -14,11 +14,11 @@ class MotelJWTAuthentication(JWTAuthentication):
         try:
             motel_id = int(raw_motel)
         except ValueError as exc:
-            raise AuthenticationFailed("El motel seleccionado no es válido.") from exc
+            raise AuthenticationFailed("La sucursal seleccionada no es válida.") from exc
 
         if user.motel_id is not None:
             if user.motel_id != motel_id:
-                raise AuthenticationFailed("No tienes acceso al motel seleccionado.")
+                raise AuthenticationFailed("No tienes acceso a la sucursal seleccionada.")
             user.active_motel_id = user.motel_id
             user.active_access_role = user.role
             return user, token
@@ -32,7 +32,7 @@ class MotelJWTAuthentication(JWTAuthentication):
         role = access_role(user, motel_id)
         motel = Motel.objects.filter(pk=motel_id, is_active=True).first()
         if not role or motel is None:
-            raise AuthenticationFailed("No tienes acceso al motel seleccionado.")
+            raise AuthenticationFailed("No tienes acceso a la sucursal seleccionada.")
         user.active_motel_id = motel_id
         user.active_motel = motel
         user.active_access_role = role

@@ -56,7 +56,7 @@ class HasMotelContext(BasePermission):
     clientes a un superusuario global.
     """
 
-    message = "Tu usuario no pertenece a un motel y no puede operar esta sección."
+    message = "Tu usuario no pertenece a una sucursal y no puede operar esta sección."
 
     def has_permission(self, request, view) -> bool:
         user = request.user

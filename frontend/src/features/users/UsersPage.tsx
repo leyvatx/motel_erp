@@ -116,7 +116,7 @@ export default function UsersPage() {
   return (
     <PageShell
       title="Usuarios"
-      description="Altas, roles y acceso del personal de este motel."
+      description="Altas, roles y acceso del personal de esta sucursal."
       actions={
         <Button onClick={openCreate}>
           <PiUserPlus />
