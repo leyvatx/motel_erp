@@ -48,9 +48,14 @@ if [ ! -f "$CREDENCIALES" ]; then
 fi
 
 # La cadena entra al entorno de los comandos y no se muestra en ningún momento.
-DATABASE_URL=$(grep '^DATABASE_URL=' "$CREDENCIALES" | head -1 | cut -d= -f2-)
+# Se acepta con prefijo (DATABASE_URL=postgres://...) o pelona, que es como sale
+# del botón de copiar de Render.
+DATABASE_URL=$(grep -m1 '^DATABASE_URL=' "$CREDENCIALES" 2>/dev/null | cut -d= -f2-)
 if [ -z "$DATABASE_URL" ]; then
-  echo "$CREDENCIALES no tiene una línea DATABASE_URL=..." >&2
+  DATABASE_URL=$(grep -m1 '^postgres' "$CREDENCIALES" 2>/dev/null | tr -d '\015\012')
+fi
+if [ -z "$DATABASE_URL" ]; then
+  echo "$CREDENCIALES no contiene una cadena de conexión (postgres://...)." >&2
   exit 1
 fi
 export DATABASE_URL
