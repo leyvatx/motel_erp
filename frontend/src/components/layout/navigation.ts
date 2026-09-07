@@ -22,12 +22,42 @@ export interface NavItem {
 }
 
 export interface NavGroup {
+  id: string
   label: string
   items: readonly NavItem[]
+  collapsible?: boolean
 }
 
+/** Las secciones de Configuración viven en la URL para que el menú pueda
+ *  apuntar a una pestaña concreta y para que un enlace de otra pantalla caiga
+ *  donde debe en vez de en la primera. */
+export const CONFIG_SECTIONS = [
+  { value: 'negocio', label: 'Negocio' },
+  { value: 'habitaciones', label: 'Habitaciones' },
+  { value: 'tipos', label: 'Tipos' },
+  { value: 'tarifas', label: 'Tarifas' },
+  { value: 'precios', label: 'Precios especiales' },
+  { value: 'apariencia', label: 'Apariencia' },
+] as const
+
+export type ConfigSection = (typeof CONFIG_SECTIONS)[number]['value']
+
+export const DEFAULT_CONFIG_SECTION: ConfigSection = 'negocio'
+
+export function configPath(section: ConfigSection): string {
+  return `/config?seccion=${section}`
+}
+
+export function isConfigSection(value: string | null): value is ConfigSection {
+  return CONFIG_SECTIONS.some((section) => section.value === value)
+}
+
+/** Operación es lo que se hace todos los días; Gestión es lo que se consulta o
+ *  se configura. Recepción vende productos y cierra su turno a diario, así que
+ *  Inventarios y Caja son operación, no administración. */
 export const NAV_GROUPS: readonly NavGroup[] = [
   {
+    id: 'platform',
     label: 'Plataforma',
     items: [
       { section: 'platform', to: '/platform', label: 'Sucursales', icon: PiBuildings },
@@ -35,6 +65,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     ],
   },
   {
+    id: 'daily',
     label: 'Operación',
     items: [
       { section: 'dashboard', to: '/dashboard', label: 'Inicio', icon: PiSquaresFour },
@@ -47,11 +78,13 @@ export const NAV_GROUPS: readonly NavGroup[] = [
         icon: PiClipboardText,
       },
       { section: 'inventory', to: '/inventory', label: 'Inventarios', icon: PiPackage },
-      { section: 'finances', to: '/finances', label: 'Finanzas', icon: PiWallet },
+      { section: 'finances', to: '/finances', label: 'Caja', icon: PiWallet },
     ],
   },
   {
-    label: 'Control',
+    id: 'management',
+    label: 'Gestión',
+    collapsible: true,
     items: [
       { section: 'reports', to: '/reports', label: 'Reportes', icon: PiScroll },
       { section: 'audit', to: '/audit', label: 'Auditoría', icon: PiShieldCheck },

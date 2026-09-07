@@ -1,7 +1,13 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { PiPencilSimple, PiPlus, PiProhibit } from 'react-icons/pi'
 
 import { PageShell, TableScroll } from '@/components/layout/PageShell'
+import {
+  CONFIG_SECTIONS,
+  DEFAULT_CONFIG_SECTION,
+  isConfigSection,
+} from '@/components/layout/navigation'
 import { AppearanceSettings } from '@/features/config/components/AppearanceSettings'
 import { DynamicPricingSettings } from '@/features/config/components/DynamicPricingSettings'
 import { BusinessSettings } from '@/features/config/components/BusinessSettings'
@@ -37,6 +43,10 @@ import type { Room, RoomType, TariffBlock } from '@/features/frontdesk/types'
 import { formatMoney } from '@/lib/format'
 
 export default function ConfigPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const pedida = searchParams.get('seccion')
+  const seccion = isConfigSection(pedida) ? pedida : DEFAULT_CONFIG_SECTION
+
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(25)
 
@@ -127,21 +137,24 @@ export default function ConfigPage() {
       title="Configuración"
       description="Datos del negocio, habitaciones, tarifas y apariencia."
     >
-      <Tabs defaultValue="business" className="flex min-h-0 flex-1 flex-col">
+      <Tabs
+        value={seccion}
+        onValueChange={(value) => setSearchParams({ seccion: value }, { replace: true })}
+        className="flex min-h-0 flex-1 flex-col"
+      >
         <TabsList className="w-fit">
-          <TabsTrigger value="business">Negocio</TabsTrigger>
-          <TabsTrigger value="rooms">Habitaciones</TabsTrigger>
-          <TabsTrigger value="types">Tipos</TabsTrigger>
-          <TabsTrigger value="tariffs">Tarifas</TabsTrigger>
-          <TabsTrigger value="dynamic-pricing">Precios especiales</TabsTrigger>
-          <TabsTrigger value="appearance">Apariencia</TabsTrigger>
+          {CONFIG_SECTIONS.map((section) => (
+            <TabsTrigger key={section.value} value={section.value}>
+              {section.label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
-        <TabsContent value="business" className="min-h-0 flex-1 overflow-auto scrollbar-thin">
+        <TabsContent value="negocio" className="min-h-0 flex-1 overflow-auto scrollbar-thin">
           <BusinessSettings />
         </TabsContent>
 
-        <TabsContent value="rooms" className="flex min-h-0 flex-1 flex-col">
+        <TabsContent value="habitaciones" className="flex min-h-0 flex-1 flex-col">
           <Card className="min-h-0 flex-1">
             <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
               <div>
@@ -224,7 +237,7 @@ export default function ConfigPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="types" className="flex min-h-0 flex-1 flex-col">
+        <TabsContent value="tipos" className="flex min-h-0 flex-1 flex-col">
           <Card>
             <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
               <div>
@@ -277,7 +290,7 @@ export default function ConfigPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="tariffs" className="flex min-h-0 flex-1 flex-col">
+        <TabsContent value="tarifas" className="flex min-h-0 flex-1 flex-col">
           <Card>
             <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
               <div>
@@ -347,14 +360,11 @@ export default function ConfigPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="appearance" className="min-h-0 flex-1 overflow-auto scrollbar-thin">
+        <TabsContent value="apariencia" className="min-h-0 flex-1 overflow-auto scrollbar-thin">
           <AppearanceSettings />
         </TabsContent>
 
-        <TabsContent
-          value="dynamic-pricing"
-          className="min-h-0 flex-1 overflow-auto scrollbar-thin"
-        >
+        <TabsContent value="precios" className="min-h-0 flex-1 overflow-auto scrollbar-thin">
           <DynamicPricingSettings />
         </TabsContent>
       </Tabs>
