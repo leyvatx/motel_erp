@@ -3,6 +3,11 @@ __pycache__/
 *.py[cod]
 *.sqlite3
 .env
+# Credenciales de un entorno remoto, para correr comandos de mantenimiento
+# contra él desde esta máquina. Nunca se versiona.
+.env.render
+# La contraseña que se le entrega a un cliente, escrita una sola vez.
+.clave-cliente.txt
 staticfiles/
 media/
 node_modules/
