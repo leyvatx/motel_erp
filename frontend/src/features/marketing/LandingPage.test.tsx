@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -186,5 +186,95 @@ describe('escaparate de la landing', () => {
 
     expect(screen.getAllByRole('link', { name: /crear cuenta/i }).length).toBeGreaterThan(0)
     expect(screen.getAllByRole('link', { name: /entrar/i }).length).toBeGreaterThan(0)
+  })
+})
+
+/** Radix activa la pestaña en `mousedown`, no en `click`: un `click` suelto
+ *  la deja donde estaba. Se reproduce el toque completo. */
+function tocarPestana(nombre: RegExp): void {
+  const pestana = screen.getByRole('tab', { name: nombre })
+  fireEvent.mouseDown(pestana)
+  fireEvent.click(pestana)
+}
+
+/** Deja `useMediaQuery` contestando que la pantalla es angosta. */
+function fingirPantallaAngosta(): void {
+  vi.stubGlobal(
+    'matchMedia',
+    (query: string) =>
+      ({
+        matches: query.includes('max-width: 1023px'),
+        media: query,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      }) as unknown as MediaQueryList,
+  )
+}
+
+describe('escaparate en pantalla angosta', () => {
+  beforeEach(() => {
+    observados = []
+    fingirPantallaAngosta()
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('no depende del desplazamiento: no observa nada', () => {
+    // El recorrido por scroll con panel pegajoso es justo lo que se rompía en
+    // el teléfono. Aquí no debe existir.
+    pintar()
+
+    expect(observados).toHaveLength(0)
+    expect(screen.getByRole('tablist')).toBeInTheDocument()
+    expect(screen.getAllByRole('tab')).toHaveLength(4)
+  })
+
+  it('la maqueta y el texto del paso conviven en pantalla', () => {
+    pintar()
+
+    const maqueta = document.querySelector('.grid-cols-4')
+    const panel = screen.getByRole('tabpanel')
+
+    expect(maqueta).toBeInTheDocument()
+    expect(panel).toBeInTheDocument()
+    if (!maqueta) throw new Error('sin maqueta')
+    // La maqueta va antes que el texto en el documento: se lee con la
+    // habitación a la vista, no después de haberla perdido.
+    expect(maqueta.compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('arranca en el primer paso, no apagada', () => {
+    // Sin desplazamiento que la encienda, esperar a un evento dejaría la
+    // maqueta en gris para siempre.
+    pintar()
+
+    expect(contar('libre')).toBe(8)
+    expect(screen.getByRole('tab', { selected: true })).toHaveTextContent(/Alta/)
+  })
+
+  it('tocar un paso enciende su estado en la maqueta', () => {
+    pintar()
+
+    tocarPestana(/Ocupación/)
+    expect(contar('ocupada')).toBe(3)
+
+    tocarPestana(/Consumo/)
+    expect(folioVisible()).toBe(true)
+
+    tocarPestana(/Rotación/)
+    expect(contar('limpieza')).toBe(1)
+    expect(folioVisible()).toBe(false)
+  })
+
+  it('el texto que se muestra es el del paso elegido', () => {
+    pintar()
+    tocarPestana(/Rotación/)
+
+    const panel = screen.getByRole('tabpanel')
+    expect(within(panel).getByRole('heading', { level: 3 })).toHaveTextContent(
+      'Rotación y control de limpieza',
+    )
   })
 })

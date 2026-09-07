@@ -115,6 +115,19 @@
   html {
     @apply bg-background;
     color-scheme: light;
+
+    /* Guía UX (Navigation > Smooth Scroll, severidad alta): las ligas de ancla
+       se desplazan, no saltan. Y `scroll-padding-top` es lo que evita que el
+       encabezado pegajoso tape el destino -- la misma regla cubre el foco del
+       teclado (Focus Not Obscured, WCAG 2.2 AA). */
+    scroll-behavior: smooth;
+    scroll-padding-top: 4.5rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
 
   html.dark {
