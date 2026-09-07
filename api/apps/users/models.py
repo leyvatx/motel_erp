@@ -14,6 +14,8 @@ comparte un solo espacio de nombres aparte.
 
 from __future__ import annotations
 
+import uuid
+
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.core.validators import RegexValidator
 from django.db import models
@@ -204,3 +206,55 @@ class UserActivity(TimeStampedModel):
 
     def __str__(self) -> str:
         return f"{self.get_action_display()} - {self.user or self.username_attempted}"
+
+
+class UserSession(TimeStampedModel):
+    """Una sesión abierta: de dónde entró alguien y con qué.
+
+    No se deriva de ``OutstandingToken`` de simplejwt a propósito. Con la
+    rotación encendida, cada refresh manda el jti viejo a la lista negra y
+    genera uno nuevo sin renglón propio, así que en esa tabla la sesión que más
+    se usa es la primera en desaparecer y la que sigue apareciendo es la que
+    nadie tocó. Tampoco guarda IP ni navegador, que es justo lo que vuelve
+    accionable una lista de sesiones: sin eso, dos sesiones de la misma persona
+    son indistinguibles y revocar es adivinar.
+
+    ``sid`` viaja como reclamo dentro del refresh token y simplejwt lo copia a
+    cada access token que deriva de él, incluso después de rotar. Es lo que
+    permite que una petición cualquiera sepa a qué sesión pertenece sin
+    consultar la base.
+    """
+
+    user = models.ForeignKey(
+        User,
+        verbose_name="Usuario",
+        on_delete=models.PROTECT,
+        related_name="sessions",
+    )
+    sid = models.UUIDField("Identificador de sesión", default=uuid.uuid4, unique=True, editable=False)
+    jti = models.CharField("Token vigente", max_length=64, blank=True, db_index=True)
+    ip_address = models.GenericIPAddressField("IP", null=True, blank=True)
+    user_agent = models.CharField("Agente", max_length=255, blank=True)
+    last_seen_at = models.DateTimeField("Última actividad", null=True, blank=True)
+    expires_at = models.DateTimeField("Vence en", null=True, blank=True)
+    revoked_at = models.DateTimeField("Revocada en", null=True, blank=True)
+    revoked_by = models.ForeignKey(
+        User,
+        verbose_name="Revocada por",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    class Meta:
+        verbose_name = "Sesión"
+        verbose_name_plural = "Sesiones"
+        ordering = ["-last_seen_at", "-created_at"]
+        indexes = [
+            models.Index(fields=["user", "-created_at"], name="usersession_user_idx"),
+            models.Index(fields=["revoked_at"], name="usersession_revoked_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.user} desde {self.ip_address or 'origen desconocido'}"

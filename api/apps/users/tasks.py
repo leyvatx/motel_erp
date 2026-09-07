@@ -17,12 +17,29 @@ import logging
 
 from celery import shared_task
 from django.core.management import call_command
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
+
+# Cuánto se conserva una sesión ya muerta. No es historial de auditoría -- eso
+# vive en UserActivity, que no se toca -- sino el rastro que permite explicar
+# "esto lo cerró gerencia el martes" mientras la pregunta sigue siendo reciente.
+DIAS_DE_SESIONES_MUERTAS = 30
 
 
 @shared_task(name="apps.users.tasks.flush_expired_tokens", ignore_result=True)
 def flush_expired_tokens() -> None:
-    """Borra de las tablas de SimpleJWT los tokens que ya vencieron."""
+    """Borra los tokens vencidos y las sesiones que ya no explican nada."""
+    from apps.users.models import UserSession
+
     call_command("flushexpiredtokens")
-    logger.info("Tokens vencidos purgados de la lista negra.")
+
+    corte = timezone.now() - timezone.timedelta(days=DIAS_DE_SESIONES_MUERTAS)
+    muertas = UserSession.objects.filter(revoked_at__lt=corte) | UserSession.objects.filter(
+        revoked_at__isnull=True, expires_at__lt=corte
+    )
+    borradas, _ = muertas.delete()
+
+    logger.info(
+        "Tokens vencidos purgados de la lista negra; %s sesiones viejas borradas.", borradas
+    )

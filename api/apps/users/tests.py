@@ -11,11 +11,15 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 
 from apps.settings.models import Motel
+from apps.users import sessions
 from apps.users.constants import Role
-from apps.users.models import User
+from apps.users.models import User, UserSession
 
 LOGIN_URL = "/api/v1/auth/login/"
 USERS_URL = "/api/v1/auth/users/"
+REFRESH_URL = "/api/v1/auth/refresh/"
+SESSIONS_URL = "/api/v1/auth/sessions/"
+ME_URL = "/api/v1/auth/me/"
 PASSWORD = "Demo.1234"
 
 
@@ -154,3 +158,128 @@ class LoginMotelTests(MotelUsersTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.data["user"]["is_platform_admin"])
+
+
+class SesionesTests(MotelUsersTestCase):
+    """Sesiones vivas, corte inmediato y el refresh que ya no revienta."""
+
+    def entrar(self, username: str, slug: str) -> dict:
+        respuesta = self.client.post(
+            LOGIN_URL, {"username": username, "password": PASSWORD, "motel": slug}
+        )
+        self.assertEqual(respuesta.status_code, 200)
+        return respuesta.data
+
+    def con_acceso(self, access: str) -> APIClient:
+        cliente = APIClient()
+        cliente.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+        return cliente
+
+    def test_entrar_deja_registro_de_la_sesion(self) -> None:
+        self.entrar("dueno", self.arcos.slug)
+
+        sesion = UserSession.objects.get(user=self.dueno_arcos)
+        self.assertIsNone(sesion.revoked_at)
+        self.assertIsNotNone(sesion.last_seen_at)
+        self.assertTrue(sesion.jti)
+
+    def test_el_refresh_de_un_usuario_dado_de_baja_contesta_401(self) -> None:
+        """Antes salía 500: el manager filtra inactivos y el DoesNotExist subía crudo.
+
+        El 401 no es cosmético. El frontend conserva la sesión con cualquier
+        5xx -- a propósito, para aguantar un servidor dormido -- así que con el
+        500 el operador se quedaba atrapado en una pantalla inservible.
+        """
+        datos = self.entrar("dueno", self.arcos.slug)
+        self.dueno_arcos.is_active = False
+        self.dueno_arcos.save(update_fields=["is_active"])
+
+        respuesta = self.client.post(REFRESH_URL, {"refresh": datos["refresh"]})
+
+        self.assertEqual(respuesta.status_code, 401)
+
+    def test_revocar_corta_el_access_token_que_ya_estaba_emitido(self) -> None:
+        """El punto entero de revisar la sesión en cada petición.
+
+        Sin esto el token seguiría sirviendo hasta media hora después, que es lo
+        que dura su vigencia.
+        """
+        datos = self.entrar("dueno", self.arcos.slug)
+        cliente = self.con_acceso(datos["access"])
+        self.assertEqual(cliente.get(ME_URL).status_code, 200)
+
+        sesion = UserSession.objects.get(user=self.dueno_arcos)
+        sessions.revocar(sesion)
+
+        self.assertEqual(cliente.get(ME_URL).status_code, 401)
+
+    def test_una_sesion_revocada_tampoco_puede_renovar(self) -> None:
+        datos = self.entrar("dueno", self.arcos.slug)
+        sessions.revocar(UserSession.objects.get(user=self.dueno_arcos))
+
+        respuesta = self.client.post(REFRESH_URL, {"refresh": datos["refresh"]})
+
+        self.assertEqual(respuesta.status_code, 401)
+
+    def test_renovar_conserva_la_sesion_y_actualiza_su_token(self) -> None:
+        datos = self.entrar("dueno", self.arcos.slug)
+        anterior = UserSession.objects.get(user=self.dueno_arcos).jti
+
+        respuesta = self.client.post(REFRESH_URL, {"refresh": datos["refresh"]})
+
+        self.assertEqual(respuesta.status_code, 200)
+        sesion = UserSession.objects.get(user=self.dueno_arcos)
+        self.assertIsNone(sesion.revoked_at)
+        self.assertNotEqual(sesion.jti, anterior)
+
+    def test_cada_quien_ve_sus_sesiones_y_gerencia_las_de_su_sucursal(self) -> None:
+        recepcion = User.objects.create_user(
+            username="recibe", password=PASSWORD, full_name="Quien recibe",
+            role=Role.RECEPTION, motel=self.arcos,
+        )
+        self.entrar("dueno", self.arcos.slug)
+        propias = self.entrar("recibe", self.arcos.slug)
+        self.entrar("dueno", self.palmas.slug)
+
+        suyas = self.con_acceso(propias["access"]).get(SESSIONS_URL)
+        self.assertEqual(suyas.status_code, 200)
+        self.assertEqual({fila["user"] for fila in suyas.data["results"]}, {recepcion.pk})
+
+        del_dueno = self.auth(self.dueno_arcos).get(SESSIONS_URL)
+        usuarios = {fila["user"] for fila in del_dueno.data["results"]}
+        self.assertEqual(usuarios, {self.dueno_arcos.pk, recepcion.pk})
+        self.assertNotIn(self.dueno_palmas.pk, usuarios)
+
+    def test_gerencia_expulsa_y_el_expulsado_deja_de_operar(self) -> None:
+        recepcion = User.objects.create_user(
+            username="recibe", password=PASSWORD, full_name="Quien recibe",
+            role=Role.RECEPTION, motel=self.arcos,
+        )
+        datos = self.entrar("recibe", self.arcos.slug)
+        cliente = self.con_acceso(datos["access"])
+        sesion = UserSession.objects.get(user=recepcion)
+
+        corte = self.auth(self.dueno_arcos).post(f"{SESSIONS_URL}{sesion.sid}/revoke/")
+
+        self.assertEqual(corte.status_code, 204)
+        self.assertEqual(cliente.get(ME_URL).status_code, 401)
+
+    def test_nadie_expulsa_a_la_sucursal_de_al_lado(self) -> None:
+        self.entrar("dueno", self.palmas.slug)
+        ajena = UserSession.objects.get(user=self.dueno_palmas)
+
+        corte = self.auth(self.dueno_arcos).post(f"{SESSIONS_URL}{ajena.sid}/revoke/")
+
+        self.assertEqual(corte.status_code, 404)
+        ajena.refresh_from_db()
+        self.assertIsNone(ajena.revoked_at)
+
+    def test_salir_cierra_la_sesion_y_no_solo_el_token(self) -> None:
+        datos = self.entrar("dueno", self.arcos.slug)
+        cliente = self.con_acceso(datos["access"])
+
+        salida = cliente.post("/api/v1/auth/logout/", {"refresh": datos["refresh"]})
+
+        self.assertEqual(salida.status_code, 204)
+        self.assertIsNotNone(UserSession.objects.get(user=self.dueno_arcos).revoked_at)
+        self.assertEqual(cliente.get(ME_URL).status_code, 401)

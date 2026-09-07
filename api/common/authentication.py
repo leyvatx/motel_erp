@@ -1,3 +1,5 @@
+"""Autenticación por JWT, acotada al motel de la petición y a su sesión."""
+
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
@@ -8,6 +10,7 @@ class MotelJWTAuthentication(JWTAuthentication):
         if result is None:
             return None
         user, token = result
+        self._exigir_sesion_viva(token)
         raw_motel = request.headers.get("X-Motel-Id", "").strip()
         if not raw_motel:
             return user, token
@@ -37,3 +40,26 @@ class MotelJWTAuthentication(JWTAuthentication):
         user.active_motel = motel
         user.active_access_role = role
         return user, token
+
+    @staticmethod
+    def _exigir_sesion_viva(token) -> None:
+        """Rechaza el token cuyo dueño perdió la sesión.
+
+        Sin esto, revocar solo mata el refresh y el access token que ya tiene el
+        navegador sigue sirviendo hasta media hora. La comprobación va contra
+        Redis, no contra la base: ver ``apps.users.sessions``.
+
+        Un token sin ``sid`` es de antes de que existieran las sesiones y se
+        deja pasar. No se puede revocar de forma individual, pero muere al
+        vencer su refresh, y dar de baja al usuario lo corta igual.
+        """
+        # Adentro y no arriba: este módulo lo carga DRF al leer sus ajustes,
+        # antes de que las apps terminen de registrarse.
+        from apps.users import sessions
+
+        sid = token.get(sessions.CLAVE_SESION)
+        if sid is None:
+            return
+        if sessions.esta_revocada(sid):
+            raise AuthenticationFailed("Tu sesión se cerró desde otro equipo.")
+        sessions.latir(sid)

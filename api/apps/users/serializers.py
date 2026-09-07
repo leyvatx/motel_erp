@@ -5,11 +5,18 @@ from __future__ import annotations
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.exceptions import InvalidToken
+from rest_framework_simplejwt.serializers import (
+    TokenObtainPairSerializer,
+    TokenRefreshSerializer,
+)
+from rest_framework_simplejwt.settings import api_settings as jwt_settings
+from rest_framework_simplejwt.utils import datetime_from_epoch
 
 from apps.settings.models import Motel
+from apps.users import sessions
 from apps.users.constants import Role
-from apps.users.models import User
+from apps.users.models import User, UserSession
 from common.exceptions import DomainError
 from common.tenancy import current_motel_id, use_motel
 
@@ -148,6 +155,17 @@ class MotelTokenObtainPairSerializer(TokenObtainPairSerializer):
         token = super().get_token(user)
         token["role"] = user.role
         token["full_name"] = user.full_name
+        # La sesión nace aquí porque es el único punto donde se conocen la IP y
+        # el navegador. El sid viaja dentro del refresh y simplejwt lo copia a
+        # cada access token que derive de él, también después de rotar: por eso
+        # una petición cualquiera puede saber a qué sesión pertenece.
+        sesion = sessions.abrir(user)
+        token[sessions.CLAVE_SESION] = str(sesion.sid)
+        sessions.renovar(
+            sesion.sid,
+            token[jwt_settings.JTI_CLAIM],
+            datetime_from_epoch(token["exp"]),
+        )
         return token
 
     def validate(self, attrs: dict) -> dict:
@@ -181,6 +199,120 @@ class MotelTokenObtainPairSerializer(TokenObtainPairSerializer):
                 code="motel_requerido",
             )
         return candidatos[0] if candidatos else None
+
+
+class MotelTokenRefreshSerializer(TokenRefreshSerializer):
+    """Renueva el acceso sin reventar cuando el usuario ya no puede entrar.
+
+    El serializador de simplejwt busca al dueño del token con
+    ``get_user_model().objects.get(...)``, y el manager por omisión de este
+    proyecto filtra ``is_active=True`` además del motel. Un empleado dado de
+    baja no falla la regla de autenticación que simplejwt trae para responder
+    401: desaparece antes, y el ``DoesNotExist`` sale como 500. El frontend lee
+    ese 500 como "el servidor tiene problemas" -- con razón -- y conserva la
+    sesión, así que el operador se queda dando vueltas en una pantalla que ya
+    no puede usar.
+
+    Aquí se traduce esa ausencia a un token inválido, que es lo que de verdad
+    pasó, y el navegador ya sabe qué hacer con eso: limpiar y mandar al acceso.
+    """
+
+    def validate(self, attrs: dict) -> dict:
+        sid = self._sid(attrs.get("refresh", ""))
+        if sid is not None and sessions.esta_revocada(sid):
+            raise InvalidToken("Esta sesión se cerró desde otro equipo.")
+
+        try:
+            data = super().validate(attrs)
+        except User.DoesNotExist as exc:
+            raise InvalidToken("Tu cuenta ya no está activa. Pide que la reactiven.") from exc
+
+        if sid is not None:
+            self._renovar(sid, data.get("refresh") or attrs["refresh"])
+        return data
+
+    def _sid(self, raw: str):
+        """Lee el identificador de sesión sin opinar sobre el resto del token.
+
+        Un token corrupto devuelve ``None`` para que la validación de arriba lo
+        rechace con su propio mensaje, que es más preciso que cualquiera que se
+        pudiera inventar aquí.
+        """
+        try:
+            return self.token_class(raw).payload.get(sessions.CLAVE_SESION)
+        except Exception:
+            return None
+
+    def _renovar(self, sid, raw: str) -> None:
+        try:
+            payload = self.token_class(raw).payload
+        except Exception:
+            return
+        sessions.renovar(sid, payload[jwt_settings.JTI_CLAIM], datetime_from_epoch(payload["exp"]))
+
+
+class UserSessionSerializer(serializers.ModelSerializer):
+    """Una sesión como la lee un humano, no como la guarda simplejwt."""
+
+    user_username = serializers.CharField(source="user.username", read_only=True)
+    user_full_name = serializers.CharField(source="user.full_name", read_only=True)
+    user_role_display = serializers.CharField(source="user.get_role_display", read_only=True)
+    device = serializers.SerializerMethodField()
+    is_current = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserSession
+        fields = (
+            "sid",
+            "user",
+            "user_username",
+            "user_full_name",
+            "user_role_display",
+            "ip_address",
+            "user_agent",
+            "device",
+            "created_at",
+            "last_seen_at",
+            "expires_at",
+            "is_current",
+        )
+        read_only_fields = fields
+
+    def get_is_current(self, obj: UserSession) -> bool:
+        return str(obj.sid) == str(self.context.get("sid_actual"))
+
+    def get_device(self, obj: UserSession) -> str:
+        """Navegador y sistema en dos palabras.
+
+        El user agent completo se manda igual por si hace falta el detalle,
+        pero nadie distingue dos sesiones leyendo cien caracteres de cadena.
+        """
+        agente = obj.user_agent or ""
+        navegador = next(
+            (nombre for marca, nombre in NAVEGADORES if marca in agente), "Navegador"
+        )
+        sistema = next((nombre for marca, nombre in SISTEMAS if marca in agente), "")
+        return f"{navegador} en {sistema}" if sistema else navegador
+
+
+# El orden importa: Edge y Opera se anuncian también como Chrome, y Chrome se
+# anuncia como Safari. Gana el primero que coincide.
+NAVEGADORES = (
+    ("Edg/", "Edge"),
+    ("OPR/", "Opera"),
+    ("Chrome/", "Chrome"),
+    ("Firefox/", "Firefox"),
+    ("Safari/", "Safari"),
+)
+
+SISTEMAS = (
+    ("Windows", "Windows"),
+    ("Android", "Android"),
+    ("iPhone", "iPhone"),
+    ("iPad", "iPad"),
+    ("Mac OS", "macOS"),
+    ("Linux", "Linux"),
+)
 
 
 class UserPresenceSerializer(serializers.Serializer):
