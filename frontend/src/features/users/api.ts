@@ -1,5 +1,10 @@
 import { del, get, patch, post } from '@/lib/axios'
-import type { RoleOption, UserListParams, UserPayload } from '@/features/users/types'
+import type {
+  RoleOption,
+  UserListParams,
+  UserPayload,
+  UserSession,
+} from '@/features/users/types'
 import type { PaginatedResponse, User } from '@/types/api'
 
 export const usersApi = {
@@ -13,4 +18,9 @@ export const usersApi = {
   restore: (id: number): Promise<User> => post<User>(`/auth/users/${id}/restore/`),
   forcePasswordChange: (id: number): Promise<void> =>
     post<void>(`/auth/users/${id}/force-password-change/`),
+
+  sessions: (): Promise<PaginatedResponse<UserSession>> =>
+    get<PaginatedResponse<UserSession>>('/auth/sessions/', { params: { page_size: 100 } }),
+  revokeSession: (sid: string): Promise<void> =>
+    post<void>(`/auth/sessions/${sid}/revoke/`),
 }

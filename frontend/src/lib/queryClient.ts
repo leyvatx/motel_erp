@@ -31,6 +31,7 @@ export const queryKeys = {
   users: {
     list: (params?: unknown) => ['users', 'list', params ?? {}] as const,
     roles: ['users', 'roles'] as const,
+    sessions: ['users', 'sessions'] as const,
   },
   frontdesk: {
     grid: ['frontdesk', 'grid'] as const,

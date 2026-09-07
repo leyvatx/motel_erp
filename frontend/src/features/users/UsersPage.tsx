@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { PiKey, PiPencilSimple, PiUserCheck, PiUserMinus, PiUserPlus } from 'react-icons/pi'
 
 import { PageShell, TableScroll } from '@/components/layout/PageShell'
@@ -25,6 +26,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { SessionsPanel } from '@/features/users/components/SessionsPanel'
 import { UserFormDialog } from '@/features/users/components/UserFormDialog'
 import {
   useDeactivateUser,
@@ -39,9 +42,26 @@ import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/auth'
 import type { Role, User } from '@/types/api'
 
+const SECCIONES = [
+  { value: 'personal', label: 'Personal' },
+  { value: 'sesiones', label: 'Sesiones' },
+] as const
+
+type Seccion = (typeof SECCIONES)[number]['value']
+
+const SECCION_POR_OMISION: Seccion = 'personal'
+
+function esSeccion(valor: string | null): valor is Seccion {
+  return SECCIONES.some((seccion) => seccion.value === valor)
+}
+
 type StatusFilter = 'all' | 'active' | 'inactive'
 
 export default function UsersPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const pedida = searchParams.get('seccion')
+  const seccion = esSeccion(pedida) ? pedida : SECCION_POR_OMISION
+
   const currentUserId = useAuthStore((state) => state.user?.id)
   const contextMenu = useRowContextMenu()
   const roles = useRoles()
@@ -118,161 +138,183 @@ export default function UsersPage() {
       title="Usuarios"
       description="Altas, roles y acceso del personal de esta sucursal."
       actions={
-        <Button onClick={openCreate}>
-          <PiUserPlus />
-          Nuevo usuario
-        </Button>
-      }
-      toolbar={
-        <div className="flex flex-wrap gap-2">
-          <Input
-            value={search}
-            onChange={(event) => {
-              setSearch(event.target.value)
-              setPage(1)
-            }}
-            placeholder="Buscar nombre, usuario o empleado"
-            className="min-w-64 flex-1 sm:max-w-sm"
-            aria-label="Buscar usuarios"
-          />
-          <Select
-            value={role}
-            onValueChange={(value) => {
-              setRole(value as 'all' | Role)
-              setPage(1)
-            }}
-          >
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los roles</SelectItem>
-              {(roles.data ?? []).map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={status}
-            onValueChange={(value) => {
-              setStatus(value as StatusFilter)
-              setPage(1)
-            }}
-          >
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="active">Activos</SelectItem>
-              <SelectItem value="inactive">Inactivos</SelectItem>
-              <SelectItem value="all">Todos</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        seccion === 'personal' ? (
+          <Button onClick={openCreate}>
+            <PiUserPlus />
+            Nuevo usuario
+          </Button>
+        ) : undefined
       }
     >
-      <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <TableScroll>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Empleado</TableHead>
-                <TableHead>Rol</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Último acceso</TableHead>
-                <TableHead>Ingreso</TableHead>
-                <TableHead className="w-12" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.isLoading ? (
-                Array.from({ length: 7 }, (_, index) => (
-                  <TableRow key={index}>
-                    <TableCell colSpan={6}>
-                      <Skeleton className="h-9 w-full" />
-                    </TableCell>
+      <Tabs
+        value={seccion}
+        onValueChange={(valor) => setSearchParams({ seccion: valor }, { replace: true })}
+        className="flex min-h-0 flex-1 flex-col"
+      >
+        <TabsList className="w-fit">
+          {SECCIONES.map((item) => (
+            <TabsTrigger key={item.value} value={item.value}>
+              {item.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        <TabsContent value="personal" className="flex min-h-0 flex-1 flex-col gap-4">
+          <div className="flex flex-wrap gap-2">
+            <Input
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value)
+                setPage(1)
+              }}
+              placeholder="Buscar nombre, usuario o empleado"
+              className="min-w-64 flex-1 sm:max-w-sm"
+              aria-label="Buscar usuarios"
+            />
+            <Select
+              value={role}
+              onValueChange={(value) => {
+                setRole(value as 'all' | Role)
+                setPage(1)
+              }}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los roles</SelectItem>
+                {(roles.data ?? []).map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={status}
+              onValueChange={(value) => {
+                setStatus(value as StatusFilter)
+                setPage(1)
+              }}
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Activos</SelectItem>
+                <SelectItem value="inactive">Inactivos</SelectItem>
+                <SelectItem value="all">Todos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <TableScroll>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Empleado</TableHead>
+                    <TableHead>Rol</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Último acceso</TableHead>
+                    <TableHead>Ingreso</TableHead>
+                    <TableHead className="w-12" />
                   </TableRow>
-                ))
-              ) : users.data?.results.length ? (
-                users.data.results.map((user) => {
-                  const actions = actionsFor(user)
-                  return (
-                    <TableRow
-                      key={user.id}
-                      onDoubleClick={() => openEdit(user)}
-                      onContextMenu={contextMenu(user.full_name, actions)}
-                      className="cursor-default"
-                    >
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <span
-                            className={cn(
-                              'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white',
-                              roleTone(user.role),
-                              !user.is_active && 'opacity-40 grayscale',
-                            )}
-                          >
-                            {initials(user.full_name)}
-                          </span>
-                          <div className="min-w-0">
-                            <div className="truncate font-medium">
-                              {user.full_name}
-                              {user.id === currentUserId ? (
-                                <span className="ml-1 text-xs text-muted-foreground">(tú)</span>
+                </TableHeader>
+                <TableBody>
+                  {users.isLoading ? (
+                    Array.from({ length: 7 }, (_, index) => (
+                      <TableRow key={index}>
+                        <TableCell colSpan={6}>
+                          <Skeleton className="h-9 w-full" />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : users.data?.results.length ? (
+                    users.data.results.map((user) => {
+                      const actions = actionsFor(user)
+                      return (
+                        <TableRow
+                          key={user.id}
+                          onDoubleClick={() => openEdit(user)}
+                          onContextMenu={contextMenu(user.full_name, actions)}
+                          className="cursor-default"
+                        >
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <span
+                                className={cn(
+                                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white',
+                                  roleTone(user.role),
+                                  !user.is_active && 'opacity-40 grayscale',
+                                )}
+                              >
+                                {initials(user.full_name)}
+                              </span>
+                              <div className="min-w-0">
+                                <div className="truncate font-medium">
+                                  {user.full_name}
+                                  {user.id === currentUserId ? (
+                                    <span className="ml-1 text-xs text-muted-foreground">(tú)</span>
+                                  ) : null}
+                                </div>
+                                <div className="truncate text-xs text-muted-foreground">
+                                  @{user.username}
+                                  {user.employee_number ? ` · ${user.employee_number}` : ''}
+                                </div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{user.role_display}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1.5">
+                              <Badge variant={user.is_active ? 'available' : 'secondary'}>
+                                {user.is_active ? 'Activo' : 'Inactivo'}
+                              </Badge>
+                              {user.must_change_password ? (
+                                <Badge variant="outline">Cambiar contraseña</Badge>
                               ) : null}
                             </div>
-                            <div className="truncate text-xs text-muted-foreground">
-                              @{user.username}
-                              {user.employee_number ? ` · ${user.employee_number}` : ''}
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{user.role_display}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1.5">
-                          <Badge variant={user.is_active ? 'available' : 'secondary'}>
-                            {user.is_active ? 'Activo' : 'Inactivo'}
-                          </Badge>
-                          {user.must_change_password ? (
-                            <Badge variant="outline">Cambiar contraseña</Badge>
-                          ) : null}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {user.last_login ? formatRelative(user.last_login) : 'Nunca'}
-                      </TableCell>
-                      <TableCell>{formatDate(user.hired_at)}</TableCell>
-                      <TableCell>
-                        <RowActions items={actions} label={user.full_name} />
-                      </TableCell>
-                    </TableRow>
-                  )
-                })
-              ) : (
-                <TableEmpty colSpan={6} message="No se encontraron usuarios." />
-              )}
-            </TableBody>
-          </Table>
-        </TableScroll>
+                          </TableCell>
+                          <TableCell>
+                            {user.last_login ? formatRelative(user.last_login) : 'Nunca'}
+                          </TableCell>
+                          <TableCell>{formatDate(user.hired_at)}</TableCell>
+                          <TableCell>
+                            <RowActions items={actions} label={user.full_name} />
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })
+                  ) : (
+                    <TableEmpty colSpan={6} message="No se encontraron usuarios." />
+                  )}
+                </TableBody>
+              </Table>
+            </TableScroll>
 
-        {users.data ? (
-          <Pagination
-            page={users.data.page}
-            pageSize={users.data.page_size}
-            count={users.data.count}
-            totalPages={users.data.total_pages}
-            onPageChange={setPage}
-            onPageSizeChange={(size) => {
-              setPageSize(size)
-              setPage(1)
-            }}
-            isFetching={users.isFetching}
-          />
-        ) : null}
-      </Card>
+            {users.data ? (
+              <Pagination
+                page={users.data.page}
+                pageSize={users.data.page_size}
+                count={users.data.count}
+                totalPages={users.data.total_pages}
+                onPageChange={setPage}
+                onPageSizeChange={(size) => {
+                  setPageSize(size)
+                  setPage(1)
+                }}
+                isFetching={users.isFetching}
+              />
+            ) : null}
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="sesiones" className="min-h-0 flex-1 overflow-auto scrollbar-thin">
+          <SessionsPanel />
+        </TabsContent>
+
+      </Tabs>
 
       <UserFormDialog open={formOpen} user={editing} onOpenChange={setFormOpen} />
     </PageShell>

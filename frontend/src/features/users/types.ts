@@ -5,6 +5,23 @@ export interface RoleOption {
   label: string
 }
 
+export interface UserSession {
+  sid: string
+  user: number
+  user_username: string
+  user_full_name: string
+  user_role_display: string
+  ip_address: string | null
+  user_agent: string
+  /** Navegador y sistema ya resumidos por el servidor. */
+  device: string
+  created_at: string
+  last_seen_at: string | null
+  expires_at: string | null
+  /** La sesión desde la que se está mirando la pantalla. */
+  is_current: boolean
+}
+
 export interface UserPayload {
   username: string
   full_name: string

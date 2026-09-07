@@ -22,6 +22,29 @@ export function useRoles() {
   })
 }
 
+export function useSessions() {
+  return useQuery({
+    queryKey: queryKeys.users.sessions,
+    queryFn: usersApi.sessions,
+    // La marca de actividad se refresca sola cada dos minutos en el servidor;
+    // pedirla más seguido solo repetiría el mismo dato.
+    refetchInterval: 60_000,
+  })
+}
+
+export function useRevokeSession() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: usersApi.revokeSession,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.users.sessions })
+      toast.success('Sesión cerrada', 'Deja de operar en su siguiente acción.')
+    },
+    onError: (error) => toast.error('No se pudo cerrar la sesión', apiErrorMessage(error)),
+  })
+}
+
 function useUserMutation<TArgs>(
   mutationFn: (args: TArgs) => Promise<unknown>,
   successMessage: string,
