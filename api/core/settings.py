@@ -241,7 +241,17 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "users.User"
 
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    # La lista por omisión compara contra username, first_name, last_name y
+    # email; este modelo de usuario no tiene los dos del medio, guarda el nombre
+    # en `full_name` y ahí es donde la gente lo repite. Sin nombrarlo, "Efrain
+    # Leyva" pasa como contraseña de Efraín Leyva.
+    #
+    # El orden importa: el mensaje nombra el primer campo que se parece, y en el
+    # registro público la clave de empleado ni siquiera se pregunta -- se deriva
+    # del correo. Decirle a alguien que su contraseña "es muy similar a Usuario"
+    # lo manda a buscar un campo que no llenó; "a Correo" apunta a la pantalla.
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+     "OPTIONS": {"user_attributes": ("email", "full_name", "username")}},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
      "OPTIONS": {"min_length": 8}},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
@@ -294,6 +304,10 @@ REST_FRAMEWORK = {
     "DATETIME_FORMAT": "iso-8601",
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
 }
+
+# La suite corre solo contra PostgreSQL: el corredor sustituye Redis por sus
+# equivalentes en memoria. Ver common/runner.py.
+TEST_RUNNER = "common.runner.TestRunner"
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=env("JWT_ACCESS_TOKEN_MINUTES")),

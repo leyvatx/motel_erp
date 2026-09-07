@@ -221,6 +221,40 @@ export function apiErrorMessage(error: unknown, fallback = 'Ocurrio un error ine
   return fallback
 }
 
+/** Errores por campo que manda DRF, listos para pintarse bajo su input.
+ *
+ *  El manejador global de la API (api/common/exceptions.py) mete el diccionario
+ *  de campos en `error.details` y deja en `error.message` un texto fijo -- "Los
+ *  datos enviados no son válidos" -- que no le dice nada a nadie. La razón real
+ *  siempre viajó; lo que faltaba era leerla.
+ *
+ *  Un campo puede traer varias razones a la vez: una contraseña puede ser común
+ *  y además totalmente numérica, y ocultar la segunda haría que arreglar la
+ *  primera no alcance.
+ */
+export function apiFieldErrors(error: unknown): Record<string, string> {
+  if (!axios.isAxiosError(error)) return {}
+
+  const body = error.response?.data as ApiErrorBody | undefined
+  const details = body?.error?.details
+  const message = body?.error?.message
+  const source =
+    details && typeof details === 'object' && Object.keys(details).length > 0
+      ? details
+      : message && typeof message === 'object'
+        ? message
+        : null
+
+  if (!source) return {}
+
+  const salida: Record<string, string> = {}
+  for (const [campo, valor] of Object.entries(source)) {
+    const texto = Array.isArray(valor) ? valor.filter(Boolean).join(' ') : String(valor)
+    if (texto) salida[campo] = texto
+  }
+  return salida
+}
+
 export function apiErrorCode(error: unknown): string | null {
   if (!axios.isAxiosError(error)) return null
   return (error.response?.data as ApiErrorBody | undefined)?.error?.code ?? null

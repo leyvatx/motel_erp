@@ -278,34 +278,58 @@ class RegistroPublicoSerializer(serializers.Serializer):
             raise serializers.ValidationError("Escribe el nombre del negocio.")
         return nombre
 
-    def validate_password(self, value: str) -> str:
-        """Se pasa por los validadores de Django, no por un mínimo de longitud.
+    def validate_email(self, value: str) -> str:
+        return value.strip().lower()
+
+    def validate(self, attrs: dict) -> dict:
+        """La contraseña se revisa aquí y no campo por campo.
 
         Es la única contraseña del sistema que se elige sin que nadie del lado
         del cliente supervise, y va a ser la del dueño: la cuenta con más
-        permisos de esa sucursal.
+        permisos de esa sucursal. Por eso pasa por los validadores de Django y
+        no por un mínimo de longitud.
+
+        Va en la validación de objeto porque ``UserAttributeSimilarityValidator``
+        necesita al usuario para comparar: sin él no hace nada, y "efrain2024"
+        con el correo ``efrain2024@...`` pasaría como si fuera una contraseña.
+        Aquí ya están el nombre y el correo, que es contra lo que compara.
+
+        Los mensajes salen de Django y llegan en español porque ``LANGUAGE_CODE``
+        es ``es-mx`` y no hay ``LocaleMiddleware`` que deje al navegador
+        cambiarlo. Se devuelven bajo la llave ``password`` para que el
+        formulario los pinte debajo de su campo y no en un aviso suelto.
         """
         from django.contrib.auth.password_validation import validate_password
         from django.core.exceptions import ValidationError as DjangoValidationError
 
-        try:
-            validate_password(value)
-        except DjangoValidationError as exc:
-            raise serializers.ValidationError(list(exc.messages)) from exc
-        return value
+        from apps.users.models import User
 
-    def validate_email(self, value: str) -> str:
-        return value.strip().lower()
+        candidato = User(
+            username=clave_desde_correo(attrs["email"]),
+            full_name=attrs["admin_full_name"],
+            email=attrs["email"],
+        )
+
+        try:
+            validate_password(attrs["password"], user=candidato)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({"password": list(exc.messages)}) from exc
+
+        return attrs
 
     def clave_de_empleado(self) -> str:
-        """Clave derivada del correo, ajustada al validador de ``User``.
+        return clave_desde_correo(self.validated_data["email"])
 
-        El validador exige de 3 a 40 caracteres de ``[a-z0-9._-]``. Un correo
-        como ``Ana+Ventas@motel.mx`` no pasa tal cual, y uno como ``jr@...``
-        se queda corto.
-        """
-        import re
 
-        local = self.validated_data["email"].split("@")[0]
-        clave = re.sub(r"[^a-z0-9._-]", "", local.lower())[:40]
-        return clave if len(clave) >= 3 else "admin"
+def clave_desde_correo(email: str) -> str:
+    """Clave de empleado derivada del correo, ajustada al validador de ``User``.
+
+    El validador exige de 3 a 40 caracteres de ``[a-z0-9._-]``. Un correo como
+    ``Ana+Ventas@motel.mx`` no pasa tal cual, y uno como ``jr@...`` se queda
+    corto.
+    """
+    import re
+
+    local = email.split("@")[0]
+    clave = re.sub(r"[^a-z0-9._-]", "", local.lower())[:40]
+    return clave if len(clave) >= 3 else "admin"

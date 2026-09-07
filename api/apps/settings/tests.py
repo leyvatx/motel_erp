@@ -564,6 +564,32 @@ class RegistroPublicoTests(TestCase):
         with without_motel():
             self.assertFalse(Motel.objects.filter(name="Motel Las Palmas").exists())
 
+    def test_la_razon_del_rechazo_viaja_bajo_el_campo_que_fallo(self) -> None:
+        """El formulario la pinta debajo del input; sin la llave no sabe cuál."""
+        response = APIClient().post(REGISTRO_URL, self.payload(password="12345678"), format="json")
+
+        detalles = response.data["error"]["details"]
+        self.assertIn("password", detalles)
+        self.assertTrue(any("común" in razon for razon in detalles["password"]))
+
+    def test_la_contrasena_no_puede_ser_el_propio_correo(self) -> None:
+        """Sin pasarle el usuario, el validador de similitud no hace nada.
+
+        Es la cuenta con más permisos de la sucursal y la elige alguien a quien
+        nadie está viendo: que sea su propio correo es justo lo que hay que
+        atajar.
+        """
+        response = APIClient().post(
+            REGISTRO_URL,
+            self.payload(email="laura.dominguez@laspalmas.mx", password="laura.dominguez"),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("password", response.data["error"]["details"])
+        with without_motel():
+            self.assertFalse(Motel.objects.filter(name="Motel Las Palmas").exists())
+
     def test_el_alta_no_deja_a_medias_una_sucursal_sin_dueno(self) -> None:
         """Nombre válido, correo inválido: no debe quedar el motel suelto."""
         response = APIClient().post(REGISTRO_URL, self.payload(email="no-es-correo"), format="json")
