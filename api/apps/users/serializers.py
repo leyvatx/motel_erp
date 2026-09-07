@@ -315,6 +315,30 @@ SISTEMAS = (
 )
 
 
+class PermissionOptionSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    label = serializers.CharField()
+    group = serializers.CharField()
+
+
+class RoleMatrixRoleSerializer(serializers.Serializer):
+    value = serializers.CharField()
+    label = serializers.CharField()
+    permissions = serializers.ListField(child=serializers.CharField())
+
+
+class RoleMatrixSerializer(serializers.Serializer):
+    """La matriz completa: qué puede hacer cada rol.
+
+    Vive en código, no en base de datos, y la pantalla lo dice. Se expone aparte
+    del catálogo de roles para no cambiarle la forma a ``/auth/roles/``, que el
+    desplegable de alta de usuarios ya consume como lista simple.
+    """
+
+    roles = RoleMatrixRoleSerializer(many=True)
+    permissions = PermissionOptionSerializer(many=True)
+
+
 class UserPresenceSerializer(serializers.Serializer):
     """Estado de conexión de un compañero de turno."""
 

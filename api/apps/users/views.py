@@ -19,12 +19,13 @@ from common.permissions import IsAuthenticatedActive, permissions_for
 from common.tenancy import current_motel_id
 
 from apps.users import sessions
-from apps.users.constants import PermissionCode, Role
+from apps.users.constants import ROLE_PERMISSIONS, PermissionCode, Role, permission_catalog
 from apps.users.models import User, UserActivity, UserSession
 from apps.users.serializers import (
     ChangePasswordSerializer,
     MotelTokenObtainPairSerializer,
     MotelTokenRefreshSerializer,
+    RoleMatrixSerializer,
     RoleOptionSerializer,
     UserPresenceSerializer,
     UserSerializer,
@@ -146,6 +147,33 @@ class RoleListView(APIView):
     def get(self, request) -> Response:
         data = [{"value": value, "label": label} for value, label in Role.choices]
         return Response(RoleOptionSerializer(data, many=True).data)
+
+
+class RoleMatrixView(APIView):
+    """Qué puede hacer cada rol, para verlo de un vistazo.
+
+    Aparte de ``/auth/roles/`` a propósito: aquella devuelve una lista simple
+    que el desplegable de alta de usuarios ya consume, y cambiarle la forma para
+    meterle los permisos rompería esa pantalla sin ganar nada.
+    """
+
+    allow_platform_scope = True
+    required_permissions = {"*": [PermissionCode.USER_MANAGE]}
+
+    @extend_schema(responses=RoleMatrixSerializer)
+    def get(self, request) -> Response:
+        datos = {
+            "roles": [
+                {
+                    "value": value,
+                    "label": label,
+                    "permissions": sorted(ROLE_PERMISSIONS.get(value, frozenset())),
+                }
+                for value, label in Role.choices
+            ],
+            "permissions": permission_catalog(),
+        }
+        return Response(RoleMatrixSerializer(datos).data)
 
 
 class TeamPresenceView(APIView):

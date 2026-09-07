@@ -5,6 +5,24 @@ export interface RoleOption {
   label: string
 }
 
+export interface PermissionOption {
+  code: string
+  label: string
+  /** Módulo donde se ejerce el permiso. Lo decide el servidor. */
+  group: string
+}
+
+export interface RoleMatrixRole {
+  value: Role
+  label: string
+  permissions: string[]
+}
+
+export interface RoleMatrix {
+  roles: RoleMatrixRole[]
+  permissions: PermissionOption[]
+}
+
 export interface UserSession {
   sid: string
   user: number

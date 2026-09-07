@@ -11,6 +11,7 @@ from apps.users.views import (
     MeView,
     MotelTokenRefreshView,
     RoleListView,
+    RoleMatrixView,
     SessionViewSet,
     TeamPresenceView,
     UserViewSet,
@@ -30,6 +31,7 @@ urlpatterns = [
     path("me/", MeView.as_view(), name="me"),
     path("change-password/", ChangePasswordView.as_view(), name="change-password"),
     path("roles/", RoleListView.as_view(), name="roles"),
+    path("role-matrix/", RoleMatrixView.as_view(), name="role-matrix"),
     path("team/", TeamPresenceView.as_view(), name="team-presence"),
     path("", include(router.urls)),
 ]

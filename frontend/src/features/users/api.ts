@@ -1,5 +1,6 @@
 import { del, get, patch, post } from '@/lib/axios'
 import type {
+  RoleMatrix,
   RoleOption,
   UserListParams,
   UserPayload,
@@ -11,6 +12,7 @@ export const usersApi = {
   list: (params: UserListParams): Promise<PaginatedResponse<User>> =>
     get<PaginatedResponse<User>>('/auth/users/', { params }),
   roles: (): Promise<RoleOption[]> => get<RoleOption[]>('/auth/roles/'),
+  roleMatrix: (): Promise<RoleMatrix> => get<RoleMatrix>('/auth/role-matrix/'),
   create: (payload: UserPayload): Promise<User> => post<User, UserPayload>('/auth/users/', payload),
   update: (id: number, payload: UserPayload): Promise<User> =>
     patch<User, UserPayload>(`/auth/users/${id}/`, payload),

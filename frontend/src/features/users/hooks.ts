@@ -22,6 +22,15 @@ export function useRoles() {
   })
 }
 
+export function useRoleMatrix() {
+  return useQuery({
+    queryKey: queryKeys.users.roleMatrix,
+    queryFn: usersApi.roleMatrix,
+    // La matriz vive en código: no cambia sin un despliegue de por medio.
+    staleTime: Infinity,
+  })
+}
+
 export function useSessions() {
   return useQuery({
     queryKey: queryKeys.users.sessions,

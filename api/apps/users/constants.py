@@ -93,6 +93,39 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
 }
 
 
+# Los permisos se agrupan por el módulo donde se ejercen, y el módulo sale del
+# prefijo del propio código. Es una tabla de veintitantos renglones: sin
+# agrupar, quien la consulta tiene que leerla entera para encontrar uno.
+# El orden es el de la operación, no el alfabético.
+PERMISSION_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("Recepción", ("room.", "reservation.")),
+    ("Cobro y folios", ("folio.", "payment.")),
+    ("Inventario", ("inventory.",)),
+    ("Limpieza y mantenimiento", ("housekeeping.", "maintenance.")),
+    ("Caja y gastos", ("shift.", "expense.", "cash.")),
+)
+
+GRUPO_RESTANTE = "Control y administración"
+
+
+def permission_group(code: str) -> str:
+    """Módulo al que pertenece un permiso."""
+    for etiqueta, prefijos in PERMISSION_GROUPS:
+        if any(code.startswith(prefijo) for prefijo in prefijos):
+            return etiqueta
+    return GRUPO_RESTANTE
+
+
+def permission_catalog() -> list[dict[str, str]]:
+    """Los permisos con su etiqueta y su grupo, en orden de operación."""
+    orden = [etiqueta for etiqueta, _ in PERMISSION_GROUPS] + [GRUPO_RESTANTE]
+    filas = [
+        {"code": code, "label": label, "group": permission_group(code)}
+        for code, label in PermissionCode.choices
+    ]
+    return sorted(filas, key=lambda fila: orden.index(fila["group"]))
+
+
 def permissions_for(user) -> frozenset[str]:
     """Permisos efectivos de un usuario.
 

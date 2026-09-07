@@ -27,6 +27,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { PermissionMatrix } from '@/features/users/components/PermissionMatrix'
 import { SessionsPanel } from '@/features/users/components/SessionsPanel'
 import { UserFormDialog } from '@/features/users/components/UserFormDialog'
 import {
@@ -45,6 +46,7 @@ import type { Role, User } from '@/types/api'
 const SECCIONES = [
   { value: 'personal', label: 'Personal' },
   { value: 'sesiones', label: 'Sesiones' },
+  { value: 'permisos', label: 'Permisos' },
 ] as const
 
 type Seccion = (typeof SECCIONES)[number]['value']
@@ -312,6 +314,10 @@ export default function UsersPage() {
 
         <TabsContent value="sesiones" className="min-h-0 flex-1 overflow-auto scrollbar-thin">
           <SessionsPanel />
+        </TabsContent>
+
+        <TabsContent value="permisos" className="flex min-h-0 flex-1 flex-col">
+          <PermissionMatrix />
         </TabsContent>
 
       </Tabs>
