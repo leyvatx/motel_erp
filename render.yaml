@@ -42,7 +42,12 @@ services:
     plan: free
     dockerfilePath: ./api/Dockerfile
     dockerContext: ./api
-    healthCheckPath: /api/v1/health/
+    # /api/health responde si el proceso está en pie y nada más. El otro
+    # sondeo, /api/v1/health/, contesta 503 cuando la base o Redis fallan: es
+    # justo lo que uno quiere para diagnosticar y lo peor que se le puede dar a
+    # Render, porque un parpadeo del Redis gratuito tumbaba un servicio que
+    # todavía podía atender.
+    healthCheckPath: /api/health
     envVars:
       - fromGroup: motel-erp-comun
       # Un solo worker: el plan free da 0.1 de CPU y 512 MB, y cada worker de
@@ -78,6 +83,90 @@ services:
         sync: false
       - key: PLATFORM_ADMIN_PASSWORD
         sync: false
+
+  # Sin estos dos servicios el calendario de Celery no existe en producción:
+  # los cronómetros de renta (cada 30 s), la expiración de reservaciones, el
+  # aviso de stock bajo y la purga de tokens vencidos no se ejecutan nunca. Los
+  # workers de Render NO entran en el plan gratuito; si te quedas en free,
+  # bórralos del blueprint sabiendo que esas cuatro cosas no van a pasar.
+  - type: worker
+    name: motel-erp-worker
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./api/Dockerfile
+    dockerContext: ./api
+    # Las dos colas en el mismo worker mientras la impresión sea simbólica: en
+    # Render no hay térmica que alcanzar y PRINTER_BACKEND es dummy. Cuando haya
+    # impresoras de verdad, la cola de impresión vuelve a su propio servicio,
+    # que es de lo que habla el comentario de core/celery.py.
+    dockerCommand: celery -A core worker -Q celery,printing -c 2 -l info
+    envVars:
+      - fromGroup: motel-erp-comun
+      # Migrar desde tres servicios a la vez es una carrera contra sí misma. El
+      # servicio web es el único que toca el esquema.
+      - key: RUN_MIGRATIONS
+        value: "0"
+      # El pool vive en el proceso y Celery bifurca: un hijo heredaría sockets
+      # que su padre abrió y no le pertenecen. El web sí lo usa, que es donde
+      # muchas peticiones cortas se pelean por conexiones; aquí son pocas tareas
+      # largas y una conexión por tarea sale más barata que el riesgo.
+      - key: DB_POOL
+        value: "False"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: motel-erp-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: motel-erp-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: motel-erp-redis
+          property: connectionString
+      - key: CACHE_URL
+        fromService:
+          type: redis
+          name: motel-erp-redis
+          property: connectionString
+
+  - type: worker
+    name: motel-erp-beat
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./api/Dockerfile
+    dockerContext: ./api
+    # Uno y solo uno. Dos beats con el mismo calendario encolan cada tarea dos
+    # veces, y sweep_stay_timers avisando doble es recepción viendo dos alertas
+    # por la misma renta.
+    dockerCommand: celery -A core beat -l info
+    envVars:
+      - fromGroup: motel-erp-comun
+      - key: RUN_MIGRATIONS
+        value: "0"
+      - key: DB_POOL
+        value: "False"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: motel-erp-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: motel-erp-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: motel-erp-redis
+          property: connectionString
+      - key: CACHE_URL
+        fromService:
+          type: redis
+          name: motel-erp-redis
+          property: connectionString
 
   - type: web
     name: motel-erp-frontend

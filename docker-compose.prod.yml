@@ -43,7 +43,7 @@ services:
         - CMD
         - python
         - -c
-        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health/', timeout=5)
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=5)
       interval: 30s
       timeout: 15s
       retries: 3
@@ -56,6 +56,7 @@ services:
     environment:
       RUN_MIGRATIONS: "0"
       RUN_COLLECTSTATIC: "0"
+      DB_POOL: "False"
     command: ["celery", "-A", "core", "worker", "-Q", "celery", "-l", "info"]
     depends_on:
       api:
@@ -72,6 +73,7 @@ services:
     environment:
       RUN_MIGRATIONS: "0"
       RUN_COLLECTSTATIC: "0"
+      DB_POOL: "False"
     command: ["celery", "-A", "core", "worker", "-Q", "printing", "-c", "2", "-l", "info"]
     depends_on:
       api:
@@ -86,6 +88,7 @@ services:
     environment:
       RUN_MIGRATIONS: "0"
       RUN_COLLECTSTATIC: "0"
+      DB_POOL: "False"
     command: ["celery", "-A", "core", "beat", "-l", "info"]
     depends_on:
       api:

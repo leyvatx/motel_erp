@@ -27,6 +27,15 @@ vez de rechazar -- deja cada petición esperando el tiempo de espera de TCP del
 sistema, del orden de veinte segundos. Con cuatro workers eso es el servicio
 entero colgado en lugar de errores rápidos, y es también lo que haría que el
 sondeo de salud se quedara mudo justo cuando hay que saber qué pasa.
+
+Las conexiones van a un pool de psycopg, no a ``CONN_MAX_AGE``. Bajo ASGI cada
+petición corre en un hilo propio -- Django abre un ``ThreadSensitiveContext`` por
+petición -- y una conexión persistente vive pegada a su hilo: al terminar la
+petición no se cierra, porque todavía no cumplió su edad máxima, y el hilo muere
+con la conexión colgando hasta que el recolector alcance el socket. Con tráfico
+sostenido eso son conexiones huérfanas acumulándose hasta que la base rechaza
+las nuevas. El pool es un objeto del proceso, compartido entre todos los hilos y
+con techo propio, que es justo lo que ``CONN_MAX_AGE`` no puede dar aquí.
 """
 
 from datetime import timedelta
@@ -43,8 +52,12 @@ env = environ.Env(
     DJANGO_ALLOWED_HOSTS=(list, ["localhost", "127.0.0.1"]),
     DJANGO_CSRF_TRUSTED_ORIGINS=(list, []),
     CORS_ALLOWED_ORIGINS=(list, ["http://localhost:5173"]),
-    DB_CONN_MAX_AGE=(int, 60),
+    DB_CONN_MAX_AGE=(int, 0),
     DB_CONNECT_TIMEOUT=(int, 5),
+    DB_POOL=(bool, True),
+    DB_POOL_MIN_SIZE=(int, 1),
+    DB_POOL_MAX_SIZE=(int, 8),
+    DB_POOL_TIMEOUT=(int, 10),
     JWT_ACCESS_TOKEN_MINUTES=(int, 30),
     JWT_REFRESH_TOKEN_DAYS=(int, 7),
     BUSINESS_TIME_ZONE=(str, "America/Mexico_City"),
@@ -99,7 +112,7 @@ if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 SECURE_SSL_REDIRECT = env.bool("DJANGO_SECURE_SSL_REDIRECT", default=not DEBUG)
-SECURE_REDIRECT_EXEMPT = [r"^api/v1/health/$"]
+SECURE_REDIRECT_EXEMPT = [r"^api/v1/health/$", r"^api/health$"]
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 
@@ -186,7 +199,37 @@ DATABASES = {
 }
 DATABASES["default"]["CONN_MAX_AGE"] = env("DB_CONN_MAX_AGE")
 DATABASES["default"]["ATOMIC_REQUESTS"] = False
-DATABASES["default"].setdefault("OPTIONS", {})["connect_timeout"] = env("DB_CONNECT_TIMEOUT")
+DB_OPTIONS = DATABASES["default"].setdefault("OPTIONS", {})
+DB_OPTIONS["connect_timeout"] = env("DB_CONNECT_TIMEOUT")
+
+
+def _pool_de_conexiones() -> dict | None:
+    """Configuración del pool, o ``None`` cuando no se puede usar.
+
+    Se apaga solo en vez de reventar el arranque. Son tres los casos en que no
+    aplica y ninguno es un error: una base que no es PostgreSQL, un entorno sin
+    ``psycopg_pool`` instalado, y quien pidió conexiones persistentes a mano
+    subiendo ``DB_CONN_MAX_AGE`` -- Django rechaza las dos cosas juntas, así que
+    entre pool y edad máxima gana lo que se pidió explícito.
+    """
+    if not env("DB_POOL") or DATABASES["default"]["CONN_MAX_AGE"] != 0:
+        return None
+    if "postgresql" not in DATABASES["default"].get("ENGINE", ""):
+        return None
+    try:
+        import psycopg_pool  # noqa: F401
+    except ImportError:
+        return None
+    return {
+        "min_size": env("DB_POOL_MIN_SIZE"),
+        "max_size": env("DB_POOL_MAX_SIZE"),
+        "timeout": env("DB_POOL_TIMEOUT"),
+    }
+
+
+DB_POOL_CONFIG = _pool_de_conexiones()
+if DB_POOL_CONFIG is not None:
+    DB_OPTIONS["pool"] = DB_POOL_CONFIG
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

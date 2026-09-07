@@ -39,6 +39,14 @@ python -m venv api/.venv && api/.venv/Scripts/activate && pip install -r api/req
 | `DJANGO_ALLOWED_HOSTS` | Hosts que atiende, separados por coma |
 | `DJANGO_CSRF_TRUSTED_ORIGINS` | Orígenes confiables para CSRF |
 | `DATABASE_URL` | Cadena de conexión a PostgreSQL |
+| `DB_CONN_MAX_AGE` | Edad máxima de una conexión. En `0` para poder usar el pool |
+| `DB_CONNECT_TIMEOUT` | Segundos antes de rendirse al abrir una conexión |
+| `DB_POOL` | Pool de psycopg. `False` en los procesos de Celery, que bifurcan |
+| `DB_POOL_MIN_SIZE` / `DB_POOL_MAX_SIZE` | Conexiones que sostiene el pool |
+| `DB_POOL_TIMEOUT` | Segundos que espera una petición por una conexión libre |
+| `WEB_CONCURRENCY` | Procesos de uvicorn |
+| `WEB_LIMIT_CONCURRENCY` | Peticiones en vuelo antes de contestar 503 |
+| `WEB_KEEP_ALIVE` / `WEB_GRACEFUL_TIMEOUT` | Tiempos de uvicorn en segundos |
 | `REDIS_URL` | Channel layer de Channels |
 | `CELERY_BROKER_URL` | Broker de Celery |
 | `CELERY_RESULT_BACKEND` | Backend de resultados de Celery |
@@ -248,9 +256,9 @@ en `api/.env`.
 
 ## Despliegue en Render
 
-`render.yaml` es un Blueprint: describe los seis servicios completos y Render
-los crea de una sola vez. No hace falta nginx ni certbot, porque Render termina
-TLS y entrega dominios `*.onrender.com` con HTTPS ya resuelto.
+`render.yaml` es un Blueprint: describe los servicios completos y Render los
+crea de una sola vez. No hace falta nginx ni certbot, porque Render termina TLS
+y entrega dominios `*.onrender.com` con HTTPS ya resuelto.
 
 | Servicio | Tipo | Plan |
 | --- | --- | --- |
@@ -258,18 +266,54 @@ TLS y entrega dominios `*.onrender.com` con HTTPS ya resuelto.
 | `motel-erp-redis` | Redis administrado | gratuito |
 | `motel-erp-api` | Web (Docker, ASGI) | gratuito |
 | `motel-erp-frontend` | Sitio estático | gratuito |
+| `motel-erp-worker` | Celery (colas `celery` y `printing`) | **de paga** |
+| `motel-erp-beat` | Calendario de Celery | **de paga** |
 
-Render no ofrece plan gratuito para *background workers*, así que el blueprint
-no los incluye: el despliegue completo cabe en el plan gratuito. Lo que queda
-fuera mientras no haya workers son los cronómetros automáticos de vencimiento,
-los avisos de stock bajo y la impresión. Recepción, caja, inventario, reportes,
-auditoría y configuración funcionan igual, y el tiempo real de las acciones que
-hace un usuario sigue llegando por WebSocket.
+**Los dos últimos no entran en el plan gratuito.** Render no ofrece workers
+gratis. Están en el blueprint porque sin ellos el calendario de Celery
+sencillamente no existe en producción, y eso apaga cuatro cosas en silencio:
+los cronómetros de renta que barren cada 30 s, la expiración automática de
+reservaciones, el aviso de stock bajo y la purga de tokens vencidos —esta
+última hace crecer `token_blacklist` sin techo contra una base de 1 GB.
 
-Para activarlos después se agregan al blueprint tres servicios `type: worker`
-con `plan: starter`, la misma imagen de `api/Dockerfile`, `RUN_MIGRATIONS=0`,
-`RUN_COLLECTSTATIC=0` y los comandos `celery -A core worker -Q celery`,
-`celery -A core worker -Q printing -c 2` y `celery -A core beat`.
+Si te vas a quedar en el plan gratuito, **borra los dos bloques `type: worker`
+del blueprint** sabiendo exactamente qué pierdes. El resto —recepción, caja,
+inventario, reportes, auditoría, configuración— funciona igual, y el tiempo
+real de lo que hace un usuario sigue llegando por WebSocket, porque eso viaja
+por Channels y no por Celery.
+
+### Por qué el sondeo de salud apunta a `/api/health`
+
+Hay dos sondeos y hacen cosas distintas:
+
+| Ruta | Contesta |
+| --- | --- |
+| `/api/health` | 200 si el proceso está en pie. No toca nada más. |
+| `/api/v1/health/` | 200 solo si la base **y** Redis responden; 503 con el detalle de cuál falló. |
+
+El segundo sirve para diagnosticar y es pésimo como `healthCheckPath`: un
+parpadeo del Redis gratuito devolvía 503 y Render daba por muerto un servicio
+que todavía podía atender rentas. El mismo criterio aplica al `healthcheck` del
+`api` en `docker-compose.prod.yml`, del que cuelgan `worker`, `beat` y `web` por
+`depends_on: service_healthy`.
+
+### Conexiones a la base
+
+`DB_CONN_MAX_AGE` vale **0** y las conexiones se reaprovechan con el pool de
+psycopg (`DB_POOL`, activo por omisión). No es un ajuste fino: bajo ASGI cada
+petición corre en su propio hilo, y una conexión persistente queda pegada al
+hilo que la abrió. Al terminar la petición no se cierra —todavía no cumplió su
+edad máxima— y el hilo muere con la conexión colgando hasta que el recolector
+alcance el socket. Con tráfico sostenido eso son conexiones huérfanas
+acumulándose hasta que la base rechaza las nuevas.
+
+El pool es del proceso, lo comparten todos los hilos y tiene techo propio
+(`DB_POOL_MAX_SIZE`, 8). Django exige `CONN_MAX_AGE=0` para permitirlo, así que
+subir la edad máxima apaga el pool: son excluyentes.
+
+En los procesos de Celery el pool va apagado (`DB_POOL=False`). Celery bifurca,
+y un proceso hijo heredaría sockets abiertos por su padre que no le pertenecen.
+Son pocas tareas y largas: una conexión por tarea sale más barata que el riesgo.
 
 ### Pasos
 
@@ -315,8 +359,14 @@ worker tuviera otra, los tokens que emite la API no valdrían nada.
 
 ### Lo que este despliegue todavía no resuelve
 
-- El plan gratuito del servicio web se duerme sin tráfico. La primera visita
-  después de un rato tarda cerca de un minuto en responder.
+- **El plan gratuito del servicio web se duerme a los 15 minutos sin tráfico.**
+  La primera visita después de un rato tarda cerca de un minuto en responder, y
+  para quien la sufre eso se ve exactamente igual que un servidor caído. Es la
+  causa más común de "se apagó solo". `.github/workflows/despertador.yml` lo
+  mitiga con un ping cada 10 min, pero el `schedule` de GitHub Actions es de
+  mejor esfuerzo: se retrasa bajo carga, se salta ejecuciones y se desactiva
+  solo tras 60 días sin actividad en el repositorio. **Lo único que lo quita de
+  verdad es el plan de paga**; no hay arreglo en el código.
 - El disco es efímero: los logotipos que suba cada motel desaparecen en el
   siguiente despliegue. Para conservarlos hace falta un disco persistente, que
   es de paga, o mover `MEDIA_ROOT` a almacenamiento externo.
