@@ -8,11 +8,22 @@ name: Despertador
 
 on:
   schedule:
-    # Cada 10, no cada 14. La ventana de Render es de 15 min y el cron de GitHub
-    # es "cuando haya runner": se retrasa de rutina más de lo que dura esa
-    # ventana. A 14 min el margen es de uno; a 10 son cinco, y aun así hay
-    # despertadas. Bajarlo más no ayuda: GitHub descarta los crones muy
-    # seguidos antes que los espaciados.
+    # MEDIDO EL 2026-09-07, SOBRE LAS 72 CORRIDAS DE LOS 11 DÍAS ANTERIORES:
+    # este cron pide cada 10 min y GitHub lo entrega cada 210 min de mediana.
+    # El intervalo más corto de las 72 fue de 93 min y el más largo de 738.
+    # Ninguno bajó de los 15 min que dura la ventana de Render, así que este
+    # workflow no ha evitado una sola dormida: solo la acorta cuando cae.
+    #
+    # No se arregla bajando el número -- GitHub descarta antes los crones más
+    # seguidos -- ni agregando un segundo workflow igual, que se encola con el
+    # mismo criterio. Lo que sí despierta a tiempo:
+    #   * scripts/keep_alive.ps1, mientras haya una máquina encendida;
+    #   * un servicio de monitoreo externo (UptimeRobot, cron-job.org), que sí
+    #     cumple el intervalo pero hay que dar de alta a mano;
+    #   * el plan starter de Render, que no duerme.
+    #
+    # Se queda porque despertar cada tres horas es mejor que nada y no cuesta:
+    # el repo es público y los minutos de Actions no se cobran.
     - cron: '*/10 * * * *'
   workflow_dispatch:
 
