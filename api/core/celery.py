@@ -23,7 +23,6 @@ app.conf.task_default_queue = "celery"
 app.conf.task_routes = {
     "apps.sales.tasks.print_receipt": {"queue": "printing"},
 }
-dsdsdsd
 app.conf.beat_schedule = {
     "sweep-expiring-stays": {
         "task": "apps.rooms.tasks.dispatch_stay_timer_sweeps",
