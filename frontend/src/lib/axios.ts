@@ -9,6 +9,7 @@ import axios, {
 import { useToastStore } from '@/components/ui/toast'
 import { syncServerTime } from '@/lib/serverTime'
 import { authSnapshot, useAuthStore } from '@/store/auth'
+import { navegarA } from '@/lib/navigation'
 import type { ApiErrorBody, TokenPair } from '@/types/api'
 
 function absolute(value: string | undefined): string {
@@ -196,7 +197,9 @@ api.interceptors.response.use(
       // terminó, solo no se pudo renovar ahora. El error se propaga y la vista
       // lo muestra en vez de sacar al usuario a media captura.
       if (!authSnapshot.refresh() && window.location.pathname !== '/login') {
-        window.location.assign('/login')
+        // Por el router, no por window.location: recargar la página entera aquí
+        // deja la pantalla en blanco mientras vuelve a bajar el bundle.
+        navegarA('/login')
       }
     }
 

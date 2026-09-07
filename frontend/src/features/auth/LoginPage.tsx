@@ -46,7 +46,7 @@ export default function LoginPage() {
   const onSubmit = handleSubmit((values) => login.mutate(values))
 
   return (
-    <div className="relative flex min-h-[100svh] items-center justify-center overflow-hidden bg-background p-4 sm:p-6">
+    <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-background p-4 sm:p-6">
       <div className="grid-surface grid-fade pointer-events-none absolute inset-0" aria-hidden />
 
       <div className="relative w-full max-w-[22rem] space-y-8">

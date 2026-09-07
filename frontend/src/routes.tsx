@@ -4,6 +4,7 @@ import { createBrowserRouter, Navigate, type RouteObject } from 'react-router-do
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { Skeleton } from '@/components/ui/skeleton'
+import { registrarNavegador } from '@/lib/navigation'
 import { ForbiddenPage, NotFoundPage } from '@/pages/ErrorPages'
 import { defaultRouteFor, useAuthStore } from '@/store/auth'
 
@@ -206,3 +207,7 @@ const routes: RouteObject[] = [
 ]
 
 export const router = createBrowserRouter(routes)
+
+// Lo que navega desde fuera de React -- el interceptor de axios cuando la
+// sesión murió -- pasa por aquí en vez de recargar la página.
+registrarNavegador((ruta) => void router.navigate(ruta, { replace: true }))

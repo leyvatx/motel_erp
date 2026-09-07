@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 
 function Shell({ code, title, message }: { code: string; title: string; message: string }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background p-6 text-center">
+    <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-background p-6 text-center">
       <p className="text-6xl font-bold text-brand-accent">{code}</p>
       <h1 className="text-xl font-semibold">{title}</h1>
       <p className="max-w-md text-sm text-muted-foreground">{message}</p>

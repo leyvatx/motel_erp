@@ -534,7 +534,7 @@ export default function LandingPage() {
   }, [])
 
   return (
-    <div className="min-h-[100svh] bg-white text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100">
+    <div className="min-h-dvh bg-white text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100">
       <header
         className={cn(
           'sticky top-0 z-30 border-b bg-white/85 backdrop-blur-md dark:bg-zinc-950/85',

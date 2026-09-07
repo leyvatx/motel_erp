@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, Navigate } from 'react-router-dom'
 import { z } from 'zod'
@@ -9,8 +9,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useSignup } from '@/features/auth/hooks'
-import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { apiErrorMessage, apiFieldErrors } from '@/lib/axios'
+import { APP_FALLBACK_NAME } from '@/lib/brand'
 import { cn } from '@/lib/utils'
 import { defaultRouteFor, useAuthStore } from '@/store/auth'
 
@@ -43,7 +43,12 @@ export default function RegisterPage() {
   const signup = useSignup()
   const [verClave, setVerClave] = useState(false)
 
-  useDocumentTitle('Crear cuenta')
+  // El título no pasa por `useDocumentTitle`: ese lee la marca del negocio y
+  // aquí todavía no hay negocio. Quien llega a darse de alta vería el nombre de
+  // la sucursal que esta terminal visitó por última vez, que no es la suya.
+  useEffect(() => {
+    document.title = `Crear cuenta · ${APP_FALLBACK_NAME}`
+  }, [])
 
   const {
     register,
@@ -93,7 +98,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="relative flex min-h-[100svh] items-center justify-center overflow-hidden bg-background p-4 sm:p-6">
+    <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-background p-4 sm:p-6">
       <div className="grid-surface grid-fade pointer-events-none absolute inset-0" aria-hidden />
 
       <div className="relative w-full max-w-[24rem] space-y-8">

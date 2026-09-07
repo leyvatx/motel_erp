@@ -102,6 +102,25 @@
     @apply border-border;
   }
 
+  /* El fondo va también en `html`, no solo en `body`.
+   *
+   * `body` no cubre lo que el navegador pinta detrás: el rebote del scroll, la
+   * franja que queda mientras una ruta nueva monta y el área bajo las barras
+   * del móvil. Sin esto, cada cambio de vista deja asomar el blanco del
+   * documento, y en tema oscuro se ve como un destello.
+   *
+   * `color-scheme` es lo que además tiñe barras de desplazamiento, controles
+   * nativos y ese mismo fondo del navegador; sin declararlo, el sistema asume
+   * claro aunque la aplicación esté en oscuro. */
+  html {
+    @apply bg-background;
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: 'cv11', 'ss01';
@@ -167,6 +186,18 @@
       linear-gradient(to right, hsl(var(--grid-line)) 1px, transparent 1px),
       linear-gradient(to bottom, hsl(var(--grid-line)) 1px, transparent 1px);
     background-size: 56px 56px;
+  }
+
+  /* Carrusel sin barra a la vista: en el teléfono la barra tapa parte de las
+     fichas y en escritorio ni siquiera aparece, así que solo estorba. El
+     desplazamiento sigue funcionando con dedo, rueda y teclado. */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 
   .grid-fade {

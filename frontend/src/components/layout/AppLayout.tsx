@@ -31,7 +31,7 @@ export function AppLayout() {
   }, [])
 
   return (
-    <div className="flex h-[100svh] overflow-hidden bg-background">
+    <div className="flex h-dvh overflow-hidden bg-background">
       <Sidebar />
       <MobileNav open={menuOpen} onOpenChange={setMenuOpen} />
 
