@@ -13,8 +13,6 @@ envVarGroups:
         value: America/Tijuana
       - key: BUSINESS_CURRENCY
         value: MXN
-      - key: BUSINESS_NAME
-        value: Negocio Demo
       - key: EXPIRATION_WARNING_MINUTES
         value: "15"
       - key: EXPENSE_APPROVAL_THRESHOLD
@@ -179,6 +177,11 @@ services:
         source: /*
         destination: /index.html
     envVars:
+      # Nombre de respaldo mientras la API no dice cuál es el negocio: arranque
+      # en frío, terminal nueva, red caída. No es el nombre del negocio, que
+      # vive en la base y se edita desde Configuración.
+      - key: VITE_APP_NAME
+        value: Sistema de gestión
       - key: VITE_API_URL
         sync: false
       - key: VITE_WS_URL

@@ -398,6 +398,10 @@ CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 EXPIRATION_WARNING_MINUTES = env("EXPIRATION_WARNING_MINUTES")
 EXPENSE_APPROVAL_THRESHOLD = env("EXPENSE_APPROVAL_THRESHOLD")
 
+# El valor por omisión es el centinela que el asistente de alta interpreta como
+# "este negocio todavía no se ha presentado" (ver el frontend, en
+# features/onboarding/hooks.ts). Cambiarlo aquí sin cambiarlo allá hace que el
+# primer paso del asistente se dé por hecho y nadie llegue a escribir su nombre.
 BUSINESS_NAME = env("BUSINESS_NAME", default="Mi negocio")
 BUSINESS_ADDRESS = env("BUSINESS_ADDRESS", default="")
 TICKET_FOOTER = env("TICKET_FOOTER", default="Gracias por su visita")

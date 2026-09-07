@@ -19,7 +19,7 @@ def seed(apps, schema_editor):
         return
 
     BusinessProfile.objects.create(
-        name=getattr(settings, "BUSINESS_NAME", "Motel") or "Motel",
+        name=getattr(settings, "BUSINESS_NAME", "Mi negocio") or "Mi negocio",
         address=getattr(settings, "BUSINESS_ADDRESS", ""),
         currency=getattr(settings, "BUSINESS_CURRENCY", "MXN"),
         time_zone=getattr(settings, "BUSINESS_TIME_ZONE", "America/Mexico_City"),

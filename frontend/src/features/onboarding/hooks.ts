@@ -6,7 +6,9 @@ import { queryKeys } from '@/lib/queryClient'
 import { canAccessSection, useAuthStore } from '@/store/auth'
 
 /** El nombre con el que el backend siembra la primera sucursal cuando nadie le
- *  dio uno. Mientras siga puesto, el negocio no se ha presentado. */
+ *  dio uno. Mientras siga puesto, el negocio no se ha presentado.
+ *
+ *  Tiene que coincidir con `BUSINESS_NAME` de api/core/settings.py. */
 const NOMBRE_SEMBRADO = 'Mi negocio'
 
 export type SetupStepId = 'business' | 'roomType' | 'tariff' | 'rooms'
