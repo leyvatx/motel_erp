@@ -30,7 +30,14 @@ app.conf.task_queues = {
         "exchange": "celery",
         "exchange_type": "direct",
         "binding_key": "celery",
-    } 
+    },
+    "printing": {
+        "exchange": "printing",
+        "exchange_type": "direct",  
+        "binding_key": "printing",
+    },
+}
+
 app.conf.beat_schedule = {
     "sweep-expiring-stays": {
         "task": "apps.rooms.tasks.dispatch_stay_timer_sweeps",
