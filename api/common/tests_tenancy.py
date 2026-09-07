@@ -47,7 +47,7 @@ class Sucursal:
             username=f"gerencia.{sufijo}",
             password="Demo.1234",
             full_name=f"Gerencia {nombre}",
-            role=Role.MANAGER,
+            role=Role.SUPERADMIN,
             motel=self.motel,
         )
         with use_motel(self.motel):
@@ -152,7 +152,7 @@ class AislamientoEntreSucursalesTests(TestCase):
 
         self.assertEqual(response.status_code, 404)
         self.b.gerente.refresh_from_db()
-        self.assertEqual(self.b.gerente.role, Role.MANAGER)
+        self.assertEqual(self.b.gerente.role, Role.SUPERADMIN)
 
     def test_dar_de_baja_a_un_empleado_ajeno_es_404(self) -> None:
         response = self.a.client().delete(f"{USERS_URL}{self.b.gerente.pk}/")

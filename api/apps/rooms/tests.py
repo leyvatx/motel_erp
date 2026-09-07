@@ -24,14 +24,18 @@ from apps.rooms.state_machine import validate_room_transition
 from apps.sales.constants import ChargeType, FolioStatus, PaymentMethod
 from apps.users.constants import Role
 from apps.users.models import User
+from common.testing import SucursalTestCase
 
 
-class FrontDeskTestCase(TestCase):
+class FrontDeskTestCase(SucursalTestCase):
+    motel_nombre = "Sucursal de Recepción"
+
     @classmethod
     def setUpTestData(cls) -> None:
+        super().setUpTestData()
         cls.user = User.objects.create_user(
             username="recepcion1", password="Demo.1234", full_name="Ana Recepción",
-            role=Role.RECEPTION,
+            role=Role.RECEPTION, motel=cls.motel,
         )
         cls.room_type = RoomType.objects.create(
             name="Sencilla", code="SEN", max_occupants=2, extra_person_price=Decimal("80.00")

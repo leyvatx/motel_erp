@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from django.test import TestCase, override_settings
+from django.test import override_settings
 from django.utils import timezone
 
 from common.exceptions import DomainError, InvalidStateTransition
@@ -23,21 +23,25 @@ from apps.rooms.constants import RoomStatus
 from apps.rooms.models import Room, RoomType, TariffBlock
 from apps.users.constants import Role
 from apps.users.models import User
+from common.testing import SucursalTestCase
 
 IN_MEMORY_LAYER = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
 
 
 @override_settings(CHANNEL_LAYERS=IN_MEMORY_LAYER)
-class HousekeepingTestCase(TestCase):
+class HousekeepingTestCase(SucursalTestCase):
+    motel_nombre = "Sucursal de Ama de Llaves"
+
     @classmethod
     def setUpTestData(cls) -> None:
+        super().setUpTestData()
         cls.recepcion = User.objects.create_user(
             username="recepcion4", password="Demo.1234", full_name="Dora Recepción",
-            role=Role.RECEPTION,
+            role=Role.RECEPTION, motel=cls.motel,
         )
         cls.camarista = User.objects.create_user(
             username="limpieza1", password="Demo.1234", full_name="Eva Limpieza",
-            role=Role.HOUSEKEEPING,
+            role=Role.HOUSEKEEPING, motel=cls.motel,
         )
         cls.room_type = RoomType.objects.create(name="Sencilla", code="SEN")
         cls.room = Room.objects.create(number="501", room_type=cls.room_type)

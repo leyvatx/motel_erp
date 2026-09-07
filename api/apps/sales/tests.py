@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from django.test import TestCase
 
 from common.exceptions import DomainError, InsufficientStock
 
@@ -18,13 +17,18 @@ from apps.sales import services
 from apps.sales.constants import ChargeType, FolioStatus, OrderStatus, PaymentMethod
 from apps.users.constants import Role
 from apps.users.models import User
+from common.testing import SucursalTestCase
 
 
-class SalesTestCase(TestCase):
+class SalesTestCase(SucursalTestCase):
+    motel_nombre = "Sucursal de Ventas"
+
     @classmethod
     def setUpTestData(cls) -> None:
+        super().setUpTestData()
         cls.user = User.objects.create_user(
-            username="caja1", password="Demo.1234", full_name="Luis Caja", role=Role.RECEPTION
+            username="caja1", password="Demo.1234", full_name="Luis Caja",
+            role=Role.RECEPTION, motel=cls.motel,
         )
         cls.room_type = RoomType.objects.create(name="Sencilla", code="SEN")
         cls.room = Room.objects.create(number="201", room_type=cls.room_type)

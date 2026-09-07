@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from django.test import TestCase, override_settings
+from django.test import override_settings
 from rest_framework.test import APIClient
 
 from common.exceptions import ImmutableRecordError
@@ -17,25 +17,29 @@ from apps.rooms.models import Room, RoomType, TariffBlock
 from apps.sales.constants import PaymentMethod
 from apps.users.constants import PermissionCode, Role, permissions_for
 from apps.users.models import User
+from common.testing import SucursalTestCase
 
 IN_MEMORY_LAYER = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
 
 
 @override_settings(CHANNEL_LAYERS=IN_MEMORY_LAYER, PRINTER_BACKEND="dummy")
-class AuditTestCase(TestCase):
+class AuditTestCase(SucursalTestCase):
+    motel_nombre = "Sucursal de Auditoría"
+
     @classmethod
     def setUpTestData(cls) -> None:
+        super().setUpTestData()
         cls.recepcion = User.objects.create_user(
             username="recepcion9", password="Demo.1234", full_name="Nora Recepción",
-            role=Role.RECEPTION,
+            role=Role.RECEPTION, motel=cls.motel,
         )
         cls.gerente = User.objects.create_user(
             username="gerente9", password="Demo.1234", full_name="Omar Gerente",
-            role=Role.MANAGER,
+            role=Role.MANAGER, motel=cls.motel,
         )
         cls.limpieza = User.objects.create_user(
             username="limpieza9", password="Demo.1234", full_name="Paty Limpieza",
-            role=Role.HOUSEKEEPING,
+            role=Role.HOUSEKEEPING, motel=cls.motel,
         )
         cls.room_type = RoomType.objects.create(name="Sencilla", code="SEN")
         cls.room = Room.objects.create(number="701", room_type=cls.room_type)
@@ -239,7 +243,8 @@ class EndpointPermissionTests(AuditTestCase):
         self.assertEqual(self._client(self.gerente).get("/api/v1/auth/users/").status_code, 403)
 
         superadmin = User.objects.create_user(
-            username="root9", password="Demo.1234", full_name="Root", role=Role.SUPERADMIN
+            username="root9", password="Demo.1234", full_name="Root",
+            role=Role.SUPERADMIN, motel=self.motel,
         )
         self.assertEqual(self._client(superadmin).get("/api/v1/auth/users/").status_code, 200)
 

@@ -29,20 +29,25 @@ from apps.sales.printing import render_folio_ticket, render_shift_ticket
 from apps.sales.receipts import create_folio_receipt, create_shift_receipt, render
 from apps.users.constants import Role
 from apps.users.models import User
+from common.testing import SucursalTestCase
 
 IN_MEMORY_LAYER = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
 
 
 @override_settings(CHANNEL_LAYERS=IN_MEMORY_LAYER, PRINTER_BACKEND="dummy")
-class FinancesTestCase(TestCase):
+class FinancesTestCase(SucursalTestCase):
+    motel_nombre = "Sucursal de Caja"
+
     @classmethod
     def setUpTestData(cls) -> None:
+        super().setUpTestData()
         cls.cajero = User.objects.create_user(
-            username="caja2", password="Demo.1234", full_name="Hugo Caja", role=Role.RECEPTION
+            username="caja2", password="Demo.1234", full_name="Hugo Caja",
+            role=Role.RECEPTION, motel=cls.motel,
         )
         cls.gerente = User.objects.create_user(
             username="gerente1", password="Demo.1234", full_name="Ines Gerente",
-            role=Role.MANAGER,
+            role=Role.MANAGER, motel=cls.motel,
         )
         cls.room_type = RoomType.objects.create(name="Sencilla", code="SEN")
         cls.room = Room.objects.create(number="601", room_type=cls.room_type)
