@@ -252,3 +252,60 @@ class TimeZoneOptionSerializer(serializers.Serializer):
 
     value = serializers.CharField()
     label = serializers.CharField()
+
+
+class RegistroPublicoSerializer(serializers.Serializer):
+    """Alta de autoservicio: lo mínimo para que un negocio empiece a operar.
+
+    Solo se piden cuatro cosas. Todo lo demás -- zona horaria, moneda, colores,
+    tarifas -- trae valor por omisión y se ajusta después en el asistente: pedir
+    quince campos antes de dejar entrar es la forma más segura de que nadie
+    termine el registro.
+
+    La clave de empleado no se pregunta: se deriva del correo. Quien se registra
+    todavía no sabe que este sistema entra con clave y no con correo, y explicarlo
+    en el formulario cuesta más que resolverlo aquí.
+    """
+
+    business_name = serializers.CharField(max_length=120, label="Nombre del negocio")
+    admin_full_name = serializers.CharField(max_length=150, label="Nombre del administrador")
+    email = serializers.EmailField(label="Correo")
+    password = serializers.CharField(min_length=8, write_only=True, label="Contraseña")
+
+    def validate_business_name(self, value: str) -> str:
+        nombre = value.strip()
+        if not nombre:
+            raise serializers.ValidationError("Escribe el nombre del negocio.")
+        return nombre
+
+    def validate_password(self, value: str) -> str:
+        """Se pasa por los validadores de Django, no por un mínimo de longitud.
+
+        Es la única contraseña del sistema que se elige sin que nadie del lado
+        del cliente supervise, y va a ser la del dueño: la cuenta con más
+        permisos de esa sucursal.
+        """
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError as DjangoValidationError
+
+        try:
+            validate_password(value)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(list(exc.messages)) from exc
+        return value
+
+    def validate_email(self, value: str) -> str:
+        return value.strip().lower()
+
+    def clave_de_empleado(self) -> str:
+        """Clave derivada del correo, ajustada al validador de ``User``.
+
+        El validador exige de 3 a 40 caracteres de ``[a-z0-9._-]``. Un correo
+        como ``Ana+Ventas@motel.mx`` no pasa tal cual, y uno como ``jr@...``
+        se queda corto.
+        """
+        import re
+
+        local = self.validated_data["email"].split("@")[0]
+        clave = re.sub(r"[^a-z0-9._-]", "", local.lower())[:40]
+        return clave if len(clave) >= 3 else "admin"

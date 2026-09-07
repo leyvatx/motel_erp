@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import zoneinfo
 
+from django.conf import settings as django_settings
 from django.db.models import Count, IntegerField, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -21,9 +22,12 @@ from apps.settings.serializers import (
     MotelListSerializer,
     MotelSerializer,
     PublicMotelSerializer,
+    RegistroPublicoSerializer,
     TimeZoneOptionSerializer,
 )
 from apps.users.constants import PermissionCode
+from apps.users.models import User
+from apps.users.serializers import MotelTokenObtainPairSerializer, UserSerializer
 from apps.notifications.events import Event, broadcast
 from common.tenancy import without_motel
 
@@ -203,3 +207,70 @@ class TimeZoneListView(APIView):
             if value in disponibles
         ]
         return Response(TimeZoneOptionSerializer(data, many=True).data)
+
+
+class RegistroPublicoView(APIView):
+    """Alta de autoservicio: el negocio crea su sucursal y entra de una vez.
+
+    Es el único endpoint que crea datos sin sesión, así que va cerrado por
+    fuera: ``PUBLIC_SIGNUP_ENABLED`` lo apaga sin desplegar y el throttle por
+    IP evita que alguien llene la base de sucursales vacías.
+
+    Devuelve el mismo par de tokens que ``/auth/login/`` para que la terminal
+    no tenga que volver a pedir la contraseña que acaba de escribir. Con la
+    sesión ya puesta, el asistente de configuración aparece solo: le faltan
+    los cuatro pasos y es lo primero que ve quien acaba de registrarse.
+    """
+
+    authentication_classes: list = []
+    permission_classes = [AllowAny]
+    throttle_scope = "signup"
+
+    @extend_schema(
+        operation_id="settings_public_signup",
+        request=RegistroPublicoSerializer,
+        responses={
+            201: OpenApiResponse(description="Sucursal creada y sesión iniciada"),
+            403: OpenApiResponse(description="El registro público está cerrado"),
+        },
+    )
+    def post(self, request) -> Response:
+        if not django_settings.PUBLIC_SIGNUP_ENABLED:
+            return Response(
+                {
+                    "error": {
+                        "code": "signup_cerrado",
+                        "message": "El registro público está deshabilitado.",
+                    }
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = RegistroPublicoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        datos = serializer.validated_data
+
+        clave = serializer.clave_de_empleado()
+
+        # Sin motel en el contexto: la sucursal se está creando en este momento
+        # y el manager de usuarios acota por el motel en curso, que aquí no hay.
+        with without_motel():
+            motel = services.create_motel(
+                name=datos["business_name"],
+                email=datos["email"],
+                owner_username=clave,
+                owner_full_name=datos["admin_full_name"],
+                owner_password=datos["password"],
+                owner_email=datos["email"],
+            )
+            owner = User.all_objects.get(motel=motel, username=clave)
+
+        refresh = MotelTokenObtainPairSerializer.get_token(owner)
+        return Response(
+            {
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": UserSerializer(owner).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )

@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 
-import { authApi, type LoginPayload } from '@/features/auth/api'
+import { authApi, type LoginPayload, type SignupPayload } from '@/features/auth/api'
 import { queryKeys } from '@/lib/queryClient'
 import { realtimeChannels } from '@/lib/websocket'
 import { defaultRouteFor, useAuthStore } from '@/store/auth'
+import { useUiStore } from '@/store/ui'
 import type { LoginResponse, User } from '@/types/api'
 
 export function useLogin() {
@@ -18,6 +19,27 @@ export function useLogin() {
     },
     onSuccess: (data) => {
       setSession(data)
+      navigate(defaultRouteFor(data.user), { replace: true })
+    },
+  })
+}
+
+/** Alta de autoservicio. Termina como un login: con la sesión puesta y dentro.
+ *
+ *  Se reabre el asistente de configuración antes de navegar. Está guardado por
+ *  navegador, no por cuenta, así que quien ya lo cerró una vez -- probando el
+ *  sistema, o registrando un segundo negocio desde la misma máquina -- entraría
+ *  a un tablero vacío sin nada que le diga por dónde empezar. */
+export function useSignup() {
+  const setSession = useAuthStore((state) => state.setSession)
+  const reopenSetup = useUiStore((state) => state.reopenSetup)
+  const navigate = useNavigate()
+
+  return useMutation<LoginResponse, unknown, SignupPayload>({
+    mutationFn: authApi.signup,
+    onSuccess: (data) => {
+      setSession(data)
+      reopenSetup()
       navigate(defaultRouteFor(data.user), { replace: true })
     },
   })

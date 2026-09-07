@@ -480,3 +480,116 @@ class ConsumersTests(MotelTestCase):
 
         with use_motel(self.palmas):
             self.assertEqual(approval_threshold(), Decimal("250.00"))
+
+
+REGISTRO_URL = "/api/v1/settings/registro/"
+
+
+class RegistroPublicoTests(TestCase):
+    """Alta de autoservicio: el negocio se crea su acceso y entra de una vez."""
+
+    def setUp(self) -> None:
+        # El endpoint está limitado a 5 altas por hora y por IP. Todas las
+        # pruebas salen de 127.0.0.1, así que sin limpiar el contador la sexta
+        # se estrella contra el throttle en vez de contra lo que mide.
+        cache.clear()
+
+    def payload(self, **cambios) -> dict:
+        datos = {
+            "business_name": "Motel Las Palmas",
+            "admin_full_name": "Laura Domínguez",
+            "email": "laura.dominguez@laspalmas.mx",
+            "password": "Palmas.2026!seguro",
+        }
+        datos.update(cambios)
+        return datos
+
+    def test_el_registro_crea_sucursal_administrador_y_sesion(self) -> None:
+        response = APIClient().post(REGISTRO_URL, self.payload(), format="json")
+
+        self.assertEqual(response.status_code, 201)
+        self.assertIn("access", response.data)
+        self.assertIn("refresh", response.data)
+
+        with without_motel():
+            motel = Motel.objects.get(name="Motel Las Palmas")
+            owner = User.all_objects.get(motel=motel)
+
+        self.assertEqual(owner.role, Role.SUPERADMIN)
+        self.assertEqual(owner.email, "laura.dominguez@laspalmas.mx")
+        self.assertEqual(response.data["user"]["id"], owner.pk)
+
+    def test_la_clave_de_empleado_sale_del_correo(self) -> None:
+        response = APIClient().post(
+            REGISTRO_URL, self.payload(email="Ana+Ventas@laspalmas.mx"), format="json"
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["user"]["username"], "anaventas")
+
+    def test_un_correo_de_local_muy_corto_cae_en_admin(self) -> None:
+        response = APIClient().post(
+            REGISTRO_URL, self.payload(email="jr@laspalmas.mx"), format="json"
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["user"]["username"], "admin")
+
+    def test_el_token_sirve_para_operar_de_inmediato(self) -> None:
+        """Sin esto el cliente tendría que volver a escribir la contraseña."""
+        registro = APIClient().post(REGISTRO_URL, self.payload(), format="json")
+
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {registro.data['access']}")
+        perfil = client.get("/api/v1/auth/me/")
+
+        self.assertEqual(perfil.status_code, 200)
+        self.assertEqual(perfil.data["id"], registro.data["user"]["id"])
+
+    def test_dos_negocios_con_el_mismo_nombre_no_chocan(self) -> None:
+        primero = APIClient().post(REGISTRO_URL, self.payload(), format="json")
+        segundo = APIClient().post(
+            REGISTRO_URL, self.payload(email="otra@otrolado.mx"), format="json"
+        )
+
+        self.assertEqual(primero.status_code, 201)
+        self.assertEqual(segundo.status_code, 201)
+        with without_motel():
+            self.assertEqual(Motel.objects.filter(name="Motel Las Palmas").count(), 2)
+
+    def test_una_contrasena_debil_se_rechaza(self) -> None:
+        response = APIClient().post(REGISTRO_URL, self.payload(password="12345678"), format="json")
+
+        self.assertEqual(response.status_code, 400)
+        with without_motel():
+            self.assertFalse(Motel.objects.filter(name="Motel Las Palmas").exists())
+
+    def test_el_alta_no_deja_a_medias_una_sucursal_sin_dueno(self) -> None:
+        """Nombre válido, correo inválido: no debe quedar el motel suelto."""
+        response = APIClient().post(REGISTRO_URL, self.payload(email="no-es-correo"), format="json")
+
+        self.assertEqual(response.status_code, 400)
+        with without_motel():
+            self.assertFalse(Motel.objects.filter(name="Motel Las Palmas").exists())
+
+    def test_con_el_registro_cerrado_contesta_403(self) -> None:
+        with self.settings(PUBLIC_SIGNUP_ENABLED=False):
+            response = APIClient().post(REGISTRO_URL, self.payload(), format="json")
+
+        self.assertEqual(response.status_code, 403)
+        with without_motel():
+            self.assertFalse(Motel.objects.filter(name="Motel Las Palmas").exists())
+
+    def test_el_recien_registrado_no_ve_las_sucursales_de_los_demas(self) -> None:
+        ajeno = Motel.objects.create(name="Motel de Otro Dueño")
+        with use_motel(ajeno):
+            RoomType.objects.create(name="Sencilla", code="SEN", max_occupants=2)
+
+        registro = APIClient().post(REGISTRO_URL, self.payload(), format="json")
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {registro.data['access']}")
+
+        response = client.get("/api/v1/frontdesk/room-types/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["results"], [])

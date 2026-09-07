@@ -8,6 +8,7 @@ import { ForbiddenPage, NotFoundPage } from '@/pages/ErrorPages'
 import { defaultRouteFor, useAuthStore } from '@/store/auth'
 
 const LoginPage = lazy(() => import('@/features/auth/LoginPage'))
+const RegisterPage = lazy(() => import('@/features/auth/RegisterPage'))
 const DashboardPage = lazy(() => import('@/features/dashboard/DashboardPage'))
 const FrontDeskPage = lazy(() => import('@/features/frontdesk/FrontDeskPage'))
 const InventoryPage = lazy(() => import('@/features/inventory/InventoryPage'))
@@ -45,6 +46,14 @@ const routes: RouteObject[] = [
     element: (
       <Lazy>
         <LoginPage />
+      </Lazy>
+    ),
+  },
+  {
+    path: '/registro',
+    element: (
+      <Lazy>
+        <RegisterPage />
       </Lazy>
     ),
   },

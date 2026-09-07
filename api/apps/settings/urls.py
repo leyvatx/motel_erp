@@ -7,6 +7,7 @@ from apps.settings.views import (
     BusinessProfileView,
     MotelViewSet,
     PublicMotelView,
+    RegistroPublicoView,
     TimeZoneListView,
 )
 
@@ -16,6 +17,7 @@ router.register("motels", MotelViewSet, basename="motel")
 urlpatterns = [
     path("business/", BusinessProfileView.as_view(), name="business-profile"),
     path("business/public/", PublicMotelView.as_view(), name="business-profile-public"),
+    path("registro/", RegistroPublicoView.as_view(), name="registro-publico"),
     path("time-zones/", TimeZoneListView.as_view(), name="time-zones"),
     path("", include(router.urls)),
 ]

@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
-import { Navigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { z } from 'zod'
 import { PiBed } from 'react-icons/pi'
 
@@ -132,9 +132,15 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="text-center text-xs leading-relaxed text-muted-foreground">
-          Si olvidaste tu contraseña, pídele a gerencia que la restablezca.
-        </p>
+        <div className="space-y-2 text-center text-xs leading-relaxed text-muted-foreground">
+          <p>Si olvidaste tu contraseña, pídele a gerencia que la restablezca.</p>
+          <p>
+            ¿Tu negocio todavía no está dado de alta?{' '}
+            <Link to="/registro" className="font-medium text-foreground hover:underline">
+              Crea tu cuenta
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   )

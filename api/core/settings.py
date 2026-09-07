@@ -67,6 +67,8 @@ env = environ.Env(
     APP_NAME=(str, "Sistema de gestión"),
     LOGIN_THROTTLE_RATE=(str, "20/min"),
     REPORT_THROTTLE_RATE=(str, "60/min"),
+    PUBLIC_SIGNUP_ENABLED=(bool, True),
+    SIGNUP_THROTTLE_RATE=(str, "5/hour"),
 )
 
 environ.Env.read_env(BASE_DIR / ".env")
@@ -287,6 +289,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "login": env("LOGIN_THROTTLE_RATE"),
         "reports": env("REPORT_THROTTLE_RATE"),
+        "signup": env("SIGNUP_THROTTLE_RATE"),
     },
     "DATETIME_FORMAT": "iso-8601",
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
@@ -455,3 +458,11 @@ LOGGING = {
         "common": {"level": "DEBUG" if DEBUG else "INFO", "handlers": ["console"], "propagate": False},
     },
 }
+
+# Registro público de autoservicio: cualquiera con la liga crea su sucursal y
+# su cuenta de administrador. Es la puerta por la que entra un cliente nuevo
+# sin que nadie de la plataforma lo dé de alta a mano, y por lo mismo es la
+# única forma de crear datos sin sesión. Se apaga con una variable de entorno
+# -- no con un despliegue -- porque el día que las altas dejen de ser abiertas
+# hay que poder cerrarla en el momento.
+PUBLIC_SIGNUP_ENABLED = env("PUBLIC_SIGNUP_ENABLED")
