@@ -737,7 +737,7 @@ function TarjetaBento({ item }: { item: (typeof BENTO)[number] }) {
         <Icono className="h-4 w-4" />
       </span>
 
-      <h3 className="mt-5 text-[1.0625rem] font-semibold leading-tight tracking-tight">
+      <h3 className="mt-5 text-[1.25rem] font-semibold leading-tight tracking-[-0.02em]">
         {item.titulo}
       </h3>
       <p className={cn('mt-2 text-pretty text-[0.9375rem] leading-[1.6]', SUAVE)}>{item.texto}</p>
@@ -802,6 +802,54 @@ function Marca() {
     </span>
   )
 }
+
+/** Ruido en SVG, incrustado para no pedir una imagen más.
+ *
+ *  Un plano de color liso a pantalla completa se lee digital y barato. El grano
+ *  es lo que le da cuerpo, igual que el papel a la tinta; a esta opacidad no se
+ *  ve como textura, se percibe como profundidad. Va como `url()` completo
+ *  porque el `backgroundImage` lo espera así. */
+const GRANO =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='r'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23r)'/%3E%3C/svg%3E\")"
+
+/** Desvanecido inferior: la maqueta se corta con luz, no con un borde.
+ *
+ *  Sugiere que la pantalla sigue más abajo sin tener que dibujar un marco de
+ *  navegador falso alrededor, que es el recurso que delata a una plantilla. */
+const DESVANECIDO_INFERIOR = {
+  maskImage: 'linear-gradient(to bottom, #000 62%, transparent 100%)',
+  WebkitMaskImage: 'linear-gradient(to bottom, #000 62%, transparent 100%)',
+} as const
+
+/** El pulso de un turno cualquiera, para la marquesina del hero.
+ *
+ *  No son datos reales de nadie: son los mismos sucesos que el sistema registra
+ *  en un turno, escritos como los diría recepción. Sirven para que la página
+ *  respire, no para informar. */
+const PULSO = [
+  { texto: '204 · renta iniciada · 4 h', punto: 'bg-brand-accent' },
+  { texto: '112 · limpieza terminada', punto: 'bg-status-available' },
+  { texto: 'Turno T-0042 · corte ciego', punto: 'bg-muted-foreground/60' },
+  { texto: '201 · consumo cargado · $180', punto: 'bg-brand-accent' },
+  { texto: '108 · vence en 15 min', punto: 'bg-status-cleaning' },
+  { texto: '305 · salida cobrada', punto: 'bg-status-available' },
+  { texto: 'Frigobar · 2 piezas descontadas', punto: 'bg-muted-foreground/60' },
+] as const
+
+/** Hechos comprobables del sistema, a tamaño de titular. */
+const HECHOS = [
+  { cifra: '4', unidad: 'pasos', pie: 'de configuración y queda operando. Sin instalar nada.' },
+  {
+    cifra: '0',
+    unidad: 'relojes',
+    pie: 'que discutir: el tiempo se cobra con la hora del servidor, no con la del equipo.',
+  },
+  {
+    cifra: '1',
+    unidad: 'pantalla',
+    pie: 'para recepción, caja y limpieza. Nadie cambia de sistema a media noche.',
+  },
+] as const
 
 const BOTON_PRINCIPAL = cn(
   'group inline-flex h-12 items-center justify-center gap-2 rounded-xl px-6',
@@ -870,25 +918,25 @@ export default function LandingPage() {
       </header>
 
       <main id="contenido">
-        {/* ---------------------------------------------------------- hero */}
         {/* ----------------------------------------------------------- hero
          *
-         *  Asimétrico y con el producto encendido al lado, no un titular
-         *  centrado sobre un vacío. Quien llega aquí está decidiendo si esto
-         *  sirve para su negocio, y eso se contesta enseñando el tablero --
-         *  cuartos, cronómetro, ocupación -- no describiéndolo. El mismo
-         *  componente que usa el recorrido de abajo, en su tercer paso: es el
-         *  producto de verdad, no una ilustración.
+         *  Titular a tamaño de cartel y el tablero encendido debajo, entrando
+         *  por el borde inferior. Es la composición de una portada, no la de un
+         *  formulario: quien llega tiene que entender de un vistazo qué es esto
+         *  y verlo funcionando antes de decidir si sigue leyendo.
+         *
+         *  La escala va con `clamp` y no con saltos por punto de corte, porque
+         *  a este tamaño un salto se nota como un brinco: el titular crece con
+         *  la ventana, continuo, de 2.75 rem en un teléfono chico a 7 rem en un
+         *  monitor de mostrador.
          */}
         <section className="relative overflow-hidden">
-          {/* Un solo resplandor, del color que el negocio haya configurado.
-              Es lo que separa una página con carácter de una plantilla gris,
-              y es uno -- no un degradado en cada sección. */}
+          {/* Un solo resplandor, del color que el negocio haya configurado. */}
           <div
-            className="pointer-events-none absolute inset-x-0 -top-32 h-[38rem] opacity-25 dark:opacity-[0.28]"
+            className="pointer-events-none absolute inset-x-0 -top-32 h-[42rem] opacity-30 dark:opacity-[0.35]"
             style={{
               background:
-                'radial-gradient(50rem 24rem at 30% 0%, hsl(var(--brand-accent)), transparent 68%)',
+                'radial-gradient(55rem 26rem at 50% 0%, hsl(var(--brand-accent)), transparent 68%)',
             }}
             aria-hidden
           />
@@ -896,38 +944,49 @@ export default function LandingPage() {
             className="grid-surface grid-fade pointer-events-none absolute inset-0"
             aria-hidden
           />
+          {/* Grano. Un plano de color liso a pantalla completa se ve digital y
+              barato; el ruido le da cuerpo, como el papel a la tinta. Va tan
+              bajo de opacidad que no se ve: se siente. */}
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.04] mix-blend-overlay dark:opacity-[0.07]"
+            style={{ backgroundImage: GRANO }}
+            aria-hidden
+          />
 
-          <div className="relative mx-auto grid max-w-6xl gap-12 px-4 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24 lg:grid-cols-[1fr_28rem] lg:items-center lg:gap-16">
-            <div className="max-w-xl">
+          <div className="relative mx-auto max-w-6xl px-4 pt-14 sm:px-6 sm:pt-20">
+            <div className="mx-auto max-w-4xl text-center">
               <p
                 className={cn(
-                  'mb-7 inline-flex items-center gap-2 rounded-full px-3 py-1.5',
+                  'mb-8 inline-flex items-center gap-2 rounded-full px-3 py-1.5',
                   CANTO,
                   ETIQUETA_SECCION,
                 )}
               >
-                <span className="h-1.5 w-1.5 rounded-full bg-status-available" aria-hidden />
+                <span
+                  className="h-1.5 w-1.5 rounded-full bg-status-available motion-safe:animate-pulse"
+                  aria-hidden
+                />
                 Hospitalidad por turnos
               </p>
 
-              {/* typography.csv #61: hero 36-42px con interlínea 1.1. */}
-              <h1 className="text-balance text-[2.25rem] font-semibold leading-[1.05] tracking-[-0.025em] sm:text-[3.25rem]">
-                Control operativo de habitaciones,{' '}
-                <span className="text-brand-accent">sin fricción</span> en el mostrador.
+              <h1 className="text-balance text-[clamp(2.75rem,8.5vw,7rem)] font-semibold leading-[0.92] tracking-[-0.045em]">
+                Tu operación
+                <br />
+                <span className="text-brand-accent">en una pantalla.</span>
               </h1>
 
               <p
                 className={cn(
-                  'mt-7 max-w-lg text-pretty text-[1.0625rem] leading-[1.6] sm:text-[1.125rem]',
+                  'mx-auto mt-8 max-w-xl text-pretty text-[1.0625rem] leading-[1.6] sm:text-[1.1875rem]',
                   SUAVE,
                 )}
               >
-                Ocupación en vivo, folios de consumo, cortes de caja por turno y rotación de
-                limpieza en una sola pantalla.
+                Habitaciones, tiempos, consumos y caja. Lo que hoy vive en una libreta y en tres
+                cabezas, en un tablero que todo el turno mira igual.
               </p>
 
-              <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-                <Link to="/registro" className={cn(BOTON_PRINCIPAL, 'w-full sm:w-auto')}>
+              <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                <Link to="/registro" className={cn(BOTON_PRINCIPAL, 'w-full px-7 sm:w-auto')}>
                   Crear cuenta y configurar
                   <LuArrowRight
                     className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none"
@@ -937,7 +996,7 @@ export default function LandingPage() {
                 <a
                   href="#como-funciona"
                   className={cn(
-                    'inline-flex h-12 w-full items-center justify-center rounded-xl px-6 sm:w-auto',
+                    'inline-flex h-12 w-full items-center justify-center rounded-xl px-7 sm:w-auto',
                     CANTO,
                     'text-[0.9375rem] font-medium transition-colors duration-200',
                     'hover:bg-accent',
@@ -946,55 +1005,86 @@ export default function LandingPage() {
                   Ver cómo funciona
                 </a>
               </div>
-
-              {/* Hechos comprobables del sistema, no cifras de clientes que no
-                  tenemos. Prometer tracción inventada es la forma más rápida de
-                  perder la confianza de quien sí va a probarlo. */}
-              <dl className="mt-12 grid max-w-md grid-cols-3 gap-6 border-t pt-8 text-left">
-                {[
-                  ['4 pasos', 'para dejarlo operando'],
-                  ['Hora del servidor', 'no la del equipo'],
-                  ['Corte ciego', 'el turno cuadra solo'],
-                ].map(([titulo, pie]) => (
-                  <div key={titulo}>
-                    <dt className="text-sm font-semibold leading-tight">{titulo}</dt>
-                    <dd className={cn('mt-1 text-xs leading-snug', SUAVE)}>{pie}</dd>
-                  </div>
-                ))}
-              </dl>
             </div>
 
-            {/* El tablero, encendido. En pantallas angostas estorbaría antes de
-                los botones, así que ahí vive más abajo, dentro del recorrido. */}
-            {/* `aria-hidden` porque es una fotografía del producto, no el
-                producto: quien navega con lector de pantalla no debe oír ocho
-                habitaciones inventadas antes de llegar al contenido -- y menos
-                otra vez cuando aparezca el tablero de verdad más abajo. */}
-            <div className="relative hidden lg:block" aria-hidden>
-              {/* Halo detrás de la maqueta: la despega del fondo sin recurrir a
-                  una sombra gigante, que en oscuro no se vería. Es el segundo y
-                  último degradado de toda la página, del mismo color de marca
-                  que el de arriba. */}
+            {/* El tablero entra por abajo y se desvanece: da a entender que la
+                pantalla sigue, sin dibujar un navegador falso alrededor.
+                `aria-hidden` porque es una fotografía del producto, no el
+                producto: quien usa lector de pantalla no debe oír ocho
+                habitaciones inventadas, y menos repetidas cuando llegue el
+                tablero de verdad. */}
+            <div className="relative mt-16 sm:mt-20" aria-hidden>
               <div
-                className="pointer-events-none absolute -inset-8 opacity-40 blur-2xl dark:opacity-30"
+                className="pointer-events-none absolute -inset-x-10 -top-10 bottom-0 opacity-50 blur-3xl dark:opacity-40"
                 style={{
                   background:
-                    'radial-gradient(24rem 18rem at 50% 50%, hsl(var(--brand-accent) / 0.35), transparent 70%)',
+                    'radial-gradient(40rem 20rem at 50% 40%, hsl(var(--brand-accent) / 0.4), transparent 70%)',
                 }}
               />
-              <div
-                className={cn(
-                  'relative rounded-[28px] p-4',
-                  CANTO,
-                  RADIO,
-                  ELEV.alta,
-                  'bg-card/80 backdrop-blur-[8px]',
-                )}
-              >
-                <Tablero paso={3} />
+              <div className="relative mx-auto max-w-4xl" style={DESVANECIDO_INFERIOR}>
+                <div
+                  className={cn(
+                    'rounded-t-[28px] p-4 sm:p-6',
+                    CANTO,
+                    ELEV.alta,
+                    'bg-card/85 backdrop-blur-[8px]',
+                  )}
+                >
+                  <Tablero paso={3} />
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Marquesina: el pulso de un turno cualquiera. Se mueve despacio y se
+              detiene con `prefers-reduced-motion`; es ambiente, no información
+              que alguien tenga que perseguir con la vista. */}
+          <div className={cn('relative mt-4 overflow-hidden border-y py-4', BORDE)}>
+            <div className="flex w-max motion-safe:animate-deslizar">
+              {[0, 1].map((copia) => (
+                <ul key={copia} className="flex shrink-0 items-center gap-8 px-4">
+                  {PULSO.map((evento) => (
+                    <li
+                      key={`${copia}-${evento.texto}`}
+                      className={cn('flex items-center gap-2 whitespace-nowrap', ETIQUETA_SECCION)}
+                    >
+                      <span
+                        className={cn('h-1.5 w-1.5 shrink-0 rounded-full', evento.punto)}
+                        aria-hidden
+                      />
+                      {evento.texto}
+                    </li>
+                  ))}
+                </ul>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ------------------------------------------------------- los hechos
+         *
+         *  Tres cifras a tamaño de titular. Son hechos comprobables del sistema
+         *  -- no clientes ni facturación, que no tenemos -- porque inventar
+         *  tracción es la forma más rápida de perder a quien sí iba a probarlo.
+         */}
+        <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+          <dl className="grid gap-12 sm:grid-cols-3 sm:gap-8">
+            {HECHOS.map(({ cifra, unidad, pie }) => (
+              <div key={unidad}>
+                <dt className="flex items-baseline gap-2">
+                  <span className="text-[clamp(3.5rem,7vw,5.5rem)] font-semibold leading-[0.85] tracking-[-0.05em] text-brand-accent">
+                    {cifra}
+                  </span>
+                  <span className="text-[1.375rem] font-semibold tracking-tight">{unidad}</span>
+                </dt>
+                <dd
+                  className={cn('mt-4 max-w-xs text-pretty text-[0.9375rem] leading-[1.6]', SUAVE)}
+                >
+                  {pie}
+                </dd>
+              </div>
+            ))}
+          </dl>
         </section>
 
         {/* -------------------------------------------------- escaparate */}
@@ -1003,7 +1093,7 @@ export default function LandingPage() {
             <div className="max-w-xl">
               <p className={ETIQUETA_SECCION}>El recorrido</p>
               {/* typography.csv #61: H2 de sección 28-32px. */}
-              <h2 className="mt-4 text-[1.75rem] font-semibold leading-[1.15] tracking-[-0.02em] sm:text-[2rem]">
+              <h2 className="mt-4 text-[clamp(2rem,4.5vw,3.25rem)] font-semibold leading-[1.02] tracking-[-0.035em]">
                 Del alta al primer corte de caja
               </h2>
               <p className={cn('mt-4 text-pretty text-[1.0625rem] leading-[1.6]', SUAVE)}>
@@ -1028,7 +1118,7 @@ export default function LandingPage() {
           <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
             <div className="max-w-xl">
               <p className={ETIQUETA_SECCION}>Lo que no se apaga</p>
-              <h2 className="mt-4 text-[1.75rem] font-semibold leading-[1.15] tracking-[-0.02em] sm:text-[2rem]">
+              <h2 className="mt-4 text-[clamp(2rem,4.5vw,3.25rem)] font-semibold leading-[1.02] tracking-[-0.035em]">
                 Lo que separa un sistema de una hoja de cálculo
               </h2>
               <p className={cn('mt-4 text-pretty text-[1.0625rem] leading-[1.6]', SUAVE)}>
@@ -1045,38 +1135,77 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ------------------------------------------------------- cierre */}
-        <section className={cn('border-t', BORDE)}>
-          <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
-            <div
-              className={cn(
-                'mx-auto max-w-3xl px-6 py-14 text-center sm:px-12',
-                RADIO,
-                CANTO,
-                ELEV.media,
-                'bg-muted/40',
-              )}
-            >
-              <h2 className="text-balance text-[1.75rem] font-semibold leading-[1.15] tracking-[-0.02em] sm:text-[2rem]">
-                Tu tablero puede estar operando en cuatro pasos.
-              </h2>
-              <p
+        {/* ------------------------------------------------------- cierre
+         *
+         *  Banda oscura a sangre, siempre oscura -- también cuando la página va
+         *  en claro. Después de tres secciones sobre fondo pálido, el corte es
+         *  lo que hace que el último mensaje se lea como un final y no como una
+         *  sección más; es el mismo recurso de la contraportada de un impreso.
+         *
+         *  Los colores van a mano y no por token justo por eso: no es "el tema
+         *  oscuro" de la aplicación, es una pieza que se imprime en negro
+         *  siempre. El acento sí sale de la marca del negocio.
+         */}
+        <section className="relative overflow-hidden bg-zinc-950 text-zinc-100">
+          <div
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-[36rem] opacity-40"
+            style={{
+              background:
+                'radial-gradient(50rem 24rem at 50% 100%, hsl(var(--brand-accent)), transparent 70%)',
+            }}
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.07] mix-blend-overlay"
+            style={{ backgroundImage: GRANO }}
+            aria-hidden
+          />
+
+          <div className="relative mx-auto max-w-4xl px-4 py-28 text-center sm:px-6 sm:py-36">
+            <p className={cn(ETIQUETA_SECCION, 'text-zinc-400')}>Empieza hoy</p>
+
+            <h2 className="mt-6 text-balance text-[clamp(2.25rem,6.5vw,4.75rem)] font-semibold leading-[0.95] tracking-[-0.04em]">
+              Tu tablero puede estar
+              <br />
+              <span className="text-brand-accent">operando esta noche.</span>
+            </h2>
+
+            <p className="mx-auto mt-7 max-w-lg text-pretty text-[1.0625rem] leading-[1.6] text-zinc-400 sm:text-[1.125rem]">
+              Das de alta el negocio, defines tipos y tarifas, cargas las habitaciones y recepción
+              empieza a rentar. Cuatro pasos.
+            </p>
+
+            <div className="mt-11 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Link
+                to="/registro"
                 className={cn(
-                  'mx-auto mt-4 max-w-md text-pretty text-[1.0625rem] leading-[1.6]',
-                  SUAVE,
+                  'group inline-flex h-[3.25rem] w-full items-center justify-center gap-2 rounded-xl px-8 sm:w-auto',
+                  'bg-brand-accent text-[0.9375rem] font-medium text-white',
+                  'transition-[transform,filter] duration-200 ease-out hover:-translate-y-0.5 hover:brightness-110',
+                  'motion-reduce:transition-none motion-reduce:hover:translate-y-0',
                 )}
               >
-                Das de alta el negocio, defines tipos y tarifas, cargas las habitaciones y recepción
-                empieza a rentar.
-              </p>
-              <Link to="/registro" className={cn(BOTON_PRINCIPAL, 'mt-8')}>
                 Crear cuenta y configurar
                 <LuArrowRight
                   className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none"
                   aria-hidden
                 />
               </Link>
+              <Link
+                to="/login"
+                className={cn(
+                  'inline-flex h-[3.25rem] w-full items-center justify-center rounded-xl px-8 sm:w-auto',
+                  'border border-zinc-700 text-[0.9375rem] font-medium text-zinc-100',
+                  'transition-colors duration-200 hover:bg-zinc-900',
+                )}
+              >
+                Ya tengo cuenta
+              </Link>
             </div>
+
+            <p className={cn(ETIQUETA_SECCION, 'mt-8 text-zinc-500')}>
+              Sin instalar nada · Funciona en el navegador del mostrador
+            </p>
           </div>
         </section>
       </main>

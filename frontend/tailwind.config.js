@@ -88,11 +88,19 @@ export default {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.4' },
         },
+        // Marquesina de la portada. Se desplaza la mitad exacta porque la
+        // lista va duplicada: al llegar al 50 % el segundo juego está justo
+        // donde arrancó el primero y el salto de vuelta no se ve.
+        deslizar: {
+          from: { transform: 'translateX(0)' },
+          to: { transform: 'translateX(-50%)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'pulse-alert': 'pulse-alert 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        deslizar: 'deslizar 42s linear infinite',
       },
     },
   },
