@@ -50,14 +50,33 @@ function verLimite(arriba: number, abajo: number): void {
   })
 }
 
+/** El escaparate que se opera, no la fotografía del hero.
+ *
+ *  El hero enseña el mismo tablero encendido como demostración, y está dentro
+ *  de un `aria-hidden` justo porque es decorativo. Todas las consultas de estas
+ *  pruebas se acotan aquí: lo que se verifica es lo que el visitante recorre,
+ *  no la vitrina. */
+function escaparate(): HTMLElement {
+  const grids = [...document.querySelectorAll<HTMLElement>('.grid-cols-4')]
+  const grid = grids.find((nodo) => !nodo.closest('[aria-hidden="true"]')) ?? grids.at(-1)
+  const seccion = grid?.closest('section')
+  if (!seccion) throw new Error('no se encontró el escaparate')
+  return seccion
+}
+
 /** Estados de las ocho habitaciones, leídos del color de cada tarjeta. */
 function tablero(): string[] {
-  const grid = document.querySelector('.grid-cols-4')
+  const grids = [...escaparate().querySelectorAll('.grid-cols-4')]
+  const grid = grids[0]
   return [...(grid?.children ?? [])].map((tarjeta) => {
     const clases = tarjeta.className
-    if (clases.includes('emerald')) return 'libre'
-    if (clases.includes('indigo')) return 'ocupada'
-    if (clases.includes('amber')) return 'limpieza'
+    // Se lee el token semántico, no el nombre del color. La maqueta usa los
+    // mismos que el producto (`status-available`, `brand-accent`,
+    // `status-cleaning`), así que un negocio con su propia paleta cambia los
+    // colores sin cambiar lo que estas pruebas verifican: el estado.
+    if (clases.includes('status-available')) return 'libre'
+    if (clases.includes('brand-accent')) return 'ocupada'
+    if (clases.includes('status-cleaning')) return 'limpieza'
     return 'apagada'
   })
 }
@@ -67,7 +86,7 @@ function contar(estado: string): number {
 }
 
 function folioVisible(): boolean {
-  const panel = screen.getByText('Folio · Hab. 201').closest('[aria-hidden]')
+  const panel = within(escaparate()).getByText('Folio · Hab. 201').closest('[aria-hidden]')
   return panel?.getAttribute('aria-hidden') === 'false'
 }
 
@@ -103,7 +122,7 @@ describe('escaparate de la landing', () => {
 
     expect(contar('apagada')).toBe(8)
     // Sin encender no hay porcentajes que enseñar.
-    expect(screen.queryByText('100%')).not.toBeInTheDocument()
+    expect(within(escaparate()).queryByText('100%')).not.toBeInTheDocument()
   })
 
   it('paso 1 enciende el tablero en verde', () => {
@@ -111,7 +130,7 @@ describe('escaparate de la landing', () => {
     verPaso(0)
 
     expect(contar('libre')).toBe(8)
-    expect(screen.getByText('100%')).toBeInTheDocument()
+    expect(within(escaparate()).getByText('100%')).toBeInTheDocument()
   })
 
   it('paso 2 ocupa tres habitaciones y enciende sus huéspedes', () => {
@@ -121,8 +140,8 @@ describe('escaparate de la landing', () => {
     expect(contar('ocupada')).toBe(3)
     expect(contar('libre')).toBe(5)
     // 2 + 2 + 1 huéspedes en las tres ocupadas.
-    expect(screen.getByText('14:30')).toBeInTheDocument()
-    expect(screen.getByText('38%')).toBeInTheDocument()
+    expect(within(escaparate()).getByText('14:30')).toBeInTheDocument()
+    expect(within(escaparate()).getByText('38%')).toBeInTheDocument()
   })
 
   it('paso 3 despliega el folio sin mover el tablero', () => {
@@ -144,8 +163,8 @@ describe('escaparate de la landing', () => {
     expect(contar('ocupada')).toBe(2)
     expect(folioVisible()).toBe(false)
     // 2 de 8 ocupadas, 1 de 8 por limpiar.
-    expect(screen.getByText('25%')).toBeInTheDocument()
-    expect(screen.getByText('13%')).toBeInTheDocument()
+    expect(within(escaparate()).getByText('25%')).toBeInTheDocument()
+    expect(within(escaparate()).getByText('13%')).toBeInTheDocument()
   })
 
   it('en el límite entre dos pasos no parpadea: manda el de arriba', () => {

@@ -65,18 +65,17 @@ const ELEV = {
 
 /** Micro-borde con profundidad: el borde marca el límite y el aro interior le
  *  da el canto. Un `border` de 1 px a secas se lee plano en pantallas densas. */
-const CANTO =
-  'border border-zinc-200/80 ring-1 ring-inset ring-white/60 dark:border-zinc-800/80 dark:ring-white/[0.04]'
+const CANTO = 'border border-border ring-1 ring-inset ring-white/60 dark:ring-white/[0.04]'
 
 /** Radio de tarjeta de `bento-box-grid`. */
 const RADIO = 'rounded-[24px]'
 
 /** Etiqueta de sección: 12px, mono, versalitas, tracking 1.5 (typography #61). */
 const ETIQUETA_SECCION =
-  'font-mono text-[0.75rem] uppercase leading-none tracking-[0.15em] text-zinc-500 dark:text-zinc-400'
+  'font-mono text-[0.75rem] uppercase leading-none tracking-[0.15em] text-muted-foreground'
 
-const SUAVE = 'text-zinc-500 dark:text-zinc-400'
-const BORDE = 'border-zinc-200/80 dark:border-zinc-800/80'
+const SUAVE = 'text-muted-foreground'
+const BORDE = 'border-border'
 
 /* ------------------------------------------------------- datos de la maqueta */
 
@@ -202,24 +201,24 @@ const PASOS = [
 ] as const
 
 const TARJETA: Record<Estado, string> = {
-  apagada: 'border-zinc-200/80 bg-zinc-50 dark:border-zinc-800/80 dark:bg-zinc-900/40',
-  libre: 'border-emerald-500/30 bg-emerald-500/10',
-  ocupada: 'border-indigo-500/30 bg-indigo-500/10',
-  limpieza: 'border-amber-500/35 bg-amber-500/10',
+  apagada: 'border-border bg-muted/60',
+  libre: 'border-status-available/30 bg-status-available/10',
+  ocupada: 'border-brand-accent/30 bg-brand-accent/10',
+  limpieza: 'border-status-cleaning/35 bg-status-cleaning/10',
 }
 
 const PUNTO: Record<Estado, string> = {
-  apagada: 'bg-zinc-300 dark:bg-zinc-700',
-  libre: 'bg-emerald-500',
-  ocupada: 'bg-indigo-500',
-  limpieza: 'bg-amber-500',
+  apagada: 'bg-muted-foreground/40',
+  libre: 'bg-status-available',
+  ocupada: 'bg-brand-accent',
+  limpieza: 'bg-status-cleaning',
 }
 
 const ETIQUETA_ESTADO: Record<Estado, string> = {
-  apagada: 'text-zinc-400 dark:text-zinc-600',
-  libre: 'text-emerald-700 dark:text-emerald-400',
-  ocupada: 'text-indigo-700 dark:text-indigo-400',
-  limpieza: 'text-amber-700 dark:text-amber-500',
+  apagada: 'text-muted-foreground/50',
+  libre: 'text-status-available',
+  ocupada: 'text-brand-accent',
+  limpieza: 'text-status-cleaning',
 }
 
 const NOMBRE: Record<Estado, string> = {
@@ -251,7 +250,7 @@ function Metrica({
           <span
             className={cn(
               'h-1.5 w-1.5 shrink-0 rounded-full transition-colors duration-500 motion-reduce:transition-none',
-              encendido ? punto : 'bg-zinc-300 dark:bg-zinc-700',
+              encendido ? punto : 'bg-muted-foreground/40',
             )}
             aria-hidden
           />
@@ -259,7 +258,7 @@ function Metrica({
         <span className={cn('truncate', ETIQUETA_SECCION, 'text-[0.625rem]')}>{etiqueta}</span>
       </div>
       <div className="mt-1.5 flex items-baseline gap-1.5">
-        <span className="font-mono text-xl font-semibold leading-none tabular tracking-tight text-zinc-900 dark:text-zinc-100">
+        <span className="font-mono text-xl font-semibold leading-none tabular tracking-tight text-foreground">
           {valor}
         </span>
         {porcentaje !== null ? (
@@ -287,7 +286,7 @@ function TarjetaHabitacion({ habitacion, paso }: { habitacion: Habitacion; paso:
     >
       <div className="flex items-start justify-between gap-1.5">
         <div className="min-w-0">
-          <p className="font-mono text-base font-medium leading-none tabular tracking-tight text-zinc-900 dark:text-zinc-100">
+          <p className="font-mono text-base font-medium leading-none tabular tracking-tight text-foreground">
             {habitacion.numero}
           </p>
           <p className={cn('mt-1 truncate text-[0.625rem] leading-none', SUAVE)}>
@@ -305,9 +304,9 @@ function TarjetaHabitacion({ habitacion, paso }: { habitacion: Habitacion; paso:
           {Array.from({ length: ocupada ? visibles : 0 }, (_, indice) => (
             <span
               key={indice}
-              className="flex h-4 w-4 items-center justify-center rounded-full border border-white bg-indigo-500/20 dark:border-zinc-900"
+              className="flex h-4 w-4 items-center justify-center rounded-full border border-background bg-brand-accent/25"
             >
-              <LuUser className="h-2.5 w-2.5 text-indigo-600 dark:text-indigo-400" />
+              <LuUser className="h-2.5 w-2.5 text-brand-accent" />
             </span>
           ))}
         </span>
@@ -345,13 +344,13 @@ function TarjetaHabitacion({ habitacion, paso }: { habitacion: Habitacion; paso:
 
         <div
           className={cn(
-            'mt-1.5 h-1 overflow-hidden rounded-full bg-zinc-900/10 dark:bg-zinc-100/10',
+            'mt-1.5 h-1 overflow-hidden rounded-full bg-foreground/10',
             'transition-opacity duration-500 motion-reduce:transition-none',
             ocupada ? 'opacity-100' : 'opacity-0',
           )}
         >
           <div
-            className="h-full rounded-full bg-indigo-500/70 transition-[width] duration-500 ease-out motion-reduce:transition-none"
+            className="h-full rounded-full bg-brand-accent/70 transition-[width] duration-500 ease-out motion-reduce:transition-none"
             style={{ width: `${ocupada ? habitacion.avance : 0}%` }}
           />
         </div>
@@ -372,7 +371,7 @@ function PanelFolio({ visible }: { visible: boolean }) {
       aria-hidden={!visible}
       className={cn(
         'pointer-events-none absolute inset-y-3 right-3 w-[13.5rem] rounded-2xl p-3',
-        'bg-white/95 backdrop-blur-[8px] dark:bg-zinc-950/95',
+        'bg-background/95 backdrop-blur-[8px]',
         CANTO,
         ELEV.alta,
         'transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none',
@@ -380,20 +379,18 @@ function PanelFolio({ visible }: { visible: boolean }) {
       )}
     >
       <div className={cn('flex items-baseline justify-between border-b pb-2', BORDE)}>
-        <span className="text-xs font-medium tracking-tight text-zinc-900 dark:text-zinc-100">
-          Folio · Hab. 201
-        </span>
+        <span className="text-xs font-medium tracking-tight text-foreground">Folio · Hab. 201</span>
         <span className={cn('font-mono text-[0.625rem] tabular', SUAVE)}>F-00218</span>
       </div>
 
       <ul className="mt-2 space-y-1.5">
         {cargos.map((cargo) => (
           <li key={cargo.concepto} className="flex items-baseline justify-between gap-2">
-            <span className="truncate text-[0.6875rem] text-zinc-700 dark:text-zinc-300">
+            <span className="truncate text-[0.6875rem] text-muted-foreground">
               <span className={cn('font-mono tabular', SUAVE)}>{cargo.cantidad}×</span>{' '}
               {cargo.concepto}
             </span>
-            <span className="shrink-0 font-mono text-[0.6875rem] tabular text-zinc-900 dark:text-zinc-100">
+            <span className="shrink-0 font-mono text-[0.6875rem] tabular text-foreground">
               {cargo.importe}
             </span>
           </li>
@@ -401,13 +398,13 @@ function PanelFolio({ visible }: { visible: boolean }) {
       </ul>
 
       <div className={cn('mt-2 flex items-baseline justify-between border-t pt-2', BORDE)}>
-        <span className="text-[0.6875rem] font-medium text-zinc-900 dark:text-zinc-100">Total</span>
-        <span className="font-mono text-sm font-semibold tabular tracking-tight text-zinc-900 dark:text-zinc-100">
+        <span className="text-[0.6875rem] font-medium text-foreground">Total</span>
+        <span className="font-mono text-sm font-semibold tabular tracking-tight text-foreground">
           505.00
         </span>
       </div>
 
-      <div className="mt-2.5 flex h-7 items-center justify-center rounded-lg bg-zinc-900 text-[0.6875rem] font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">
+      <div className="mt-2.5 flex h-7 items-center justify-center rounded-lg bg-primary text-[0.6875rem] font-medium text-primary-foreground">
         Cobrar y cerrar
       </div>
     </div>
@@ -423,16 +420,10 @@ function Tablero({ paso }: { paso: number }) {
     encendido ? Math.round((valor / total) * 100) : null
 
   return (
-    <div
-      className={cn('relative overflow-hidden bg-white dark:bg-zinc-950', RADIO, CANTO, ELEV.alta)}
-    >
+    <div className={cn('relative overflow-hidden bg-background', RADIO, CANTO, ELEV.alta)}>
       <div className={cn('flex items-center gap-2 border-b px-4 py-2.5', BORDE)}>
         <span className="flex gap-1" aria-hidden>
-          {[
-            'bg-zinc-300 dark:bg-zinc-700',
-            'bg-zinc-200 dark:bg-zinc-800',
-            'bg-zinc-200 dark:bg-zinc-800',
-          ].map((tono, indice) => (
+          {['bg-muted-foreground/40', 'bg-border', 'bg-border'].map((tono, indice) => (
             <span key={indice} className={cn('h-2 w-2 rounded-full', tono)} />
           ))}
         </span>
@@ -447,14 +438,14 @@ function Tablero({ paso }: { paso: number }) {
           etiqueta="Ocupadas"
           valor={contar('ocupada')}
           porcentaje={porcentaje(contar('ocupada'))}
-          punto="bg-indigo-500"
+          punto="bg-brand-accent"
           encendido={encendido}
         />
         <Metrica
           etiqueta="Libres"
           valor={contar('libre')}
           porcentaje={porcentaje(contar('libre'))}
-          punto="bg-emerald-500"
+          punto="bg-status-available"
           encendido={encendido}
         />
         <Metrica
@@ -490,14 +481,14 @@ function TextoPaso({ indice, activo }: { indice: number; activo: boolean }) {
     <div
       className={cn(
         'border-l-2 pl-5 transition-colors duration-500 motion-reduce:transition-none',
-        activo ? 'border-zinc-900 dark:border-zinc-100' : 'border-zinc-200 dark:border-zinc-800',
+        activo ? 'border-brand-accent' : 'border-border',
       )}
     >
       <div className="flex items-center gap-2.5">
         <span
           className={cn(
             'font-mono text-[0.75rem] tabular tracking-[0.15em] transition-colors duration-500 motion-reduce:transition-none',
-            activo ? 'text-zinc-900 dark:text-zinc-100' : SUAVE,
+            activo ? 'text-foreground' : SUAVE,
           )}
         >
           0{indice + 1}
@@ -505,7 +496,7 @@ function TextoPaso({ indice, activo }: { indice: number; activo: boolean }) {
         <Icono
           className={cn(
             'h-4 w-4 transition-colors duration-500 motion-reduce:transition-none',
-            activo ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-400 dark:text-zinc-600',
+            activo ? 'text-foreground' : 'text-muted-foreground/50',
           )}
           aria-hidden
         />
@@ -516,7 +507,7 @@ function TextoPaso({ indice, activo }: { indice: number; activo: boolean }) {
       <h3
         className={cn(
           'mt-3 text-[1.375rem] font-semibold leading-[1.15] tracking-[-0.015em] transition-colors duration-500 motion-reduce:transition-none sm:text-[1.5rem]',
-          activo ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-400 dark:text-zinc-600',
+          activo ? 'text-foreground' : 'text-muted-foreground/50',
         )}
       >
         {item.titulo}
@@ -525,7 +516,7 @@ function TextoPaso({ indice, activo }: { indice: number; activo: boolean }) {
       <p
         className={cn(
           'mt-2 text-pretty text-[1.0625rem] font-medium leading-[1.5] transition-colors duration-500 motion-reduce:transition-none',
-          activo ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-400 dark:text-zinc-600',
+          activo ? 'text-muted-foreground' : 'text-muted-foreground/50',
         )}
       >
         {item.resumen}
@@ -534,7 +525,7 @@ function TextoPaso({ indice, activo }: { indice: number; activo: boolean }) {
       <p
         className={cn(
           'mt-3 text-pretty text-[0.9375rem] leading-[1.6] transition-colors duration-500 motion-reduce:transition-none',
-          activo ? SUAVE : 'text-zinc-300 dark:text-zinc-700',
+          activo ? SUAVE : 'text-muted-foreground/40',
         )}
       >
         {item.detalle}
@@ -566,15 +557,14 @@ function EscaparateTactil({ paso, onPaso }: { paso: number; onPaso: (paso: numbe
     >
       <Tablero paso={actual} />
 
-      <TabsList className="grid h-auto w-full grid-cols-4 gap-1 rounded-xl bg-zinc-100 p-1 dark:bg-zinc-900">
+      <TabsList className="grid h-auto w-full grid-cols-4 gap-1 rounded-xl bg-muted p-1">
         {PASOS.map((item, indice) => (
           <TabsTrigger
             key={item.titulo}
             value={String(indice)}
             className={cn(
               'h-11 flex-col gap-0.5 rounded-lg px-1',
-              'data-[state=active]:bg-white data-[state=active]:text-zinc-900',
-              'dark:data-[state=active]:bg-zinc-950 dark:data-[state=active]:text-zinc-100',
+              'data-[state=active]:bg-background data-[state=active]:text-foreground',
             )}
           >
             <span className="font-mono text-[0.625rem] leading-none tabular tracking-[0.1em]">
@@ -652,7 +642,7 @@ function EscaparateDeEscritorio({
                 key={item.titulo}
                 className={cn(
                   'h-0.5 flex-1 rounded-full transition-colors duration-500 motion-reduce:transition-none',
-                  indice <= paso ? 'bg-zinc-900 dark:bg-zinc-100' : 'bg-zinc-200 dark:bg-zinc-800',
+                  indice <= paso ? 'bg-primary' : 'bg-border',
                 )}
               />
             ))}
@@ -714,7 +704,7 @@ const BENTO = [
 
 const SUCURSALES = [
   { nombre: 'Sucursal A', cuartos: ['101', '102', '103'], tono: 'emerald' as const },
-  { nombre: 'Sucursal B', cuartos: ['201', '202'], tono: 'indigo' as const },
+  { nombre: 'Sucursal B', cuartos: ['201', '202'], tono: 'marca' as const },
 ]
 
 function TarjetaBento({ item }: { item: (typeof BENTO)[number] }) {
@@ -724,7 +714,7 @@ function TarjetaBento({ item }: { item: (typeof BENTO)[number] }) {
   return (
     <article
       className={cn(
-        'group flex flex-col bg-white p-6 dark:bg-zinc-950',
+        'group flex flex-col bg-card p-6',
         RADIO,
         CANTO,
         ELEV.reposo,
@@ -740,7 +730,7 @@ function TarjetaBento({ item }: { item: (typeof BENTO)[number] }) {
         className={cn(
           'inline-flex h-9 w-9 items-center justify-center rounded-xl',
           CANTO,
-          'bg-zinc-50 dark:bg-zinc-900',
+          'bg-muted',
         )}
         aria-hidden
       >
@@ -758,10 +748,7 @@ function TarjetaBento({ item }: { item: (typeof BENTO)[number] }) {
         // enseñarlo.
         <div className="mt-6 grid flex-1 grid-cols-2 items-end gap-3">
           {SUCURSALES.map((sucursal) => (
-            <div
-              key={sucursal.nombre}
-              className={cn('rounded-xl p-3', CANTO, 'bg-zinc-50/60 dark:bg-zinc-900/40')}
-            >
+            <div key={sucursal.nombre} className={cn('rounded-xl p-3', CANTO, 'bg-muted/60')}>
               <p className={cn(ETIQUETA_SECCION, 'text-[0.625rem]')}>{sucursal.nombre}</p>
               <div className="mt-2 flex flex-wrap gap-1">
                 {sucursal.cuartos.map((cuarto) => (
@@ -770,8 +757,8 @@ function TarjetaBento({ item }: { item: (typeof BENTO)[number] }) {
                     className={cn(
                       'rounded-md px-1.5 py-0.5 font-mono text-[0.625rem] tabular',
                       sucursal.tono === 'emerald'
-                        ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
-                        : 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400',
+                        ? 'bg-status-available/10 text-status-available'
+                        : 'bg-brand-accent/10 text-brand-accent',
                     )}
                   >
                     {cuarto}
@@ -779,7 +766,7 @@ function TarjetaBento({ item }: { item: (typeof BENTO)[number] }) {
                 ))}
                 <span
                   className={cn(
-                    'rounded-md border border-dashed border-zinc-300 px-1.5 py-0.5 font-mono text-[0.625rem] dark:border-zinc-700',
+                    'rounded-md border border-dashed border-border px-1.5 py-0.5 font-mono text-[0.625rem]',
                     SUAVE,
                   )}
                 >
@@ -803,13 +790,13 @@ function Marca() {
         className={cn(
           'flex h-7 w-7 items-center justify-center rounded-lg',
           CANTO,
-          'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900',
+          'bg-primary text-primary-foreground',
         )}
         aria-hidden
       >
         <LuBed className="h-3.5 w-3.5" />
       </span>
-      <span className="whitespace-nowrap text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+      <span className="whitespace-nowrap text-sm font-semibold tracking-tight text-foreground">
         {APP_FALLBACK_NAME}
       </span>
     </span>
@@ -818,10 +805,9 @@ function Marca() {
 
 const BOTON_PRINCIPAL = cn(
   'group inline-flex h-12 items-center justify-center gap-2 rounded-xl px-6',
-  'bg-zinc-900 text-[0.9375rem] font-medium text-white',
+  'bg-primary text-[0.9375rem] font-medium text-primary-foreground',
   'shadow-[0_4px_6px_rgba(0,0,0,0.1)] dark:shadow-none',
-  'transition-[transform,background-color] duration-200 ease-out hover:-translate-y-0.5 hover:bg-zinc-700',
-  'dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300',
+  'transition-[transform,background-color] duration-200 ease-out hover:-translate-y-0.5 hover:bg-primary/90',
   'motion-reduce:transition-none motion-reduce:hover:translate-y-0',
 )
 
@@ -835,33 +821,19 @@ export default function LandingPage() {
   }, [])
 
   return (
-    <div className="min-h-dvh bg-white text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100">
+    <div className="min-h-dvh bg-background text-foreground antialiased">
       <a
         href="#contenido"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-zinc-900 focus:px-4 focus:py-2 focus:text-sm focus:text-white dark:focus:bg-zinc-100 dark:focus:text-zinc-900"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:text-primary-foreground"
       >
         Saltar al contenido
       </a>
 
       <header
-        className={cn(
-          'sticky top-0 z-30 border-b',
-          BORDE,
-          'bg-white/80 backdrop-blur-[8px] dark:bg-zinc-950/80',
-        )}
+        className={cn('sticky top-0 z-30 border-b', BORDE, 'bg-background/80 backdrop-blur-[8px]')}
       >
         <nav className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:px-6">
           <Marca />
-          <span
-            className={cn(
-              'hidden whitespace-nowrap rounded-md px-1.5 py-1 sm:inline-block',
-              CANTO,
-              ETIQUETA_SECCION,
-              'text-[0.625rem]',
-            )}
-          >
-            SaaS v2.0
-          </span>
 
           <div className="ml-auto flex items-center gap-1">
             <a
@@ -869,7 +841,7 @@ export default function LandingPage() {
               className={cn(
                 'hidden rounded-lg px-3 py-2 text-sm transition-colors duration-200 sm:block',
                 SUAVE,
-                'hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-900 dark:hover:text-zinc-100',
+                'hover:bg-accent hover:text-accent-foreground',
               )}
             >
               Cómo funciona
@@ -879,7 +851,7 @@ export default function LandingPage() {
               className={cn(
                 'whitespace-nowrap rounded-lg px-3 py-2 text-sm transition-colors duration-200',
                 SUAVE,
-                'hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-900 dark:hover:text-zinc-100',
+                'hover:bg-accent hover:text-accent-foreground',
               )}
             >
               Entrar
@@ -887,9 +859,8 @@ export default function LandingPage() {
             <Link
               to="/registro"
               className={cn(
-                'whitespace-nowrap rounded-lg bg-zinc-900 px-3.5 py-2 text-sm font-medium text-white',
-                'transition-colors duration-200 hover:bg-zinc-700',
-                'dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300',
+                'whitespace-nowrap rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground',
+                'transition-colors duration-200 hover:bg-primary/90',
               )}
             >
               Crear cuenta
@@ -900,66 +871,134 @@ export default function LandingPage() {
 
       <main id="contenido">
         {/* ---------------------------------------------------------- hero */}
-        <section className="mx-auto max-w-6xl px-4 pb-20 pt-20 sm:px-6 sm:pb-28 sm:pt-28">
-          <div className="mx-auto max-w-3xl text-center">
-            <p
-              className={cn(
-                'mx-auto mb-7 inline-flex items-center gap-2 rounded-full px-3 py-1.5',
-                CANTO,
-                ETIQUETA_SECCION,
-              )}
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
-              Hospitalidad por turnos
-            </p>
+        {/* ----------------------------------------------------------- hero
+         *
+         *  Asimétrico y con el producto encendido al lado, no un titular
+         *  centrado sobre un vacío. Quien llega aquí está decidiendo si esto
+         *  sirve para su negocio, y eso se contesta enseñando el tablero --
+         *  cuartos, cronómetro, ocupación -- no describiéndolo. El mismo
+         *  componente que usa el recorrido de abajo, en su tercer paso: es el
+         *  producto de verdad, no una ilustración.
+         */}
+        <section className="relative overflow-hidden">
+          {/* Un solo resplandor, del color que el negocio haya configurado.
+              Es lo que separa una página con carácter de una plantilla gris,
+              y es uno -- no un degradado en cada sección. */}
+          <div
+            className="pointer-events-none absolute inset-x-0 -top-32 h-[38rem] opacity-25 dark:opacity-[0.28]"
+            style={{
+              background:
+                'radial-gradient(50rem 24rem at 30% 0%, hsl(var(--brand-accent)), transparent 68%)',
+            }}
+            aria-hidden
+          />
+          <div
+            className="grid-surface grid-fade pointer-events-none absolute inset-0"
+            aria-hidden
+          />
 
-            {/* typography.csv #61: hero 36-42px con interlínea 1.1. */}
-            <h1 className="text-balance text-[2.25rem] font-semibold leading-[1.05] tracking-[-0.02em] sm:text-[3.25rem]">
-              Control operativo de habitaciones, sin fricción en el mostrador.
-            </h1>
-
-            <p
-              className={cn(
-                'mx-auto mt-7 max-w-xl text-pretty text-[1.0625rem] leading-[1.6] sm:text-[1.125rem]',
-                SUAVE,
-              )}
-            >
-              Sistema de gestión de hospedaje y estancias ágiles: ocupación en vivo, folios de
-              consumo, cortes de caja por turno y rotación de limpieza en una sola pantalla.
-            </p>
-
-            <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link to="/registro" className={cn(BOTON_PRINCIPAL, 'w-full sm:w-auto')}>
-                Crear cuenta y configurar
-                <LuArrowRight
-                  className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none"
-                  aria-hidden
-                />
-              </Link>
-              <a
-                href="#como-funciona"
+          <div className="relative mx-auto grid max-w-6xl gap-12 px-4 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24 lg:grid-cols-[1fr_28rem] lg:items-center lg:gap-16">
+            <div className="max-w-xl">
+              <p
                 className={cn(
-                  'inline-flex h-12 w-full items-center justify-center rounded-xl px-6 sm:w-auto',
+                  'mb-7 inline-flex items-center gap-2 rounded-full px-3 py-1.5',
                   CANTO,
-                  'text-[0.9375rem] font-medium transition-colors duration-200',
-                  'hover:bg-zinc-50 dark:hover:bg-zinc-900',
+                  ETIQUETA_SECCION,
                 )}
               >
-                Ver cómo funciona
-              </a>
+                <span className="h-1.5 w-1.5 rounded-full bg-status-available" aria-hidden />
+                Hospitalidad por turnos
+              </p>
+
+              {/* typography.csv #61: hero 36-42px con interlínea 1.1. */}
+              <h1 className="text-balance text-[2.25rem] font-semibold leading-[1.05] tracking-[-0.025em] sm:text-[3.25rem]">
+                Control operativo de habitaciones,{' '}
+                <span className="text-brand-accent">sin fricción</span> en el mostrador.
+              </h1>
+
+              <p
+                className={cn(
+                  'mt-7 max-w-lg text-pretty text-[1.0625rem] leading-[1.6] sm:text-[1.125rem]',
+                  SUAVE,
+                )}
+              >
+                Ocupación en vivo, folios de consumo, cortes de caja por turno y rotación de
+                limpieza en una sola pantalla.
+              </p>
+
+              <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+                <Link to="/registro" className={cn(BOTON_PRINCIPAL, 'w-full sm:w-auto')}>
+                  Crear cuenta y configurar
+                  <LuArrowRight
+                    className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none"
+                    aria-hidden
+                  />
+                </Link>
+                <a
+                  href="#como-funciona"
+                  className={cn(
+                    'inline-flex h-12 w-full items-center justify-center rounded-xl px-6 sm:w-auto',
+                    CANTO,
+                    'text-[0.9375rem] font-medium transition-colors duration-200',
+                    'hover:bg-accent',
+                  )}
+                >
+                  Ver cómo funciona
+                </a>
+              </div>
+
+              {/* Hechos comprobables del sistema, no cifras de clientes que no
+                  tenemos. Prometer tracción inventada es la forma más rápida de
+                  perder la confianza de quien sí va a probarlo. */}
+              <dl className="mt-12 grid max-w-md grid-cols-3 gap-6 border-t pt-8 text-left">
+                {[
+                  ['4 pasos', 'para dejarlo operando'],
+                  ['Hora del servidor', 'no la del equipo'],
+                  ['Corte ciego', 'el turno cuadra solo'],
+                ].map(([titulo, pie]) => (
+                  <div key={titulo}>
+                    <dt className="text-sm font-semibold leading-tight">{titulo}</dt>
+                    <dd className={cn('mt-1 text-xs leading-snug', SUAVE)}>{pie}</dd>
+                  </div>
+                ))}
+              </dl>
             </div>
 
-            <p className={cn('mt-6', ETIQUETA_SECCION)}>
-              4 pasos de configuración · sin instalar nada
-            </p>
+            {/* El tablero, encendido. En pantallas angostas estorbaría antes de
+                los botones, así que ahí vive más abajo, dentro del recorrido. */}
+            {/* `aria-hidden` porque es una fotografía del producto, no el
+                producto: quien navega con lector de pantalla no debe oír ocho
+                habitaciones inventadas antes de llegar al contenido -- y menos
+                otra vez cuando aparezca el tablero de verdad más abajo. */}
+            <div className="relative hidden lg:block" aria-hidden>
+              {/* Halo detrás de la maqueta: la despega del fondo sin recurrir a
+                  una sombra gigante, que en oscuro no se vería. Es el segundo y
+                  último degradado de toda la página, del mismo color de marca
+                  que el de arriba. */}
+              <div
+                className="pointer-events-none absolute -inset-8 opacity-40 blur-2xl dark:opacity-30"
+                style={{
+                  background:
+                    'radial-gradient(24rem 18rem at 50% 50%, hsl(var(--brand-accent) / 0.35), transparent 70%)',
+                }}
+              />
+              <div
+                className={cn(
+                  'relative rounded-[28px] p-4',
+                  CANTO,
+                  RADIO,
+                  ELEV.alta,
+                  'bg-card/80 backdrop-blur-[8px]',
+                )}
+              >
+                <Tablero paso={3} />
+              </div>
+            </div>
           </div>
         </section>
 
         {/* -------------------------------------------------- escaparate */}
-        <section
-          id="como-funciona"
-          className={cn('border-t bg-zinc-50/60 dark:bg-zinc-900/20', BORDE)}
-        >
+        <section id="como-funciona" className={cn('border-t bg-muted/40', BORDE)}>
           <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
             <div className="max-w-xl">
               <p className={ETIQUETA_SECCION}>El recorrido</p>
@@ -1015,7 +1054,7 @@ export default function LandingPage() {
                 RADIO,
                 CANTO,
                 ELEV.media,
-                'bg-zinc-50 dark:bg-zinc-900/40',
+                'bg-muted/40',
               )}
             >
               <h2 className="text-balance text-[1.75rem] font-semibold leading-[1.15] tracking-[-0.02em] sm:text-[2rem]">
@@ -1046,16 +1085,10 @@ export default function LandingPage() {
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 py-10 sm:flex-row sm:px-6">
           <Marca />
           <div className={cn('flex items-center gap-4 text-sm sm:ml-auto', SUAVE)}>
-            <Link
-              to="/login"
-              className="transition-colors duration-200 hover:text-zinc-900 dark:hover:text-zinc-100"
-            >
+            <Link to="/login" className="transition-colors duration-200 hover:text-foreground">
               Entrar
             </Link>
-            <Link
-              to="/registro"
-              className="transition-colors duration-200 hover:text-zinc-900 dark:hover:text-zinc-100"
-            >
+            <Link to="/registro" className="transition-colors duration-200 hover:text-foreground">
               Crear cuenta
             </Link>
             <span className="inline-flex items-center gap-1.5">
