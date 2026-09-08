@@ -1,7 +1,7 @@
 import { PiPackage } from 'react-icons/pi'
 
 import { RowActions, type RowAction } from '@/components/ui/row-actions'
-import { EmptyState, ErrorState } from '@/components/ui/states'
+import { EmptyState, ErrorState, OfflineState } from '@/components/ui/states'
 import type { WarehouseStock } from '@/features/inventory/types'
 import { formatQuantity, toNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -10,6 +10,7 @@ interface Props {
   rows: WarehouseStock[]
   isLoading: boolean
   isError?: boolean
+  sinConexion?: boolean
   onRetry?: () => void
   emptyTitle: string
   emptyDescription: string
@@ -31,6 +32,7 @@ export function StockCards({
   rows,
   isLoading,
   isError = false,
+  sinConexion = false,
   onRetry,
   emptyTitle,
   emptyDescription,
@@ -47,6 +49,12 @@ export function StockCards({
         description="El inventario no llegó. Nada se perdió: es la conexión con el servidor."
         onRetry={onRetry}
       />
+    )
+  }
+
+  if (sinConexion) {
+    return (
+      <OfflineState descripcion="Sin red no podemos leer las existencias." />
     )
   }
 

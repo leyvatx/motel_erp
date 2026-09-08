@@ -95,16 +95,76 @@ export function LoadingState({ rows = 5, className }: { rows?: number; className
 }
 
 /** Sin red: distinto de "vacío" y distinto de "falló". Se reintenta solo. */
-export function OfflineState({ className }: { className?: string }) {
+export function OfflineState({
+  titulo = 'Sin conexión',
+  descripcion = 'No hay red. La información se carga en cuanto vuelva.',
+  className,
+}: {
+  titulo?: string
+  descripcion?: string
+  className?: string
+}) {
   return (
     <div
       className={cn(
-        'flex items-center justify-center gap-2 px-4 py-3 text-sm text-muted-foreground',
+        'flex flex-col items-center justify-center gap-2 px-6 py-14 text-center',
         className,
       )}
+      role="status"
     >
-      <PiPlugsConnected className="h-4 w-4 animate-pulse-alert" aria-hidden />
-      Sin conexión con el servidor. Reintentando…
+      <PiPlugsConnected
+        className="mb-1 h-8 w-8 animate-pulse-alert text-status-cleaning"
+        aria-hidden
+      />
+      <p className="text-sm font-medium">{titulo}</p>
+      <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">{descripcion}</p>
+
+      {/* Recargar, no "reintentar la consulta".
+       *
+       *  Cuando el navegador se declara sin red, la biblioteca de datos deja
+       *  las consultas en pausa y **ignora la orden de recargar**: se probó, y
+       *  el botón no hacía absolutamente nada. Prometer "vuelve solo" y dejar
+       *  un botón muerto es peor que no poner botón.
+       *
+       *  Recargar la aplicación sí funciona siempre -- se verificó con el
+       *  servidor apagado y encendido de nuevo -- y es además lo que la persona
+       *  iba a hacer por su cuenta. Nada se pierde: no hay formularios abiertos
+       *  detrás de esta pantalla, porque esta pantalla aparece justamente
+       *  cuando no se pudo cargar nada. */}
+      <Button variant="outline" className="mt-3" onClick={() => window.location.reload()}>
+        Reintentar ahora
+      </Button>
     </div>
   )
+}
+
+/** En qué situación está una consulta, con el nombre que le daría un operador.
+ *
+ *  React Query distingue dos ejes -- si hay datos (`status`) y si está pidiendo
+ *  (`fetchStatus`) -- y la combinación que importa aquí es fácil de perder:
+ *  **sin red, una consulta sin datos queda `pending` + `paused`**, que no es
+ *  `isLoading` ni `isError`. Las pantallas caían entonces en su rama de "no hay
+ *  nada", y una recepcionista sin Wi-Fi leía "todavía no hay habitaciones dadas
+ *  de alta" -- con botón para crearlas -- sobre un negocio con cuarenta y dos.
+ *
+ *  Decirlo una vez y en un solo lugar es lo que evita que la próxima pantalla
+ *  vuelva a equivocarse igual.
+ *
+ *  Con `networkMode: 'always'` en el cliente de consultas, `paused` ya no
+ *  debería aparecer: se dejó esta rama porque el fallo que provocó -- una
+ *  pantalla que decía "no hay habitaciones" sobre un negocio con cuarenta y
+ *  dos -- vuelve solo con que alguien fije otro `networkMode` en una consulta
+ *  suelta. Aquí cuesta tres líneas; allá costaba credibilidad.
+ */
+export type EstadoConsulta = 'error' | 'sin-conexion' | 'cargando' | 'listo'
+
+export function estadoDeConsulta(consulta: {
+  isError: boolean
+  isPending: boolean
+  fetchStatus: 'fetching' | 'paused' | 'idle'
+}): EstadoConsulta {
+  if (consulta.isError) return 'error'
+  if (consulta.isPending && consulta.fetchStatus === 'paused') return 'sin-conexion'
+  if (consulta.isPending) return 'cargando'
+  return 'listo'
 }

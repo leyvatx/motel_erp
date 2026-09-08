@@ -575,6 +575,18 @@ def checkout_stay(
         .select_related("room", "tariff_block", "folio")
         .get(pk=stay_id, is_active=True)
     )
+    # Una salida repetida no es un error del sistema, es alguien que volvió a
+    # pulsar. Sin esta rama caía en `_get_open_folio` y contestaba "la renta no
+    # tiene una cuenta abierta": cierto, pero quien acaba de cobrar $400 lee eso
+    # y no sabe si el cargo entró. Decir que ya se cerró es la única respuesta
+    # que lo deja tranquilo.
+    if stay.status == StayStatus.CLOSED:
+        raise DomainError(
+            f"La renta {stay.code} ya se cerró. El cobro anterior sí quedó registrado.",
+            code="stay_already_closed",
+            stay_id=stay.pk,
+        )
+
     validate_stay_transition(stay.status, StayStatus.CLOSED)
 
     folio = _get_open_folio(stay)

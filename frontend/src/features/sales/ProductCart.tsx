@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { EmptyState } from '@/components/ui/states'
 import { QuickProductDialog } from '@/features/sales/QuickProductDialog'
-import { ProductIcon } from '@/features/inventory/productIcon'
+import { ProductThumb } from '@/features/inventory/productIcon'
 import type { Product } from '@/features/inventory/types'
 import { formatMoney, toNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -297,19 +297,16 @@ export function ProductPicker({
                     40 al texto deja "Agua embo...". El nombre completo es lo
                     que se lee de reojo; el ícono solo acompaña. */}
                 <div>
-                  {/* La foto cuando existe, y el ícono de la familia cuando no.
-                      Los dos ocupan el mismo hueco para que la cuadrícula no se
-                      desalinee mientras el catálogo se va llenando de fotos. */}
-                  <span className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-md bg-muted">
-                    {product.image_url ? (
-                      <img src={product.image_url} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      <ProductIcon
-                        categoria={product.category_name}
-                        className="h-4 w-4 text-muted-foreground"
-                      />
-                    )}
-                  </span>
+                  {/* La foto cuando existe, y el ícono de la familia cuando no
+                      -- o cuando la foto no carga. Los dos ocupan el mismo hueco
+                      para que la cuadrícula no se desalinee mientras el catálogo
+                      se va llenando de fotos. */}
+                  <ProductThumb
+                    src={product.image_url}
+                    categoria={product.category_name}
+                    className="h-7 w-7 rounded-md bg-muted"
+                    iconClassName="h-4 w-4 text-muted-foreground"
+                  />
                   <p className="mt-2 line-clamp-2 text-sm font-medium leading-snug">
                     {product.name}
                   </p>

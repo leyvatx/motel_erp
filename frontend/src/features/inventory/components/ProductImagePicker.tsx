@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { PiCamera, PiTrash, PiUploadSimple } from 'react-icons/pi'
 
 import { Button } from '@/components/ui/button'
-import { ProductIcon } from '@/features/inventory/productIcon'
+import { ProductThumb } from '@/features/inventory/productIcon'
 import { cn } from '@/lib/utils'
 
 /** El mismo tope que valida el servidor, para avisar antes de subir. */
@@ -96,13 +96,12 @@ export function ProductImagePicker({ actual, categoria = '', onChange, className
       />
 
       <div className="flex items-center gap-3">
-        <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/40">
-          {muestra ? (
-            <img src={muestra} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <ProductIcon categoria={categoria} className="h-8 w-8 text-muted-foreground/70" />
-          )}
-        </div>
+        <ProductThumb
+          src={muestra}
+          categoria={categoria}
+          className="h-20 w-20 shrink-0 rounded-lg border bg-muted/40"
+          iconClassName="h-8 w-8 text-muted-foreground/70"
+        />
 
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <div className="flex flex-wrap gap-2">

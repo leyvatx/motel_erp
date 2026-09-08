@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from unittest.mock import patch
+
+from django.db import IntegrityError
 
 
 from common.exceptions import DomainError, InsufficientStock
@@ -284,6 +287,55 @@ class VentaMostradorTests(SalesTestCase):
         self.assertEqual(primera.pk, segunda.pk)
         self.assertEqual(Folio.objects.filter(folio_type=FolioType.COUNTER).count(), 1)
         self.assertEqual(Payment.objects.filter(folio=primera).count(), 1)
+
+    def test_el_choque_de_dos_cobros_a_la_vez_devuelve_el_mismo_ticket(self) -> None:
+        """El perdedor de la carrera recibe el folio bueno, no un error.
+
+        Reproduce lo que pasa con un doble clic real: la restriccion unica ya
+        impedia el cargo doble, pero al segundo se le devolvia el error de base
+        de datos. El cajero leia "no se pudo completar la venta" sobre una venta
+        que si se hizo, y volvia a cobrar; esa segunda vez si duplicaba.
+        """
+        primera = services.counter_sale(
+            warehouse_id=self.warehouse.pk,
+            items=self._items("1"),
+            method=PaymentMethod.CASH,
+            tendered_amount=Decimal("50.00"),
+            actor=self.user,
+            attempt_key="carrera",
+        )
+
+        # Se simula el choque: la fila ya existe cuando el segundo intenta
+        # guardarla, que es exactamente el estado en el que PostgreSQL desbloquea
+        # al perdedor.
+        with patch.object(
+            services, "_cobrar_mostrador", side_effect=IntegrityError("uniq_sale_attempt_key")
+        ):
+            segunda = services.counter_sale(
+                warehouse_id=self.warehouse.pk,
+                items=self._items("1"),
+                method=PaymentMethod.CASH,
+                tendered_amount=Decimal("50.00"),
+                actor=self.user,
+                attempt_key="carrera",
+            )
+
+        self.assertEqual(primera.pk, segunda.pk)
+        self.assertEqual(Payment.objects.filter(folio=primera).count(), 1)
+
+    def test_un_choque_sin_clave_si_propaga_el_error(self) -> None:
+        """Sin clave no hay ticket que devolver: el error tiene que salir."""
+        with patch.object(
+            services, "_cobrar_mostrador", side_effect=IntegrityError("otra cosa")
+        ):
+            with self.assertRaises(IntegrityError):
+                services.counter_sale(
+                    warehouse_id=self.warehouse.pk,
+                    items=self._items("1"),
+                    method=PaymentMethod.CASH,
+                    tendered_amount=Decimal("50.00"),
+                    actor=self.user,
+                )
 
     def test_una_venta_distinta_si_se_cobra(self) -> None:
         """La protección no puede volverse un candado: otra clave, otra venta."""

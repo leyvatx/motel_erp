@@ -1,5 +1,8 @@
+import { useEffect, useState } from 'react'
 import { PiBeerBottle, PiCookie, PiPackage, PiSparkle, PiTShirt } from 'react-icons/pi'
 import type { IconType } from 'react-icons'
+
+import { cn } from '@/lib/utils'
 
 /**
  * La cara de un producto que no tiene foto.
@@ -27,4 +30,54 @@ export function iconoDeCategoria(categoria: string): IconType {
 export function ProductIcon({ categoria, className }: { categoria: string; className?: string }) {
   const Icono = iconoDeCategoria(categoria)
   return <Icono className={className} aria-hidden />
+}
+
+/**
+ * La miniatura de un producto, con el ícono de su familia como red.
+ *
+ * Una fotografía puede faltar, tardar, o llegar rota: el archivo se borró del
+ * disco, el almacenamiento no responde, o alguien subió un `.png` que por
+ * dentro no era un PNG (la extensión se valida, el contenido no). En cualquiera
+ * de esos casos el navegador pinta el icono gris de imagen partida, que en una
+ * cuadrícula de punto de venta se ve como si el catálogo estuviera dañado.
+ *
+ * Aquí ese fallo degrada al mismo ícono que usan los productos sin foto: la
+ * tarjeta se sigue reconociendo y nadie se pregunta si perdió datos.
+ */
+export function ProductThumb({
+  src,
+  categoria,
+  className,
+  iconClassName,
+}: {
+  src: string | null | undefined
+  categoria: string
+  className?: string
+  iconClassName?: string
+}) {
+  const [falló, setFalló] = useState(false)
+
+  // Un producto distinto en el mismo hueco -- al filtrar o al buscar -- trae
+  // una imagen nueva que merece su propia oportunidad.
+  useEffect(() => setFalló(false), [src])
+
+  if (!src || falló) {
+    return (
+      <span className={cn('flex items-center justify-center', className)}>
+        <ProductIcon categoria={categoria} className={iconClassName} />
+      </span>
+    )
+  }
+
+  return (
+    <span className={cn('flex items-center justify-center overflow-hidden', className)}>
+      <img
+        src={src}
+        alt=""
+        loading="lazy"
+        onError={() => setFalló(true)}
+        className="h-full w-full object-cover"
+      />
+    </span>
+  )
 }

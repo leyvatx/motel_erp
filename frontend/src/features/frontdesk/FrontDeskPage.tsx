@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { EmptyState, ErrorState } from '@/components/ui/states'
+import { EmptyState, ErrorState, OfflineState, estadoDeConsulta } from '@/components/ui/states'
 import { canManageCatalog, useAuthStore } from '@/store/auth'
 import { RentRoomDialog } from '@/features/frontdesk/components/RentRoomDialog'
 import { RoomActionsDialog } from '@/features/frontdesk/components/RoomActionsDialog'
@@ -191,6 +191,8 @@ export default function FrontDeskPage() {
     if (room) handleSelect(room)
     setSearchParams({}, { replace: true })
   }, [pedida, grid.isPending, allRooms, setSearchParams])
+
+  const estadoGrid = estadoDeConsulta(grid)
 
   const alerts = (expiring.data?.results ?? []).filter(
     (stay) => secondsUntil(stay.expires_at) <= 15 * 60,
@@ -365,7 +367,7 @@ export default function FrontDeskPage() {
           "no pudimos cargar" es un problema que se reintenta. Pintar los tres
           como una lista vacía hacía creer que se habían borrado las
           habitaciones justo cuando el servidor no contestaba. */}
-      {grid.isError ? (
+      {estadoGrid === 'error' ? (
         <Card>
           <ErrorState
             title="No pudimos cargar las habitaciones"
@@ -374,7 +376,11 @@ export default function FrontDeskPage() {
             retrying={grid.isFetching}
           />
         </Card>
-      ) : grid.isLoading ? (
+      ) : estadoGrid === 'sin-conexion' ? (
+        <Card>
+          <OfflineState descripcion="Tus habitaciones siguen ahí. El tablero se llena en cuanto vuelva la red." />
+        </Card>
+      ) : estadoGrid === 'cargando' ? (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-2.5 sm:grid-cols-[repeat(auto-fill,minmax(190px,1fr))]">
           {Array.from({ length: 18 }).map((_, index) => (
             <Skeleton key={index} className="h-[8rem] rounded-xl" />

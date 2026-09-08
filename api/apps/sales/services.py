@@ -14,7 +14,7 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Sequence, TypedDict
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Sum
 from django.utils import timezone
 
@@ -711,7 +711,6 @@ def cancel_folio(*, folio_id: int, reason: str, actor) -> Folio:
     return folio
 
 
-@transaction.atomic
 def counter_sale(
     *,
     warehouse_id: int,
@@ -740,10 +739,61 @@ def counter_sale(
     """
     from apps.sales.models import SaleAttempt
 
-    if attempt_key:
-        previo = SaleAttempt.objects.filter(key=attempt_key).select_related("folio").first()
-        if previo is not None:
-            return previo.folio
+    def cobro_previo() -> Folio | None:
+        if not attempt_key:
+            return None
+        registro = SaleAttempt.objects.filter(key=attempt_key).select_related("folio").first()
+        return registro.folio if registro else None
+
+    ya_cobrado = cobro_previo()
+    if ya_cobrado is not None:
+        return ya_cobrado
+
+    try:
+        return _cobrar_mostrador(
+            warehouse_id=warehouse_id,
+            items=items,
+            method=method,
+            actor=actor,
+            tendered_amount=tendered_amount,
+            reference=reference,
+            notes=notes,
+            attempt_key=attempt_key,
+        )
+    except IntegrityError:
+        # Dos peticiones con la misma clave entraron a la vez. La restricción
+        # única dejó pasar una y deshizo la otra por completo -- sin folio, sin
+        # descuento de inventario, sin pago -- que es justo lo que protege el
+        # dinero.
+        #
+        # Lo que faltaba era el final: al perdedor se le devolvía el error de
+        # base de datos, así que el cajero leía "no se pudo completar la venta"
+        # sobre una venta que sí se hizo, y volvía a cobrar. Esa segunda vez sí
+        # duplicaba el cargo, y la causaba el mensaje, no el sistema.
+        #
+        # PostgreSQL bloquea al perdedor hasta que el ganador confirma, así que
+        # cuando llega aquí el registro ya está visible: se devuelve el mismo
+        # ticket, que es lo que significa ser idempotente.
+        ganador = cobro_previo()
+        if ganador is not None:
+            return ganador
+        raise
+
+
+@transaction.atomic
+def _cobrar_mostrador(
+    *,
+    warehouse_id: int,
+    items: Sequence[OrderItemInput],
+    method: str,
+    actor,
+    tendered_amount: Decimal | None,
+    reference: str,
+    notes: str,
+    attempt_key: str,
+) -> Folio:
+    """El cobro en sí, todo dentro de una transacción."""
+    from apps.sales.models import SaleAttempt
 
     folio = open_folio(actor=actor, folio_type=FolioType.COUNTER, notes=notes)
     create_order(
@@ -771,7 +821,8 @@ def counter_sale(
     if attempt_key:
         # La restricción única es la que de verdad protege: si dos peticiones
         # con la misma clave entran a la vez, la segunda choca aquí y su
-        # transacción entera se deshace -- incluido el cobro.
+        # transacción entera se deshace -- incluido el cobro. Quien la atrapa y
+        # devuelve el ticket bueno es `counter_sale`.
         SaleAttempt.objects.create(key=attempt_key[:64], folio=cerrado)
 
     return cerrado

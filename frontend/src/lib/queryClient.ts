@@ -4,6 +4,21 @@ import axios from 'axios'
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
+      // Se intenta siempre, aunque el navegador diga que no hay red.
+      //
+      // Por omisión React Query deja las consultas en `paused` cuando
+      // `navigator.onLine` es falso, y las despierta con el evento `online`.
+      // Ese evento no siempre llega -- una terminal detrás de un portal
+      // cautivo, una red sin salida a internet, o un navegador que
+      // sencillamente no lo emite -- y entonces la consulta se queda esperando
+      // para siempre: ni datos, ni error, ni forma de reintentar. En una
+      // recepción eso es una pantalla muerta a mitad del turno.
+      //
+      // Intentando siempre, la petición falla rápido y cae en el estado de
+      // error, que sí trae botón de reintentar. Los reintentos con espera
+      // -- incluido el arranque en frío del servidor -- ya los hace el
+      // interceptor de axios, que es donde viven las reglas de idempotencia.
+      networkMode: 'always',
       refetchOnWindowFocus: false,
       staleTime: 30_000,
       gcTime: 5 * 60_000,
@@ -16,6 +31,9 @@ export const queryClient = new QueryClient({
       },
     },
     mutations: {
+      // Misma razón: un cobro que se queda en `paused` no avisa de nada. Que
+      // falle y se pueda reintentar es preferible a que desaparezca.
+      networkMode: 'always',
       retry: false,
     },
   },

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { PiCheckCircle, PiEye, PiPlay, PiUserCheck, PiWrench } from 'react-icons/pi'
 
 import { ModuleHelp } from '@/components/layout/ModuleHelp'
+import { ErrorState, OfflineState, estadoDeConsulta } from '@/components/ui/states'
 import { PageShell, TableScroll } from '@/components/layout/PageShell'
 import { StatStrip } from '@/components/layout/StatStrip'
 import { Badge } from '@/components/ui/badge'
@@ -74,6 +75,7 @@ export default function HousekeepingPage() {
   const finish = useFinishCleaningTask()
   const openContextMenu = useRowContextMenu()
 
+  const estadoBoard = estadoDeConsulta(board)
   const tasks = board.data?.results ?? []
 
   /** Quién ve la cola de tarjetas en vez de la tabla.
@@ -136,7 +138,7 @@ export default function HousekeepingPage() {
       }
       toolbar={
         <StatStrip
-          isLoading={board.isLoading}
+          isLoading={board.isLoading || estadoBoard === 'sin-conexion'}
           stats={[
             { label: 'Cuartos por limpiar', value: tasks.length, help: 'pendientes y asignados' },
             {
@@ -175,6 +177,7 @@ export default function HousekeepingPage() {
                 tasks={tasks}
                 isLoading={board.isLoading}
                 isError={board.isError}
+                sinConexion={estadoBoard === 'sin-conexion'}
                 onRetry={() => void board.refetch()}
                 sinAsignar={mine ? (sinFiltrar.data?.results.length ?? 0) : 0}
                 onVerTodas={() => setMine(false)}
@@ -183,68 +186,79 @@ export default function HousekeepingPage() {
           ) : (
             <Card className="min-h-0 flex-1">
               <CardContent className="flex min-h-0 flex-1 flex-col p-0">
-                <TableScroll>
-                  <Table>
-                    <TableHeader className="sticky top-0 z-10 bg-card">
-                      <TableRow>
-                        <TableHead>Habitación</TableHead>
-                        <TableHead>Tipo</TableHead>
-                        <TableHead>Asignada a</TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead>Tiempo</TableHead>
-                        <TableHead className="w-[52px]" />
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {tasks.length === 0 ? (
-                        <TableEmpty
-                          colSpan={6}
-                          message="Nada pendiente. Cuando salga un huésped, su cuarto aparece aquí solo."
-                        />
-                      ) : (
-                        tasks.map((task) => (
-                          <TableRow
-                            key={task.id}
-                            onContextMenu={openContextMenu(
-                              `Habitación ${task.room_number}`,
-                              taskActions(task),
-                            )}
-                            className={cn(
-                              'cursor-context-menu',
-                              task.status === 'IN_PROGRESS' && 'bg-status-cleaning/5',
-                            )}
-                          >
-                            <TableCell className="font-medium tabular">
-                              {task.room_number}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">
-                              {task.task_type_display}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">
-                              {task.assigned_to_name ?? 'Sin asignar'}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={TASK_VARIANT[task.status] ?? 'secondary'}>
-                                {task.status_display}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-xs text-muted-foreground">
-                              {task.started_at
-                                ? `Inició ${formatRelative(task.started_at)}`
-                                : `En espera ${formatRelative(task.created_at)}`}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <RowActions
-                                items={taskActions(task)}
-                                label={`habitación ${task.room_number}`}
-                              />
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </TableScroll>
+                {estadoBoard === 'sin-conexion' ? (
+                  <OfflineState descripcion="Sin red no podemos leer el tablero." />
+                ) : estadoBoard === 'error' ? (
+                  <ErrorState
+                    title="No pudimos cargar el tablero"
+                    description="Las tareas no llegaron. Nada se perdió: es la conexión con el servidor."
+                    onRetry={() => void board.refetch()}
+                    retrying={board.isFetching}
+                  />
+                ) : (
+                  <TableScroll>
+                    <Table>
+                      <TableHeader className="sticky top-0 z-10 bg-card">
+                        <TableRow>
+                          <TableHead>Habitación</TableHead>
+                          <TableHead>Tipo</TableHead>
+                          <TableHead>Asignada a</TableHead>
+                          <TableHead>Estado</TableHead>
+                          <TableHead>Tiempo</TableHead>
+                          <TableHead className="w-[52px]" />
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {tasks.length === 0 ? (
+                          <TableEmpty
+                            colSpan={6}
+                            message="Nada pendiente. Cuando salga un huésped, su cuarto aparece aquí solo."
+                          />
+                        ) : (
+                          tasks.map((task) => (
+                            <TableRow
+                              key={task.id}
+                              onContextMenu={openContextMenu(
+                                `Habitación ${task.room_number}`,
+                                taskActions(task),
+                              )}
+                              className={cn(
+                                'cursor-context-menu',
+                                task.status === 'IN_PROGRESS' && 'bg-status-cleaning/5',
+                              )}
+                            >
+                              <TableCell className="font-medium tabular">
+                                {task.room_number}
+                              </TableCell>
+                              <TableCell className="text-muted-foreground">
+                                {task.task_type_display}
+                              </TableCell>
+                              <TableCell className="text-muted-foreground">
+                                {task.assigned_to_name ?? 'Sin asignar'}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={TASK_VARIANT[task.status] ?? 'secondary'}>
+                                  {task.status_display}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground">
+                                {task.started_at
+                                  ? `Inició ${formatRelative(task.started_at)}`
+                                  : `En espera ${formatRelative(task.created_at)}`}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <RowActions
+                                  items={taskActions(task)}
+                                  label={`habitación ${task.room_number}`}
+                                />
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </TableScroll>
+                )}
               </CardContent>
             </Card>
           )}

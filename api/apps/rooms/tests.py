@@ -363,3 +363,27 @@ class StateMachineTests(TestCase):
 
     def test_transicion_valida_pasa(self) -> None:
         validate_room_transition(RoomStatus.CLEANING, RoomStatus.AVAILABLE)
+
+
+class SalidaRepetidaTests(FrontDeskTestCase):
+    def test_una_segunda_salida_dice_que_ya_se_cerro(self) -> None:
+        """El mensaje que ve quien vuelve a pulsar "Cobrar y salir".
+
+        Antes contestaba "la renta no tiene una cuenta abierta": cierto, pero
+        ilegible para alguien que acaba de cobrar y no sabe si el cargo entro.
+        """
+        stay = services.rent_room(
+            room_id=self.room.pk, tariff_block_id=self.block4.pk, actor=self.user
+        )
+        total = stay.folio.total
+        services.checkout_stay(
+            stay_id=stay.pk,
+            actor=self.user,
+            payments=[{"method": "CASH", "amount": total, "tendered_amount": total}],
+        )
+
+        with self.assertRaises(DomainError) as caso:
+            services.checkout_stay(stay_id=stay.pk, actor=self.user)
+
+        self.assertEqual(caso.exception.detail.code, "stay_already_closed")
+        self.assertIn("ya se cerró", str(caso.exception.detail))

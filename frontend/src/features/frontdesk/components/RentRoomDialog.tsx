@@ -66,6 +66,7 @@ export function RentRoomDialog({ room, open, onOpenChange }: Props) {
     () => (blocks?.results ?? []).filter((block) => block.is_active),
     [blocks],
   )
+  const sinTarifas = !isLoading && options.length === 0
   const selectedId = Number(watch('tariff_block_id'))
   const selected = options.find((block) => block.id === selectedId)
 
@@ -126,6 +127,19 @@ export function RentRoomDialog({ room, open, onOpenChange }: Props) {
           />
           {errors.tariff_block_id ? (
             <p className="text-xs text-status-occupied">{errors.tariff_block_id.message}</p>
+          ) : null}
+
+          {/* Un tipo de habitación sin tarifas es un hueco de configuración, no
+              un error de quien está en el mostrador. Antes el desplegable
+              quedaba vacío, el botón seguía activo, y al confirmar el servidor
+              contestaba que "el bloque tarifario no corresponde al tipo de esta
+              habitación" -- sobre un bloque que nadie había elegido. */}
+          {sinTarifas ? (
+            <p className="rounded-md border border-status-cleaning/40 bg-status-cleaning/5 px-3 py-2 text-xs leading-relaxed">
+              Este tipo de habitación ({room.room_type_name}) todavía no tiene tarifas. Pídele a
+              gerencia que las dé de alta en Configuración · Tarifas; mientras tanto no se puede
+              rentar.
+            </p>
           ) : null}
         </div>
 
@@ -202,7 +216,12 @@ export function RentRoomDialog({ room, open, onOpenChange }: Props) {
           >
             Cancelar
           </Button>
-          <Button type="submit" className="h-11 sm:h-9" loading={rent.isPending}>
+          <Button
+            type="submit"
+            className="h-11 sm:h-9"
+            disabled={sinTarifas}
+            loading={rent.isPending}
+          >
             Rentar
           </Button>
         </div>

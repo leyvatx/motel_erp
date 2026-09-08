@@ -10,7 +10,7 @@ import {
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { EmptyState, ErrorState } from '@/components/ui/states'
+import { EmptyState, ErrorState, OfflineState } from '@/components/ui/states'
 import { ReportMaintenanceDialog } from '@/features/housekeeping/components/ReportMaintenanceDialog'
 import { useFinishCleaningTask, useStartCleaning } from '@/features/housekeeping/hooks'
 import type { CleaningTask } from '@/features/housekeeping/types'
@@ -28,6 +28,8 @@ interface Props {
   tasks: CleaningTask[]
   isLoading: boolean
   isError?: boolean
+  /** Sin red: no es "no hay tareas", es "todavía no sabemos". */
+  sinConexion?: boolean
   onRetry?: () => void
   /** Cuántas tareas hay en total cuando la lista está filtrada a las propias. */
   sinAsignar?: number
@@ -51,6 +53,7 @@ export function CleaningQueue({
   tasks,
   isLoading,
   isError = false,
+  sinConexion = false,
   onRetry,
   sinAsignar = 0,
   onVerTodas,
@@ -73,6 +76,10 @@ export function CleaningQueue({
         onRetry={onRetry}
       />
     )
+  }
+
+  if (sinConexion) {
+    return <OfflineState descripcion="No hay red. Tus tareas no se han perdido." />
   }
 
   if (isLoading) {

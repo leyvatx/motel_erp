@@ -32,7 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ErrorState } from '@/components/ui/states'
+import { ErrorState, OfflineState, estadoDeConsulta } from '@/components/ui/states'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Table,
@@ -92,6 +92,7 @@ export default function InventoryPage() {
     return ordered
   }, [stocks.data, view])
 
+  const estadoStocks = estadoDeConsulta(stocks)
   const lowCount = lowStock.data?.count ?? 0
   const expiringCount = lots.data?.count ?? 0
 
@@ -266,6 +267,7 @@ export default function InventoryPage() {
                     rows={rows}
                     isLoading={stocks.isLoading}
                     isError={stocks.isError}
+                    sinConexion={estadoStocks === 'sin-conexion'}
                     onRetry={() => void stocks.refetch()}
                     emptyTitle={
                       view === 'low' ? 'Nada bajo mínimo' : 'Sin existencias que coincidan'
@@ -279,6 +281,8 @@ export default function InventoryPage() {
                     actionsFor={actionsFor}
                   />
                 </div>
+              ) : estadoStocks === 'sin-conexion' ? (
+                <OfflineState descripcion="Sin red no podemos leer las existencias." />
               ) : stocks.isError ? (
                 <ErrorState
                   title="No pudimos cargar las existencias"

@@ -23,6 +23,23 @@ const ICONO: Partial<Record<RoomStatus, IconType>> = {
   BLOCKED: LuWrench,
 }
 
+/** El nombre en español de cada estado, para cuando el servidor todavía no lo
+ *  ha dicho.
+ *
+ *  El resumen trae `status_display` ya traducido, pero mientras no llega -- o
+ *  no llega nunca, porque se cayó la red -- la ficha caía en la clave cruda de
+ *  la base de datos y recepción leía "OCCUPIED", "AVAILABLE", "CLEANING" en su
+ *  tablero. Un nombre técnico en la pantalla principal es justo lo que este
+ *  producto no debe hacer. */
+const ETIQUETA: Record<RoomStatus, string> = {
+  AVAILABLE: 'Disponible',
+  RESERVED: 'Reservada',
+  OCCUPIED: 'Ocupada',
+  CLEANING: 'En limpieza',
+  MAINTENANCE: 'Mantenimiento',
+  BLOCKED: 'Bloqueada',
+}
+
 /** Orden de lectura del turno: cuánto se está usando, cuánto queda libre y
  *  cuánto está por rotar. Los demás estados van después y solo si los hay: en
  *  la mayoría de los turnos son cero y ocuparían fichas vacías. */
@@ -148,7 +165,7 @@ export function StatusSummary({ data, isLoading, activeStatus, onFilter }: Props
         return (
           <Chip
             key={status}
-            label={item?.status_display ?? status}
+            label={item?.status_display ?? ETIQUETA[status]}
             value={valor}
             percent={porcentaje(valor)}
             dot={DOT[status]}
