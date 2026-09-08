@@ -1,10 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 
 import { authApi, type LoginPayload, type SignupPayload } from '@/features/auth/api'
 import { queryKeys } from '@/lib/queryClient'
+import { cerrarSesionLocal } from '@/lib/session'
 import { despertarServidor } from '@/lib/wakeup'
-import { realtimeChannels } from '@/lib/websocket'
 import { defaultRouteFor, useAuthStore } from '@/store/auth'
 import { useUiStore } from '@/store/ui'
 import type { LoginResponse, User } from '@/types/api'
@@ -58,7 +58,6 @@ export function useSignup() {
 }
 
 export function useLogout() {
-  const queryClient = useQueryClient()
   const navigate = useNavigate()
 
   return useMutation<void, unknown, void>({
@@ -68,10 +67,11 @@ export function useLogout() {
         await authApi.logout(refresh).catch(() => undefined)
       }
     },
+    // `onSettled` y no `onSuccess`: si el servidor no contesta -- dormido, sin
+    // red -- la sesión se cierra igual en esta terminal. Quedarse dentro porque
+    // no se pudo avisar es lo contrario de lo que pidió el usuario.
     onSettled: () => {
-      realtimeChannels.forEach((channel) => channel.disconnect())
-      useAuthStore.getState().clear()
-      queryClient.clear()
+      cerrarSesionLocal()
       navigate('/login', { replace: true })
     },
   })

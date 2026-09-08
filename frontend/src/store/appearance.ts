@@ -46,6 +46,43 @@ export const useAppearanceStore = create<AppearanceState>()(
   ),
 )
 
+/** Los colores del producto, sin negocio detrás.
+ *
+ *  Son los mismos que usa `BrandSync` cuando todavía no sabe de quién es la
+ *  pantalla, y los que debe usar la portada pública siempre. */
+export const APARIENCIA_NEUTRA: BusinessAppearance = {
+  brand_primary_color: '#3B82F6',
+  brand_sidebar_color: '#0F172A',
+  status_available_color: '#10B981',
+  status_occupied_color: '#EF4444',
+  status_cleaning_color: '#F59E0B',
+  status_maintenance_color: '#6B7280',
+  default_theme: 'light',
+  default_density: 'comfortable',
+  border_radius: 'medium',
+  font_family: 'modern',
+}
+
+/** ¿Esta pantalla es del producto o de un negocio?
+ *
+ *  La portada pública es del producto: la ve quien todavía no es cliente de
+ *  nadie. Heredaba el color del último motel que se abrió en ese navegador
+ *  -- el tema resuelto vive en `localStorage` y se aplica antes de que React
+ *  monte -- así que un visitante nuevo veía la marca de un negocio ajeno.
+ *
+ *  Arranca leyendo la ruta para que el primer pintado ya sea el correcto, y la
+ *  portada lo confirma al montar. No se persiste: es de esta pantalla, no de
+ *  este navegador. */
+interface AlcanceDeMarca {
+  neutra: boolean
+  setNeutra: (neutra: boolean) => void
+}
+
+export const useAlcanceDeMarca = create<AlcanceDeMarca>()((set) => ({
+  neutra: typeof window !== 'undefined' && window.location.pathname === '/',
+  setNeutra: (neutra) => set({ neutra }),
+}))
+
 function hexToHsl(hex: string): string {
   const value = hex.replace('#', '')
   const red = Number.parseInt(value.slice(0, 2), 16) / 255
@@ -94,6 +131,9 @@ export function applyAppearance(
   themePreference: ThemePreference,
   densityPreference: DensityPreference,
   negocio: BusinessAppearance,
+  /** La portada pinta neutro pero no deja huella: guardarlo borraría la marca
+   *  con la que la terminal pre-pinta su pantalla de acceso. */
+  persistir = true,
 ): void {
   const root = document.documentElement
   const theme = themePreference === 'business' ? negocio.default_theme : themePreference
@@ -119,6 +159,8 @@ export function applyAppearance(
   root.classList.toggle('dark', dark)
   for (const [nombre, valor] of Object.entries(vars)) root.style.setProperty(nombre, valor)
   root.dataset.density = density
+
+  if (!persistir) return
 
   const resuelto: TemaResuelto = { dark, density, vars }
   try {

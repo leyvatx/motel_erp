@@ -236,7 +236,40 @@ class RoomSerializer(serializers.ModelSerializer):
             "out_of_service_reason",
             "is_active",
         )
-        read_only_fields = ("status", "status_changed_at", "out_of_service_reason")
+        # `is_active` también: la baja de una habitación es un DELETE -- que el
+        # modelo convierte en baja lógica y deja constancia de quién y por qué --
+        # no un campo del formulario. Dejarlo escribible tiene una consecuencia
+        # silenciosa el día que este alta viaje como multipart: DRF lee un
+        # booleano ausente como `False`, igual que una casilla sin marcar, y la
+        # habitación nacería dada de baja, invisible en recepción y sin una sola
+        # pista de por qué. Es el mismo tropiezo que ya costó el catálogo de
+        # productos.
+        read_only_fields = (
+            "status",
+            "status_changed_at",
+            "out_of_service_reason",
+            "is_active",
+        )
+
+    def validate_number(self, value: str) -> str:
+        """El número repetido, dicho en su campo y no como falla de la base.
+
+        La restricción es condicional -- único entre las habitaciones vigentes
+        de un motel -- así que DRF no la deduce sola y el choque llegaba hasta
+        el motor de base de datos. El usuario recibía "la operación choca con
+        una restricción de integridad de datos": ni qué campo, ni qué número, ni
+        qué hacer. Aquí se contesta en el idioma del formulario.
+        """
+        numero = value.strip()
+        existentes = Room.objects.filter(number=numero, is_active=True)
+        if self.instance is not None:
+            existentes = existentes.exclude(pk=self.instance.pk)
+        if existentes.exists():
+            raise serializers.ValidationError(
+                f"Ya hay una habitación {numero} vigente. Usa otro número, "
+                "o da de baja la que existe."
+            )
+        return numero
 
 
 class RoomGridSerializer(serializers.ModelSerializer):

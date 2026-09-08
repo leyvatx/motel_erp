@@ -87,4 +87,8 @@ export interface RealtimeMessage<TPayload = unknown> {
   timestamp?: IsoDateTime
 }
 
-export type ConnectionState = 'idle' | 'connecting' | 'open' | 'closed' | 'error'
+/** `degradado` es el estado honesto cuando el servidor de WebSocket no
+ *  responde y se dejó de insistir: la aplicación funciona, pero los cambios de
+ *  otras terminales ya no llegan solos. No es un error de la operación, es una
+ *  capacidad menos. */
+export type ConnectionState = 'idle' | 'connecting' | 'open' | 'closed' | 'error' | 'degradado'

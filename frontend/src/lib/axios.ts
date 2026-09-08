@@ -10,6 +10,7 @@ import { useToastStore } from '@/components/ui/toast'
 import { syncServerTime } from '@/lib/serverTime'
 import { authSnapshot, useAuthStore } from '@/store/auth'
 import { navegarA } from '@/lib/navigation'
+import { cerrarSesionLocal } from '@/lib/session'
 import type { ApiErrorBody, TokenPair } from '@/types/api'
 
 function absolute(value: string | undefined): string {
@@ -146,7 +147,9 @@ async function refreshAccessToken(): Promise<string | null> {
     // ahí significa que cada vez que el contenedor duerme, todo el turno de
     // recepción amanece en la pantalla de login.
     const rechazado = axios.isAxiosError(error) && (error.response?.status ?? 0) < 500
-    if (rechazado) useAuthStore.getState().clear()
+    // Por el mismo camino que el botón de salir: si la sesión se acabó, no
+    // puede quedar en pantalla el nombre ni el color del negocio anterior.
+    if (rechazado) cerrarSesionLocal()
     return null
   }
 }
@@ -184,9 +187,22 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && original && !original._retried) {
       original._retried = true
 
-      refreshPromise = refreshPromise ?? refreshAccessToken()
+      // Una sola renovación a la vez, y se suelta cuando *ella* termina.
+      //
+      // Antes cada petición en espera ponía `refreshPromise = null` al salir de
+      // su propio `await`. Con el token rotatorio y la lista negra del servidor
+      // eso es una trampa: entre que la renovación termina y el primero en
+      // despertar limpia la variable, otro 401 arranca una segunda renovación
+      // con el refresh que acaba de rotar -- ya invalidado -- el servidor lo
+      // rechaza con 401, y `refreshAccessToken` cierra la sesión de alguien que
+      // estaba a media captura. Con el `finally` colgado de la promesa, la
+      // variable se limpia una vez y en el momento correcto.
+      if (!refreshPromise) {
+        refreshPromise = refreshAccessToken().finally(() => {
+          refreshPromise = null
+        })
+      }
       const access = await refreshPromise
-      refreshPromise = null
 
       if (access) {
         original.headers.set('Authorization', `Bearer ${access}`)

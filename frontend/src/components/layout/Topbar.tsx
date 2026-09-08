@@ -31,6 +31,7 @@ import { useLogout } from '@/features/auth/hooks'
 import { cn } from '@/lib/utils'
 import { useAppearanceStore } from '@/store/appearance'
 import { useAuthStore } from '@/store/auth'
+import { realtimeChannels } from '@/lib/websocket'
 import { useUiStore } from '@/store/ui'
 import type { ConnectionState } from '@/types/realtime'
 
@@ -97,19 +98,45 @@ export function Topbar({ connection, onOpenMenu }: Props) {
           <>
             <ShiftChip />
 
-            <span
-              className="mx-1.5 hidden items-center gap-1.5 rounded-full border px-2 py-1 text-2xs font-medium text-muted-foreground sm:flex"
-              title={online ? 'Conectado en tiempo real' : 'Reconectando al servidor'}
+            {/* Qué significa cada estado, dicho sin asustar.
+                "Reconectando" eterno se lee como "el sistema está caído" y no
+                lo está: se puede rentar, cobrar y capturar igual. Cuando el
+                tiempo real se da por vencido, el chip dice qué se pierde --
+                que los cambios de otras terminales ya no llegan solos -- y
+                ofrece volver a intentarlo. */}
+            <button
+              type="button"
+              onClick={() => realtimeChannels.forEach((canal) => canal.reintentar())}
+              disabled={connection !== 'degradado'}
+              className={cn(
+                'mx-1.5 hidden items-center gap-1.5 rounded-full border px-2 py-1 text-2xs font-medium sm:flex',
+                connection === 'degradado'
+                  ? 'text-muted-foreground hover:bg-accent'
+                  : 'cursor-default text-muted-foreground',
+              )}
+              title={
+                online
+                  ? 'Conectado en tiempo real'
+                  : connection === 'degradado'
+                    ? 'Sin tiempo real. La operación sigue normal; los cambios de otras terminales tardan en aparecer. Toca para reintentar.'
+                    : 'Reconectando al servidor'
+              }
             >
               <span
                 className={cn(
                   'h-1.5 w-1.5 rounded-full',
-                  online ? 'bg-status-available' : 'animate-pulse-alert bg-status-cleaning',
+                  online && 'bg-status-available',
+                  connection === 'degradado' && 'bg-muted-foreground/50',
+                  !online && connection !== 'degradado' && 'animate-pulse-alert bg-status-cleaning',
                 )}
                 aria-hidden
               />
-              {online ? 'En línea' : 'Reconectando'}
-            </span>
+              {online
+                ? 'En línea'
+                : connection === 'degradado'
+                  ? 'Sin tiempo real'
+                  : 'Reconectando'}
+            </button>
 
             {/* Sonido y tema son ajustes, no operación: en 375 px la franja
                 no da para nueve controles y acababa cortando el menú del

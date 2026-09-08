@@ -18,6 +18,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { APP_FALLBACK_NAME } from '@/lib/brand'
+import { setFavicon } from '@/lib/favicon'
+import { useAlcanceDeMarca } from '@/store/appearance'
 import { cn } from '@/lib/utils'
 
 /* =========================================================================
@@ -878,8 +880,21 @@ export default function LandingPage() {
   // `lg` es donde la columna pegajosa deja de caber junto al texto.
   const angosta = useMediaQuery('(max-width: 1023px)')
 
+  /* Esta pantalla es del producto, no de un negocio.
+   *
+   *  Lo declara mientras está montada para que la marca -- colores, ícono de la
+   *  pestaña, nombre -- no salga de ningún motel. Volvía a aparecer aunque el
+   *  usuario hubiera cerrado sesión, porque el color vive en `localStorage` y
+   *  se aplica antes que React; ahora aquí manda lo neutro. */
+  const setNeutra = useAlcanceDeMarca((estado) => estado.setNeutra)
+  useEffect(() => {
+    setNeutra(true)
+    return () => setNeutra(false)
+  }, [setNeutra])
+
   useEffect(() => {
     document.title = `${APP_FALLBACK_NAME} · Hospedaje y estancias ágiles`
+    setFavicon(null)
   }, [])
 
   return (

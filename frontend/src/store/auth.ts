@@ -47,11 +47,16 @@ export const useAuthStore = create<AuthState>()(
       setActiveMotel: (id, name, role) =>
         set({ activeMotelId: id, activeMotelName: name, activeRole: role }),
       clearActiveMotel: () => set({ activeMotelId: null, activeMotelName: null, activeRole: null }),
+      // `motelSlug` también, y no es un detalle: es la única pista que queda
+      // de a qué negocio se entró, y la consulta pública de la marca la usa
+      // para volver a pedir su nombre, su logotipo y sus colores. Dejarla
+      // puesta hacía que cerrar sesión no borrara la sucursal de la pantalla.
       clear: () =>
         set({
           user: null,
           access: null,
           refresh: null,
+          motelSlug: null,
           activeMotelId: null,
           activeMotelName: null,
           activeRole: null,

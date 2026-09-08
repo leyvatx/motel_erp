@@ -48,6 +48,18 @@ const INVALIDATION_MAP: Record<string, QueryKeyList> = {
   [RealtimeEvent.SettingsChanged]: [queryKeys.settings.business],
 }
 
+/** Cada cuánto se vuelve a preguntar cuando no hay socket. */
+const RELEVO_SIN_SOCKET_MS = 30_000
+
+/** Lo que el socket mantenía al día y no se puede quedar viejo en pantalla. */
+const CLAVES_SIN_SOCKET: QueryKeyList = [
+  queryKeys.frontdesk.grid,
+  queryKeys.frontdesk.summary,
+  queryKeys.frontdesk.expiring,
+  queryKeys.housekeeping.board(),
+  queryKeys.notifications.unreadCount,
+]
+
 export function useRealtime(): { state: ConnectionState } {
   const queryClient = useQueryClient()
   const access = useAuthStore((state) => state.access)
@@ -82,6 +94,51 @@ export function useRealtime(): { state: ConnectionState } {
       unsubscribeNotifications()
     }
   }, [access, activeMotelId, queryClient, user?.is_corporate_user, user?.is_platform_admin])
+
+  /* Sin socket, la pantalla se queda con lo que trajo la última consulta.
+   *
+   *  Recepción no puede operar con un tablero congelado: si otra terminal renta
+   *  el 204, aquí tiene que verse. Mientras el tiempo real esté caído se vuelve
+   *  a preguntar cada medio minuto por lo que cambia solo -- el tablero, los
+   *  vencimientos, la limpieza, las notificaciones -- que es exactamente lo que
+   *  el socket avisaba. Cuesta cuatro peticiones por minuto y evita la peor
+   *  forma de error: la que no se ve. */
+  useEffect(() => {
+    if (state !== 'degradado' || !access) return
+
+    const id = window.setInterval(() => {
+      // Solo si la pestaña está a la vista: refrescar un tablero que nadie
+      // está mirando es gastar batería y CPU del servidor.
+      if (document.visibilityState !== 'visible') return
+      CLAVES_SIN_SOCKET.forEach((queryKey) => {
+        void queryClient.invalidateQueries({ queryKey })
+      })
+    }, RELEVO_SIN_SOCKET_MS)
+
+    return () => window.clearInterval(id)
+  }, [state, access, queryClient])
+
+  /* Volver a intentarlo cuando algo cambió de verdad.
+   *
+   *  Rendirse no puede ser para siempre: la red vuelve, el servidor se
+   *  despierta, el usuario regresa a la pestaña después de comer. Esos son los
+   *  momentos en que sí vale la pena reintentar, y no cada treinta segundos a
+   *  ciegas. */
+  useEffect(() => {
+    if (!access) return
+
+    const reintentar = (): void => {
+      if (document.visibilityState !== 'visible') return
+      realtimeChannels.forEach((channel) => channel.reintentar())
+    }
+
+    window.addEventListener('online', reintentar)
+    document.addEventListener('visibilitychange', reintentar)
+    return () => {
+      window.removeEventListener('online', reintentar)
+      document.removeEventListener('visibilitychange', reintentar)
+    }
+  }, [access])
 
   const previousAccess = useRef<string | null>(access)
   useEffect(() => {

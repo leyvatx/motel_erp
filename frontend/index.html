@@ -54,6 +54,13 @@
     <script>
       ;(function () {
         try {
+          // La portada pública no hereda la marca de nadie. Es la primera
+          // pantalla que ve un visitante nuevo y salía con el color del último
+          // motel que se abrió en este navegador -- aunque su sesión ya se
+          // hubiera cerrado -- porque este guion corre antes que la aplicación
+          // y no preguntaba de quién era la pantalla.
+          if (location.pathname === '/') return
+
           var crudo = localStorage.getItem('erp-tema-resuelto')
           if (!crudo) return
           var tema = JSON.parse(crudo)

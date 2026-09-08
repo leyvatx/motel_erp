@@ -4,27 +4,28 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useBusinessProfile, usePublicBusinessProfile } from '@/features/config/hooks'
 import { setFavicon } from '@/lib/favicon'
 import { configureFormatting } from '@/lib/format'
-import { applyAppearance, useAppearanceStore, type BusinessAppearance } from '@/store/appearance'
-
-const FALLBACK_APPEARANCE: BusinessAppearance = {
-  brand_primary_color: '#3B82F6',
-  brand_sidebar_color: '#0F172A',
-  status_available_color: '#10B981',
-  status_occupied_color: '#EF4444',
-  status_cleaning_color: '#F59E0B',
-  status_maintenance_color: '#6B7280',
-  default_theme: 'light',
-  default_density: 'comfortable',
-  border_radius: 'medium',
-  font_family: 'modern',
-}
+import {
+  APARIENCIA_NEUTRA,
+  applyAppearance,
+  useAlcanceDeMarca,
+  useAppearanceStore,
+} from '@/store/appearance'
 
 export function BrandSync(): null {
   const queryClient = useQueryClient()
   const profile = useBusinessProfile()
   const publicProfile = usePublicBusinessProfile()
 
-  const source = profile.data ?? publicProfile.data
+  /* En la portada pública no manda ningún negocio.
+   *
+   *  La ve gente que todavía no es cliente de nadie, y estaba saliendo con el
+   *  color y el ícono del último motel que se abrió en ese navegador. Aquí se
+   *  ignora el perfil venga de donde venga: no se filtra por qué consulta trajo
+   *  el dato, se corta el dato entero. */
+  const neutra = useAlcanceDeMarca((estado) => estado.neutra)
+
+  const negocio = profile.data ?? publicProfile.data
+  const source = neutra ? undefined : negocio
   const logoUrl = source?.logo_url ?? null
   const locale = source?.locale
   const currency = source?.currency
@@ -50,13 +51,17 @@ export function BrandSync(): null {
   }, [locale, currency, queryClient])
 
   useEffect(() => {
-    const appearance = source ?? FALLBACK_APPEARANCE
-    applyAppearance(theme, density, appearance)
+    const appearance = source ?? APARIENCIA_NEUTRA
+    // La portada también ignora el tema del negocio: se pinta en claro, que es
+    // como se ve un sitio público, sin arrastrar el modo oscuro de la terminal.
+    const preferencia = neutra ? 'light' : theme
+    const aplicar = (): void => applyAppearance(preferencia, density, appearance, !neutra)
+
+    aplicar()
     const media = window.matchMedia('(prefers-color-scheme: dark)')
-    const listener = (): void => applyAppearance(theme, density, appearance)
-    media.addEventListener('change', listener)
-    return () => media.removeEventListener('change', listener)
-  }, [source, theme, density])
+    media.addEventListener('change', aplicar)
+    return () => media.removeEventListener('change', aplicar)
+  }, [source, theme, density, neutra])
 
   return null
 }

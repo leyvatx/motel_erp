@@ -7,6 +7,7 @@ from decimal import Decimal
 
 from django.test import TestCase
 from django.utils import timezone
+from rest_framework.test import APIClient
 
 from common.exceptions import DomainError, InvalidStateTransition, ResourceUnavailable
 
@@ -435,3 +436,75 @@ class LimpiezaDesdeRecepcionTests(TestCase):
             cuarto = services.finish_cleaning(room_id=self.cuarto.pk, actor=self.actor)
 
         self.assertEqual(cuarto.status, RoomStatus.AVAILABLE)
+
+
+class AltaDeHabitacionTests(TestCase):
+    """El contrato del alta, tal como lo llama el navegador.
+
+    Se reportó que en producción no se podían agregar habitaciones. El endpoint
+    resultó sano; estas pruebas lo dejan por escrito para que siga estándolo:
+    la ruta con su barra final, sin CSRF -- la sesión es un token, no una cookie
+    -- y una habitación que nace vigente aunque el formulario no lo mande.
+    """
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls.motel = Motel.objects.create(name="Motel del Alta de Cuartos")
+        cls.gerente = User.objects.create_user(
+            username="gerencia.cuartos", password="Demo.1234", full_name="Gerencia",
+            role=Role.MANAGER, motel=cls.motel,
+        )
+        with use_motel(cls.motel):
+            cls.tipo = RoomType.objects.create(name="Sencilla", code="SEN", max_occupants=2)
+
+    def cliente(self) -> APIClient:
+        client = APIClient()
+        client.force_authenticate(user=self.gerente)
+        return client
+
+    def test_el_alta_responde_201_con_el_payload_del_formulario(self) -> None:
+        response = self.cliente().post(
+            "/api/v1/frontdesk/rooms/",
+            {
+                "number": "301",
+                "room_type": self.tipo.pk,
+                "floor": 3,
+                "zone": "Edificio A",
+                "has_garage": True,
+                "notes": "",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.data["number"], "301")
+        self.assertEqual(response.data["status"], RoomStatus.AVAILABLE)
+
+    def test_nace_vigente_aunque_nadie_mande_is_active(self) -> None:
+        # En multipart, un booleano ausente vale `False`. Con el campo de solo
+        # lectura da igual cómo viaje el alta: la habitación nace vigente.
+        response = self.cliente().post(
+            "/api/v1/frontdesk/rooms/",
+            {"number": "302", "room_type": self.tipo.pk, "floor": 3, "is_active": False},
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, 201, response.data)
+        with use_motel(self.motel):
+            self.assertTrue(Room.objects.get(number="302").is_active)
+
+    def test_un_numero_repetido_se_explica_en_su_campo(self) -> None:
+        self.cliente().post(
+            "/api/v1/frontdesk/rooms/",
+            {"number": "303", "room_type": self.tipo.pk, "floor": 3},
+            format="json",
+        )
+        response = self.cliente().post(
+            "/api/v1/frontdesk/rooms/",
+            {"number": "303", "room_type": self.tipo.pk, "floor": 3},
+            format="json",
+        )
+
+        # 400 con el motivo en el campo, no un 500 ni un silencio.
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("number", str(response.data).lower())
