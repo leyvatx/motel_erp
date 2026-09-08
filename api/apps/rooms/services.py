@@ -686,7 +686,40 @@ def cancel_stay(*, stay_id: int, reason: str, actor) -> Stay:
 
 @transaction.atomic
 def finish_cleaning(*, room_id: int, actor, reason: str = "") -> Room:
-    """Marca el cuarto como disponible al terminar la limpieza."""
+    """Marca el cuarto como disponible al terminar la limpieza.
+
+    Recepción también da por terminada la limpieza -- es quien está en el
+    mostrador cuando la camarista pasa a avisar -- y por ahí se liberaba el
+    cuarto sin cerrar su tarea de ama de llaves. La tarea se quedaba "en
+    proceso" para siempre: seguía en el tablero de limpieza y el tablero de
+    inicio contaba como pendiente un cuarto que ya estaba rentándose. Se cierra
+    aquí, por el mismo camino que usa ama de llaves, para que las dos pantallas
+    cuenten lo mismo y el tiempo quede registrado.
+
+    La importación va dentro porque ama de llaves ya depende de este módulo.
+    """
+    from apps.housekeeping import services as limpieza
+    from apps.housekeeping.constants import CleaningTaskStatus
+    from apps.housekeeping.models import CleaningTask
+    from apps.housekeeping.services import OPEN_CLEANING_STATUSES
+
+    tarea = (
+        CleaningTask.objects.select_for_update(of=("self",))
+        .filter(room_id=room_id, is_active=True, status__in=OPEN_CLEANING_STATUSES)
+        .order_by("id")
+        .first()
+    )
+    if tarea is not None:
+        # La máquina de estados no deja saltar de pendiente a hecha, y con
+        # razón: sin arranque no hay cronómetro ni responsable. Se arranca a
+        # nombre de quien la está cerrando.
+        if tarea.status != CleaningTaskStatus.IN_PROGRESS:
+            limpieza.start_cleaning_task(task_id=tarea.id, actor=actor)
+        limpieza.finish_cleaning_task(
+            task_id=tarea.id, actor=actor, notes=reason or "Cerrada desde recepción"
+        )
+        return Room.objects.get(pk=room_id)
+
     room = Room.objects.select_for_update().get(pk=room_id, is_active=True)
     return transition_room(
         room, RoomStatus.AVAILABLE, actor=actor, reason=reason or "Limpieza terminada"

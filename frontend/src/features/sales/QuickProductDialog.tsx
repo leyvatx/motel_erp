@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { PiPlus } from 'react-icons/pi'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,9 +13,23 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { ProductImagePicker } from '@/features/inventory/components/ProductImagePicker'
-import { useCategories, useCreateProduct } from '@/features/inventory/hooks'
+import {
+  useCategories,
+  useCreateCategory,
+  useCreateProduct,
+  useStockEntry,
+} from '@/features/inventory/hooks'
 import type { Product } from '@/features/inventory/types'
+import { useSalesWarehouse } from '@/features/sales/hooks'
 import { apiErrorMessage, apiFieldErrors } from '@/lib/axios'
+
+/** Los tres cajones con los que arranca cualquier negocio de hospedaje.
+ *  No son una taxonomía: son un atajo para no dejar a nadie atorado. */
+const SUGERIDAS = [
+  { name: 'Bebidas', kind: 'BEVERAGE' },
+  { name: 'Botanas', kind: 'FOOD' },
+  { name: 'Amenidades', kind: 'AMENITY' },
+] as const
 
 const UNIDADES = [
   { value: 'PIECE', label: 'Pieza' },
@@ -68,13 +83,25 @@ interface Props {
 export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onCreated }: Props) {
   const categories = useCategories()
   const create = useCreateProduct()
+  const crearCategoria = useCreateCategory()
+  const entrada = useStockEntry()
+  const almacen = useSalesWarehouse()
 
   const [nombre, setNombre] = useState(nombreInicial)
   const [precio, setPrecio] = useState('')
   const [categoria, setCategoria] = useState('')
   const [unidad, setUnidad] = useState<string>('PIECE')
   const [inventariable, setInventariable] = useState(true)
+  const [existencias, setExistencias] = useState('')
   const [foto, setFoto] = useState<File | null>(null)
+
+  /* El nombre que se tecleó en el buscador. El botón dice Crear "Agua mineral"
+     y el formulario abría en blanco: había que volver a escribirlo con el
+     cliente enfrente. `useState(nombreInicial)` solo mira su valor del primer
+     render, y este diálogo se monta una vez y se reutiliza en cada alta. */
+  useEffect(() => {
+    if (open) setNombre(nombreInicial)
+  }, [open, nombreInicial])
 
   const listaCategorias = categories.data?.results ?? []
   const categoriaElegida = categoria || (listaCategorias[0] ? String(listaCategorias[0].id) : '')
@@ -100,11 +127,31 @@ export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onC
         image: foto,
       },
       {
-        onSuccess: (producto) => {
-          onCreated(producto as Product)
+        onSuccess: async (creado) => {
+          const producto = creado as Product
+
+          // Un producto inventariable nace en cero, y la venta descuenta de
+          // existencias: sin esta entrada el cajero acababa de darlo de alta,
+          // lo veía en la cuenta y al cobrar le salía "no hay suficiente". Se
+          // registra lo que hay ahora en el almacén de venta, que es de donde
+          // se va a descontar en un momento.
+          if (inventariable && Number(existencias) > 0 && almacen) {
+            await entrada
+              .mutateAsync({
+                product_id: producto.id,
+                warehouse_id: almacen.id,
+                quantity: String(Number(existencias)),
+                movement_type: 'INITIAL',
+                reason: 'Alta desde el punto de venta',
+              })
+              .catch(() => undefined)
+          }
+
+          onCreated(producto)
           setNombre('')
           setPrecio('')
           setInventariable(true)
+          setExistencias('')
           setFoto(null)
           onOpenChange(false)
         },
@@ -194,10 +241,45 @@ export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onC
               ))}
             </SelectContent>
           </Select>
+          {/* Un negocio recién dado de alta no tiene categorías, y sin una el
+              formulario no se puede guardar: el cajero llegaba aquí con el
+              cliente enfrente, encontraba el botón apagado y un letrero que lo
+              mandaba a otra pantalla. Se crea desde aquí, en un toque, con el
+              nombre del cajón donde de verdad va el producto. */}
           {listaCategorias.length === 0 ? (
-            <p className="text-xs text-muted-foreground">
-              Todavía no hay categorías. Se crean en Inventarios, pestaña Catálogos.
-            </p>
+            <div className="space-y-2 rounded-lg border border-dashed p-3">
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Todavía no tienes categorías. Crea la primera y sigue con la venta.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {SUGERIDAS.map((sugerida) => (
+                  <Button
+                    key={sugerida.name}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    loading={crearCategoria.isPending}
+                    onClick={() =>
+                      crearCategoria.mutate(
+                        {
+                          name: sugerida.name,
+                          kind: sugerida.kind,
+                          description: '',
+                          sort_order: 0,
+                        },
+                        {
+                          onSuccess: (creada) =>
+                            setCategoria(String((creada as { id: number }).id)),
+                        },
+                      )
+                    }
+                  >
+                    <PiPlus className="h-3.5 w-3.5" />
+                    {sugerida.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
           ) : null}
         </div>
 
@@ -228,6 +310,31 @@ export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onC
             </span>
           </span>
         </label>
+
+        {/* Lo que hay ahora, contado a ojo desde el mostrador. Sin esto el
+            producto nace en cero y la primera venta rebota por falta de
+            existencia -- justo la venta que se estaba cobrando. */}
+        {inventariable ? (
+          <div className="space-y-2">
+            <Label htmlFor="nuevo-existencias">¿Cuántas tienes ahora?</Label>
+            <Input
+              id="nuevo-existencias"
+              inputMode="numeric"
+              type="number"
+              min="0"
+              step="1"
+              value={existencias}
+              onChange={(event) => setExistencias(event.target.value)}
+              placeholder="0"
+              className="h-11 text-right tabular"
+            />
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              {Number(existencias) > 0
+                ? `Entran al ${almacen?.name ?? 'almacén de venta'}. Puedes ajustarlas luego en Inventarios.`
+                : 'Si lo dejas en cero, el producto queda dado de alta pero la venta no podrá cobrarse hasta que registres existencia.'}
+            </p>
+          </div>
+        ) : null}
 
         {/* El motivo real, no una suposición. Decía siempre "revisa que el
             nombre no exista" y eso escondía lo que de verdad pasaba -- por

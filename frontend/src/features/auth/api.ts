@@ -12,6 +12,9 @@ export interface SignupPayload {
   admin_full_name: string
   email: string
   password: string
+  /** Identifica el intento de alta, no la petición: el reintento repite clave
+   *  y el servidor devuelve la organización que ya creó. */
+  attempt_key?: string
 }
 
 export interface ChangePasswordPayload {

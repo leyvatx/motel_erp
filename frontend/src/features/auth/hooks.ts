@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { authApi, type LoginPayload, type SignupPayload } from '@/features/auth/api'
 import { queryKeys } from '@/lib/queryClient'
+import { despertarServidor } from '@/lib/wakeup'
 import { realtimeChannels } from '@/lib/websocket'
 import { defaultRouteFor, useAuthStore } from '@/store/auth'
 import { useUiStore } from '@/store/ui'
@@ -36,7 +37,18 @@ export function useSignup() {
   const navigate = useNavigate()
 
   return useMutation<LoginResponse, unknown, SignupPayload>({
-    mutationFn: authApi.signup,
+    // Antes de mandar el alta se toca la puerta del servidor.
+    //
+    // Un POST no se puede reintentar a ciegas -- crearía dos negocios -- así
+    // que el interceptor lo deja pasar sin red de seguridad. Con el servicio
+    // dormido eso significaba que quien se registraba recibía un error de red
+    // y se quedaba sin cuenta. Despertarlo primero con una petición que sí es
+    // segura de repetir convierte esa espera en una pantalla que explica qué
+    // está pasando.
+    mutationFn: async (payload) => {
+      await despertarServidor()
+      return authApi.signup(payload)
+    },
     onSuccess: (data) => {
       setSession(data)
       reopenSetup()

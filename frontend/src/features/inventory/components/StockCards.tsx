@@ -82,13 +82,17 @@ export function StockCards({
     <ul className="space-y-2">
       {rows.map((row) => {
         const faltante = toNumber(row.min_stock) - toNumber(row.quantity)
+        // Cero es peor que bajo mínimo: no es que se esté acabando, es que no
+        // se puede vender. Y con mínimo en cero no entra en "bajo mínimo".
+        const agotado = toNumber(row.quantity) <= 0
 
         return (
           <li
             key={row.id}
             className={cn(
               'flex items-center gap-3 rounded-lg border bg-card p-3',
-              row.is_below_minimum && 'border-status-occupied/40 bg-status-occupied/[0.04]',
+              (row.is_below_minimum || agotado) &&
+                'border-status-occupied/40 bg-status-occupied/[0.04]',
             )}
           >
             <button
@@ -104,7 +108,7 @@ export function StockCards({
               <p
                 className={cn(
                   'text-lg font-semibold leading-none tabular',
-                  row.is_below_minimum && 'text-status-occupied',
+                  (row.is_below_minimum || agotado) && 'text-status-occupied',
                 )}
               >
                 {formatQuantity(row.quantity)}
@@ -112,7 +116,9 @@ export function StockCards({
               {/* "faltan 0" no dice nada: cuando la existencia toca el mínimo
                   exacto el producto ya está en alerta, pero no falta nada
                   todavía. Lo que hay que comunicar es que se acabó el colchón. */}
-              {row.is_below_minimum ? (
+              {agotado ? (
+                <p className="mt-1 text-2xs text-status-occupied">no se puede vender</p>
+              ) : row.is_below_minimum ? (
                 <p className="mt-1 text-2xs text-status-occupied">
                   {faltante > 0 ? `faltan ${formatQuantity(faltante)}` : 'en el mínimo'}
                 </p>

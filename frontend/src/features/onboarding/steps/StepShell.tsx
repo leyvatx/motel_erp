@@ -29,12 +29,18 @@ export function StepShell({
   submitting,
   onSubmit,
   submitLabel = 'Continuar',
+  ayuda,
+  loading = false,
 }: {
   children: ReactNode
   valid: boolean
   submitting: boolean
   onSubmit: () => void
   submitLabel?: string
+  /** Qué falta para poder avanzar. Se muestra cuando el botón está apagado. */
+  ayuda?: string | null
+  /** El paso todavía está trayendo lo que ya estaba guardado. */
+  loading?: boolean
 }) {
   return (
     <form
@@ -45,7 +51,22 @@ export function StepShell({
       }}
     >
       <div className="space-y-3">{children}</div>
-      <Button type="submit" className="w-full" disabled={!valid} loading={submitting}>
+
+      {/* Un botón gris y mudo es la forma más rápida de que alguien abandone el
+          asistente: no sabe si el sistema se rompió o si le falta algo. Cuando
+          no se puede avanzar, aquí se dice exactamente qué falta. */}
+      {!valid && ayuda ? (
+        <p className="text-xs leading-relaxed text-muted-foreground" role="status">
+          {ayuda}
+        </p>
+      ) : null}
+
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={!valid || loading}
+        loading={submitting || loading}
+      >
         {submitLabel}
       </Button>
     </form>

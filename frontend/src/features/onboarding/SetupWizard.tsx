@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { PiCheckCircle } from 'react-icons/pi'
+import { PiArrowLeft, PiCheckCircle } from 'react-icons/pi'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -16,6 +16,7 @@ import { RoomsStep } from '@/features/onboarding/steps/RoomsStep'
 import { TariffStep } from '@/features/onboarding/steps/TariffStep'
 import { useSetupStatus, type SetupStepId } from '@/features/onboarding/hooks'
 import { cn } from '@/lib/utils'
+import { defaultRouteFor, useAuthStore } from '@/store/auth'
 import { useUiStore } from '@/store/ui'
 
 function Progreso({
@@ -43,6 +44,7 @@ function Progreso({
 export function SetupWizard() {
   const navigate = useNavigate()
   const { steps, pending, loading, applies } = useSetupStatus()
+  const user = useAuthStore((state) => state.user)
   const dismissed = useUiStore((state) => state.setupDismissed)
   const dismiss = useUiStore((state) => state.dismissSetup)
 
@@ -52,17 +54,35 @@ export function SetupWizard() {
    *  milisegundos. */
   const [recienHechos, setRecienHechos] = useState<SetupStepId[]>([])
 
+  /** Un paso al que se volvió con "Atrás". Manda sobre el orden natural.
+   *
+   *  Sin esto el asistente solo sabía avanzar: quien se equivocaba al escribir
+   *  el nombre tenía que terminar los cuatro pasos y buscar Configuración. */
+  const [revisando, setRevisando] = useState<SetupStepId | null>(null)
+
   const restantes = pending.filter((step) => !recienHechos.includes(step.id))
-  const actual = restantes[0]
+  const actual = revisando ? steps.find((step) => step.id === revisando) : restantes[0]
+
+  /** El paso anterior al que se está viendo, si lo hay. */
+  const indiceActual = actual ? steps.findIndex((step) => step.id === actual.id) : -1
+  const anterior = indiceActual > 0 ? steps[indiceActual - 1] : undefined
   const terminado = recienHechos.length > 0 && restantes.length === 0
   const open = applies && !loading && !dismissed && (pending.length > 0 || terminado)
+
+  // Quien acaba de configurar es dueño o gerente, y su pantalla es el tablero;
+  // recepción cae en Recepción. Mandar a todos al mismo sitio hacía que el
+  // administrador terminara el asistente en una pantalla que no es la suya.
+  const destino = defaultRouteFor(user)
 
   const cerrar = (): void => {
     dismiss()
     setRecienHechos([])
   }
 
-  const completar = (id: SetupStepId): void => setRecienHechos((previos) => [...previos, id])
+  const completar = (id: SetupStepId): void => {
+    setRecienHechos((previos) => (previos.includes(id) ? previos : [...previos, id]))
+    setRevisando(null)
+  }
 
   return (
     <Dialog
@@ -89,10 +109,10 @@ export function SetupWizard() {
               className="w-full"
               onClick={() => {
                 cerrar()
-                navigate('/frontdesk')
+                navigate(destino)
               }}
             >
-              Ir a Recepción
+              {destino === '/frontdesk' ? 'Ir a Recepción' : 'Ir al tablero'}
             </Button>
           </>
         ) : (
@@ -112,9 +132,21 @@ export function SetupWizard() {
             {actual.id === 'rooms' ? <RoomsStep onDone={() => completar('rooms')} /> : null}
 
             <div className="flex items-center justify-between border-t pt-3">
-              <p className="text-xs text-muted-foreground">
-                Faltan {restantes.length} de {steps.length}
-              </p>
+              {anterior ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setRevisando(anterior.id)}
+                  className="-ml-2"
+                >
+                  <PiArrowLeft />
+                  {anterior.label}
+                </Button>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Faltan {restantes.length} de {steps.length}
+                </p>
+              )}
               <Button variant="ghost" size="sm" onClick={cerrar}>
                 Saltar por ahora
               </Button>

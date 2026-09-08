@@ -84,8 +84,15 @@ export default function InventoryPage() {
 
   const rows = useMemo(() => {
     const all = stocks.data?.results ?? []
+    // Primero lo que no hay, luego lo que se está acabando y al final lo que
+    // sobra: son las dos razones por las que alguien abre esta pantalla, en ese
+    // orden. Un producto en cero no siempre queda bajo su mínimo -- si el mínimo
+    // es cero, no lo está -- y aun así es el que impide vender.
+    const urgencia = (row: WarehouseStock): number =>
+      toNumber(row.quantity) <= 0 ? 0 : row.is_below_minimum ? 1 : 2
     const ordered = [...all].sort((a, b) => {
-      if (a.is_below_minimum !== b.is_below_minimum) return a.is_below_minimum ? -1 : 1
+      const diferencia = urgencia(a) - urgencia(b)
+      if (diferencia !== 0) return diferencia
       return a.product_name.localeCompare(b.product_name)
     })
     if (view === 'low') return ordered.filter((row) => row.is_below_minimum)
@@ -325,7 +332,7 @@ export default function InventoryPage() {
                             >
                               <TableCell>
                                 <div className="flex items-center gap-2">
-                                  {row.is_below_minimum ? (
+                                  {row.is_below_minimum || toNumber(row.quantity) <= 0 ? (
                                     <span
                                       className="h-1.5 w-1.5 shrink-0 rounded-full bg-status-occupied"
                                       aria-hidden
@@ -345,11 +352,16 @@ export default function InventoryPage() {
                               <TableCell
                                 className={cn(
                                   'text-right tabular font-semibold',
-                                  row.is_below_minimum && 'text-status-occupied',
+                                  (row.is_below_minimum || toNumber(row.quantity) <= 0) &&
+                                    'text-status-occupied',
                                 )}
                               >
                                 {formatQuantity(row.quantity)}
-                                {row.is_below_minimum ? (
+                                {toNumber(row.quantity) <= 0 ? (
+                                  <span className="ml-2 text-2xs font-normal text-status-occupied">
+                                    no se puede vender
+                                  </span>
+                                ) : row.is_below_minimum ? (
                                   <span className="ml-2 text-2xs font-normal text-status-occupied">
                                     {toNumber(row.min_stock) - toNumber(row.quantity) > 0
                                       ? `faltan ${formatQuantity(

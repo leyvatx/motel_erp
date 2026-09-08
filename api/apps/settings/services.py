@@ -23,6 +23,8 @@ def create_motel(
     Van en la misma transacción a proposito: un motel sin nadie que pueda
     entrar no le sirve a nadie, y quedaria como basura en la base.
     """
+    from apps.inventory.constants import WarehouseType
+    from apps.inventory.models import Warehouse
     from apps.users.models import User
 
     motel = Motel(**fields)
@@ -37,6 +39,21 @@ def create_motel(
         email=owner_email,
         role=Role.SUPERADMIN,
         motel=motel,
+    )
+
+    # Y un almacén del que vender desde el primer día.
+    #
+    # El punto de venta descuenta de un almacén: sin ninguno, "Cobrar" se veía
+    # habilitado y reventaba siempre, y el negocio recién dado de alta no podía
+    # vender ni un refresco hasta que alguien adivinara que primero había que
+    # crear un almacén en Inventarios. Se crea aquí, con el motel, porque es
+    # parte de poder operar y no una preferencia que alguien vaya a configurar.
+    Warehouse.objects.create(
+        motel=motel,
+        code="GEN",
+        name="Almacén general",
+        warehouse_type=WarehouseType.GENERAL,
+        is_default_for_sales=True,
     )
 
     return motel

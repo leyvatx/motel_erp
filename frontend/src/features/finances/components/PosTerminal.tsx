@@ -274,6 +274,18 @@ export function PosTerminal() {
                 <PiReceipt />
                 Cobrar {cart.total > 0 ? formatMoney(cart.total) : ''}
               </Button>
+
+              {/* Un botón apagado sin motivo es el que hace que alguien lo
+                  golpee tres veces con el cliente enfrente. El importe recibido
+                  es obligatorio para calcular el cambio, así que se dice, y se
+                  dice cuánto falta. */}
+              {!canCharge && !checkout.isPending ? (
+                <p className="text-center text-xs text-muted-foreground">
+                  {cart.lines.length === 0
+                    ? 'Agrega al menos un producto a la cuenta.'
+                    : `Anota cuánto pagó el cliente: faltan ${formatMoney(cart.total - toNumber(tendered))}.`}
+                </p>
+              ) : null}
             </div>
           )}
         </CardContent>

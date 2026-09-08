@@ -271,10 +271,21 @@ function Metrica({
   )
 }
 
+/** Desde dónde una renta se lee como "se va a acabar". Es el mismo umbral con
+ *  el que el cronómetro del producto se pone ámbar. */
+const AVISO_DESDE = 85
+
 function TarjetaHabitacion({ habitacion, paso }: { habitacion: Habitacion; paso: number }) {
   const estado = estadoEn(habitacion, paso)
   const ocupada = estado === 'ocupada'
   const visibles = Math.min(habitacion.huespedes, MAX_AVATARES)
+
+  /* "Por vencer" es el estado que hace hotelero a este negocio: no es que la
+     habitación esté ocupada, es que se acaba en veinte minutos y hay que
+     decidir si se extiende o se prepara la salida. Igual que en el producto, no
+     cambia el color de la tarjeta -- sigue ocupada -- sino el del tiempo: lo
+     que corre es la hora, no el cuarto. */
+  const porVencer = ocupada && habitacion.avance >= AVISO_DESDE
 
   return (
     <div
@@ -318,23 +329,23 @@ function TarjetaHabitacion({ habitacion, paso }: { habitacion: Habitacion; paso:
             className={cn(
               'inline-flex items-center gap-1 text-[0.625rem] font-medium uppercase tracking-[0.08em]',
               'transition-colors duration-500 motion-reduce:transition-none',
-              ETIQUETA_ESTADO[estado],
+              porVencer ? 'text-status-cleaning' : ETIQUETA_ESTADO[estado],
             )}
           >
             <span
               className={cn(
                 'h-1 w-1 rounded-full transition-colors duration-500 motion-reduce:transition-none',
-                PUNTO[estado],
+                porVencer ? 'bg-status-cleaning' : PUNTO[estado],
               )}
               aria-hidden
             />
-            {NOMBRE[estado]}
+            {porVencer ? 'Por vencer' : NOMBRE[estado]}
           </span>
 
           <span
             className={cn(
               'font-mono text-[0.625rem] leading-none tabular transition-opacity duration-500 motion-reduce:transition-none',
-              SUAVE,
+              porVencer ? 'font-medium text-status-cleaning' : SUAVE,
               ocupada ? 'opacity-100' : 'opacity-0',
             )}
           >
@@ -350,7 +361,10 @@ function TarjetaHabitacion({ habitacion, paso }: { habitacion: Habitacion; paso:
           )}
         >
           <div
-            className="h-full rounded-full bg-brand-accent/70 transition-[width] duration-500 ease-out motion-reduce:transition-none"
+            className={cn(
+              'h-full rounded-full transition-[width,background-color] duration-500 ease-out motion-reduce:transition-none',
+              porVencer ? 'bg-status-cleaning' : 'bg-brand-accent/70',
+            )}
             style={{ width: `${ocupada ? habitacion.avance : 0}%` }}
           />
         </div>

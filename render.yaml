@@ -46,6 +46,18 @@ services:
     # Render, porque un parpadeo del Redis gratuito tumbaba un servicio que
     # todavía podía atender.
     healthCheckPath: /api/health
+    # Sin disco montado, MEDIA_ROOT vive en el sistema de archivos del
+    # contenedor y se borra en cada despliegue y en cada reinicio: los
+    # logotipos y las fotos de producto duran hasta el siguiente deploy.
+    #
+    # El plan free no admite discos. Al pasar el servicio a starter, descomenta
+    # el bloque y las imágenes sobreviven; MEDIA_ROOT ya apunta a `api/media`,
+    # así que el mountPath es el único dato que hay que cuadrar.
+    #
+    # disk:
+    #   name: motel-erp-media
+    #   mountPath: /app/media
+    #   sizeGB: 1
     envVars:
       - fromGroup: motel-erp-comun
       # Un solo worker: el plan free da 0.1 de CPU y 512 MB, y cada worker de

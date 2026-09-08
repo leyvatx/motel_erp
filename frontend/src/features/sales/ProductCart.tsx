@@ -266,8 +266,13 @@ export function ProductPicker({
         >
           {filtered.map((product) => {
             const inCart = cart.lines.find((line) => line.product.id === product.id)
-            const existencia = product.total_stock === null ? null : toNumber(product.total_stock)
-            const agotado = product.is_stockable && existencia !== null && existencia <= 0
+            // `total_stock` llega nulo cuando el producto no tiene ni un
+            // renglón de existencias -- el caso de uno recién dado de alta. Para
+            // vender eso es cero, no "desconocido": tratándolo como desconocido
+            // la tarjeta se quedaba encendida, el producto entraba a la cuenta y
+            // el cobro reventaba con el cliente enfrente.
+            const existencia = product.is_stockable ? toNumber(product.total_stock ?? '0') : null
+            const agotado = existencia !== null && existencia <= 0
 
             return (
               <button

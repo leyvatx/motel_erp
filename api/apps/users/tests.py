@@ -14,6 +14,7 @@ from django.core.management import CommandError, call_command
 from django.test import TestCase
 from rest_framework.test import APIClient
 
+from apps.inventory.models import Warehouse
 from apps.settings.models import Motel
 from apps.users import sessions
 from apps.users.constants import Role
@@ -306,6 +307,12 @@ class CrearAdminDelClienteTests(TestCase):
         listo para entregar.
         """
         cache.clear()
+        # Todo lo que cuelga de una sucursal la protege contra el borrado: en
+        # este sistema no se borra historial, y la baja real es lógica
+        # (reset_tenant). Aquí sí hace falta el borrado físico para llegar a un
+        # sistema sin ninguna sucursal, así que primero se retira el almacén que
+        # el alta le siembra para poder vender.
+        Warehouse.all_objects.all().hard_delete()
         # all_objects es un Manager llano, así que este borrado es el de verdad.
         Motel.all_objects.all().delete()
 

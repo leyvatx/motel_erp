@@ -252,3 +252,37 @@ class Motel(TimeStampedModel, AuthorStampedModel, SoftDeleteModel):
 
         _cache_safe(cache.set, key, motel, CACHE_TTL_SECONDS)
         return motel
+
+
+class SignupAttempt(TimeStampedModel):
+    """Huella de un alta ya realizada, para que un reintento no cree otro negocio.
+
+    Dar de alta una organización no se puede repetir a ciegas: crea un motel, un
+    dueño y una sesión. El interceptor del navegador lo sabe y por eso no
+    reintenta los POST -- pero eso dejaba el problema en manos del usuario, que
+    ante un error de red vuelve a pulsar "Crear cuenta" y termina con dos
+    negocios idénticos y dos claves de acceso.
+
+    La clave la genera el navegador una vez por intento de alta, no por
+    petición: mientras el formulario sea el mismo, todos los reintentos comparten
+    clave y todos reciben la misma organización.
+
+    No hereda de ``TenantModel`` porque nace antes que el motel al que apunta, y
+    porque su razón de ser es justamente responder "esto ya se creó" cuando
+    todavía no hay contexto de sucursal.
+    """
+
+    key = models.CharField("Clave de intento", max_length=64, unique=True, editable=False)
+    motel = models.ForeignKey(
+        "settings.Motel",
+        verbose_name="Organización creada",
+        on_delete=models.CASCADE,
+        related_name="signup_attempts",
+    )
+
+    class Meta:
+        verbose_name = "Intento de alta"
+        verbose_name_plural = "Intentos de alta"
+
+    def __str__(self) -> str:
+        return f"{self.key} -> {self.motel.slug}"

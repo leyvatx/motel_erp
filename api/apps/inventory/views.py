@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from django.db import transaction
-from django.db.models import F, Sum
+from django.db.models import DecimalField, F, Sum, Value
+from django.db.models.functions import Coalesce
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
@@ -76,8 +77,13 @@ class ProductCategoryViewSet(viewsets.ModelViewSet):
 
 
 class ProductViewSet(viewsets.ModelViewSet):
+    # Sin renglones de existencia, ``Sum`` devuelve nulo, y el punto de venta lo
+    # leía como "no se sabe" en vez de "no hay": la tarjeta quedaba encendida y
+    # el cobro reventaba después. Cero es la respuesta correcta.
     queryset = Product.objects.select_related("category").annotate(
-        total_stock=Sum("stocks__quantity")
+        total_stock=Coalesce(
+            Sum("stocks__quantity"), Value(0), output_field=DecimalField(decimal_places=3)
+        )
     )
     serializer_class = ProductSerializer
     # La foto llega como multipart desde el telefono o el explorador de
@@ -87,6 +93,25 @@ class ProductViewSet(viewsets.ModelViewSet):
     filterset_fields = ["category", "is_sellable", "is_stockable", "track_expiration", "is_active"]
     search_fields = ["sku", "name", "barcode"]
     ordering_fields = ["name", "sku", "sale_price"]
+
+    def perform_create(self, serializer) -> None:
+        producto = serializer.save()
+
+        # Un producto inventariable nace con su renglón de existencias en cero.
+        #
+        # Sin él no aparece en Inventarios -- la pantalla lista existencias, no
+        # productos -- así que lo recién dado de alta era invisible justo donde
+        # se le registra la mercancía: no se podía vender y tampoco se veía por
+        # qué. Con el renglón en cero sale en la lista, con su cero a la vista y
+        # sus acciones de entrada y ajuste a la mano.
+        if producto.is_stockable:
+            almacen = (
+                Warehouse.objects.filter(is_active=True)
+                .order_by("-is_default_for_sales", "id")
+                .first()
+            )
+            if almacen is not None:
+                WarehouseStock.objects.get_or_create(product=producto, warehouse=almacen)
 
     def perform_destroy(self, instance: Product) -> None:
         instance.soft_delete(user=self.request.user, reason="Baja de producto")

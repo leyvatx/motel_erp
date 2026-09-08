@@ -22,6 +22,8 @@ import {
   useStay,
   useTariffBlocks,
 } from '@/features/frontdesk/hooks'
+import { openShiftDialog } from '@/features/finances/components/OpenShiftDialog'
+import { useCurrentShift } from '@/features/finances/hooks'
 import { StayTimeline } from '@/features/audit/StayTimeline'
 import { useSellableProducts } from '@/features/inventory/hooks'
 import { CartLines, ProductPicker, useCart } from '@/features/sales/ProductCart'
@@ -461,11 +463,35 @@ function CheckoutPanel({
   onCancel: () => void
 }) {
   const checkout = useCheckoutStay(stayId)
+  const turno = useCurrentShift()
   const [method, setMethod] = useState<PaymentMethod>('CASH')
   const [amount, setAmount] = useState<string>(balance ?? '0')
   const [tendered, setTendered] = useState<string>('')
 
   const change = toNumber(tendered) - toNumber(amount)
+
+  /* Sin turno de caja abierto el servidor rechaza el cobro, y eso se descubría
+     hasta después de elegir método, escribir el importe y pulsar "Cobrar y
+     cerrar": el formulario pedía trabajo para terminar en un error. Se pregunta
+     antes de pintarlo. Un fallo de la consulta no bloquea nada -- ahí manda el
+     servidor, no una suposición del navegador. */
+  if (!turno.isPending && turno.data === null) {
+    return (
+      <div className="space-y-3 rounded-md border p-4">
+        <p className="text-sm font-medium">Falta abrir el turno de caja</p>
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          El cobro entra al corte del turno y ahora mismo no hay ninguno abierto. Ábrelo con el
+          efectivo con el que empiezas y vuelve aquí; la habitación sigue activa mientras tanto.
+        </p>
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={onCancel}>
+            Volver
+          </Button>
+          <Button onClick={openShiftDialog}>Abrir turno de caja</Button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-3 rounded-md border p-4">

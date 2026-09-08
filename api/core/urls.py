@@ -4,10 +4,13 @@ Cada modulo expone su propio ``urls.py`` y se monta bajo ``/api/v1/``.
 Los routers de cada app se van agregando conforme avanzan las fases.
 """
 
+import re
+
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
+from django.views.static import serve
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
@@ -53,5 +56,28 @@ urlpatterns = [
     ),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Los archivos que sube el usuario -- logotipos, fotos de producto, evidencia de
+# mantenimiento -- se sirven siempre, no solo en desarrollo.
+#
+# `static()` no hace nada cuando DEBUG es False, así que en producción la API
+# guardaba la imagen, devolvía su URL, y esa URL contestaba 404: el usuario
+# subía una foto, la veía en la vista previa, y al recargar encontraba un hueco.
+# El fallo no estaba en la subida sino en que nadie servía lo subido.
+#
+# Sirve Django y no un proxy porque aquí no hay uno: en Render el contenedor
+# atiende directo. Para el volumen de este producto -- una foto por producto,
+# unas decenas por sucursal -- es de sobra. El día que haya almacenamiento
+# externo (S3, Cloudinary), esto se cae solo: `MEDIA_URL` pasa a ser absoluta y
+# esta ruta deja de recibir tráfico.
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+if not settings.DEBUG:
+    # `static()` se rinde con DEBUG=False, así que fuera de desarrollo la ruta
+    # se declara a mano.
+    urlpatterns += [
+        re_path(
+            r"^%s(?P<path>.*)$" % re.escape(settings.MEDIA_URL.lstrip("/")),
+            serve,
+            {"document_root": settings.MEDIA_ROOT},
+        ),
+    ]

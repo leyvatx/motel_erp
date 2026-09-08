@@ -144,6 +144,21 @@ describe('escaparate de la landing', () => {
     expect(within(escaparate()).getByText('38%')).toBeInTheDocument()
   })
 
+  // El estado que hace hotelero a esto: la habitación sigue ocupada, pero su
+  // tiempo se está acabando. Se avisa en el reloj, no en el color del cuarto --
+  // igual que en Recepción -- porque lo que corre es la hora, no la habitación.
+  it('avisa la que está por vencerse sin sacarla de ocupada', () => {
+    pintar()
+    verPaso(1)
+
+    const avisos = within(escaparate()).getAllByText('Por vencer')
+    expect(avisos).toHaveLength(1)
+    expect(contar('ocupada')).toBe(3)
+
+    // La 102 va al 92 % de su estancia y sale a las 14:30.
+    expect(within(escaparate()).getByText('14:30').className).toContain('status-cleaning')
+  })
+
   it('paso 3 despliega el folio sin mover el tablero', () => {
     pintar()
     verPaso(1)

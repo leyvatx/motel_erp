@@ -428,3 +428,76 @@ class ProductoConImagenTests(InventoryTestCase):
         self.assertTrue(producto.is_active)
         self.assertTrue(producto.image.name.startswith("productos/"))
         self.assertIsNotNone(ProductSerializer(producto).data["image_url"])
+
+
+class AltaDeProductoVendibleTests(TestCase):
+    """Lo que hace falta para que un producto recién dado de alta se pueda vender.
+
+    El caso es el de un negocio que acaba de abrir: da de alta un refresco desde
+    la caja, con el cliente enfrente, y espera cobrarlo en ese momento.
+    """
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls.motel = Motel.objects.create(name="Motel del Alta")
+        cls.gerente = User.objects.create_user(
+            username="gerencia.alta", password="Demo.1234", full_name="Gerencia",
+            role=Role.MANAGER, motel=cls.motel,
+        )
+        with use_motel(cls.motel):
+            cls.almacen = Warehouse.objects.create(
+                code="GEN", name="Almacén general", is_default_for_sales=True
+            )
+            cls.categoria = ProductCategory.objects.create(
+                name="Bebidas", kind=ProductKind.BEVERAGE
+            )
+
+    def crear(self, **extra) -> dict:
+        client = APIClient()
+        client.force_authenticate(user=self.gerente)
+        datos = {
+            "sku": "REF-001",
+            "name": "Refresco de cola",
+            "category": self.categoria.pk,
+            "unit": UnitOfMeasure.PIECE,
+            "sale_price": "30.00",
+            "tax_rate": "0.00",
+            "default_min_stock": "0",
+            "is_sellable": True,
+            "is_stockable": True,
+            "track_expiration": False,
+            **extra,
+        }
+        response = client.post(PRODUCTS_URL, datos, format="json")
+        self.assertEqual(response.status_code, 201, response.data)
+        return response.data
+
+    def test_el_inventariable_nace_con_su_renglon_de_existencias_en_cero(self) -> None:
+        # Inventarios lista existencias, no productos: sin este renglón el
+        # producto recién creado no aparecía en la única pantalla donde se le
+        # puede registrar la mercancía que le falta.
+        creado = self.crear()
+
+        with use_motel(self.motel):
+            stock = WarehouseStock.objects.get(product_id=creado["id"])
+
+        self.assertEqual(stock.warehouse_id, self.almacen.id)
+        self.assertEqual(stock.quantity, Decimal("0.000"))
+
+    def test_un_servicio_no_ocupa_lugar_en_el_almacen(self) -> None:
+        creado = self.crear(sku="LAV-001", name="Lavandería", is_stockable=False)
+
+        with use_motel(self.motel):
+            self.assertFalse(WarehouseStock.objects.filter(product_id=creado["id"]).exists())
+
+    def test_sin_existencias_el_catalogo_dice_cero_y_no_nulo(self) -> None:
+        # El punto de venta apaga la tarjeta con cero. Con nulo la leía como
+        # "no se sabe", dejaba agregar el producto y el cobro reventaba.
+        self.crear()
+
+        client = APIClient()
+        client.force_authenticate(user=self.gerente)
+        response = client.get(f"{PRODUCTS_URL}sellable/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Decimal(response.data["results"][0]["total_stock"]), Decimal("0"))

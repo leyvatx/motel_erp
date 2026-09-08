@@ -57,12 +57,22 @@ export function useSetupStatus(): SetupStatus {
 
   const nombre = business.data?.name?.trim() ?? ''
 
+  /** El nombre cuenta como puesto por alguien, no como valor de fábrica. */
+  const nombrePropio = nombre.length > 0 && nombre !== NOMBRE_SEMBRADO
+
+  /* El logotipo no entra en la cuenta a propósito. Esta lista dice qué le falta
+   * al negocio para poder rentar, y sin logotipo se renta igual: exigirlo dejaba
+   * "Faltan 4 de 4" en la pantalla de inicio de un negocio que ya tiene su
+   * nombre puesto y funcionando, sin manera de quitarlo salvo subir una imagen
+   * que quizá no existe todavía. Se sube en este mismo paso -- alcanzable con
+   * el botón de atrás del asistente y desde Configuración -- pero no bloquea. */
+
   const steps: SetupStep[] = [
     {
       id: 'business',
-      label: 'Nombre y logotipo',
-      hint: 'Aparecen en el menú, en la pantalla de acceso y en el ticket.',
-      done: nombre.length > 0 && nombre !== NOMBRE_SEMBRADO,
+      label: 'Nombre del negocio',
+      hint: 'Aparece en el menú, en la pantalla de acceso y en el ticket. El logotipo es opcional.',
+      done: nombrePropio,
     },
     {
       id: 'roomType',

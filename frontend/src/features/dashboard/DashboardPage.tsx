@@ -384,10 +384,14 @@ export default function DashboardPage() {
                 loading={expiring.isLoading}
                 tone={expiredStays.length ? 'warning' : 'default'}
               />
+              {/* Cuenta tareas abiertas, no cuartos en limpieza: recepción
+                  puede pedir una limpieza de un cuarto que sigue disponible, y
+                  decir "habitaciones en proceso" hacía que la suma de las
+                  cuatro tarjetas pasara del total de cuartos. */}
               <MetricCard
                 title="Limpieza"
                 value={activeCleaning.length}
-                detail="Habitaciones en proceso"
+                detail="Tareas abiertas"
                 icon={<PiSparkle className="size-4" />}
                 loading={cleaning.isLoading}
               />

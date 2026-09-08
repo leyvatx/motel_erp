@@ -16,7 +16,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.settings import services
-from apps.settings.models import Motel
+from apps.settings.models import Motel, SignupAttempt
 from apps.settings.serializers import (
     MotelCreateSerializer,
     MotelListSerializer,
@@ -251,6 +251,37 @@ class RegistroPublicoView(APIView):
         datos = serializer.validated_data
 
         clave = serializer.clave_de_empleado()
+        intento = (datos.get("attempt_key") or "").strip()[:64]
+
+        # Ya se creó con esta misma clave: se devuelve la sesión de aquella
+        # organización en vez de crear otra. Es el caso del doble clic y el de
+        # la respuesta que se perdió en el camino.
+        if intento:
+            previo = SignupAttempt.objects.filter(key=intento).select_related("motel").first()
+            if previo is not None:
+                dueño = User.all_objects.filter(motel=previo.motel, username=clave).first()
+                if dueño is not None:
+                    return self._sesion(dueño, status.HTTP_200_OK)
+
+        # El correo ya dio de alta un negocio. Crear otro dejaría dos
+        # organizaciones con la misma clave de empleado -- que se deriva del
+        # correo -- y al entrar sin decir la sucursal el sistema no sabría a
+        # cuál de las dos. Es más útil mandarlo a entrar que duplicarle el
+        # negocio en silencio.
+        if User.all_objects.filter(email__iexact=datos["email"], motel__isnull=False).exists():
+            return Response(
+                {
+                    "error": {
+                        "code": "email_ya_registrado",
+                        "message": (
+                            "Ese correo ya dio de alta un negocio. Entra con tu clave, "
+                            "o usa otro correo si vas a abrir uno distinto."
+                        ),
+                        "details": {},
+                    }
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
 
         # Sin motel en el contexto: la sucursal se está creando en este momento
         # y el manager de usuarios acota por el motel en curso, que aquí no hay.
@@ -264,7 +295,17 @@ class RegistroPublicoView(APIView):
                 owner_email=datos["email"],
             )
             owner = User.all_objects.get(motel=motel, username=clave)
+            if intento:
+                # La restricción única es la que de verdad protege: dos altas
+                # simultáneas con la misma clave chocan aquí y la segunda
+                # deshace su transacción entera, motel incluido.
+                SignupAttempt.objects.create(key=intento, motel=motel)
 
+        return self._sesion(owner, status.HTTP_201_CREATED)
+
+    @staticmethod
+    def _sesion(owner, codigo: int) -> Response:
+        """El par de tokens con el que la terminal entra sin volver a preguntar."""
         refresh = MotelTokenObtainPairSerializer.get_token(owner)
         return Response(
             {
@@ -272,5 +313,5 @@ class RegistroPublicoView(APIView):
                 "refresh": str(refresh),
                 "user": UserSerializer(owner).data,
             },
-            status=status.HTTP_201_CREATED,
+            status=codigo,
         )

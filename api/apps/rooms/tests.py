@@ -22,8 +22,10 @@ from apps.rooms.constants import (
 from apps.rooms.models import Room, RoomStatusLog, RoomType, Stay, TariffBlock
 from apps.rooms.state_machine import validate_room_transition
 from apps.sales.constants import ChargeType, FolioStatus, PaymentMethod
+from apps.settings.models import Motel
 from apps.users.constants import Role
 from apps.users.models import User
+from common.tenancy import use_motel
 from common.testing import SucursalTestCase
 
 
@@ -387,3 +389,49 @@ class SalidaRepetidaTests(FrontDeskTestCase):
 
         self.assertEqual(caso.exception.detail.code, "stay_already_closed")
         self.assertIn("ya se cerró", str(caso.exception.detail))
+
+
+class LimpiezaDesdeRecepcionTests(TestCase):
+    """Liberar el cuarto desde recepción también cierra su tarea de limpieza.
+
+    Son dos botones para lo mismo -- "Limpieza lista" en recepción y "Lista" en
+    ama de llaves -- y solo uno cerraba la tarea. El otro dejaba al cuarto
+    disponible y a la tarea en proceso: el tablero de limpieza la seguía
+    mostrando y el de inicio contaba un pendiente que ya no existía.
+    """
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls.motel = Motel.objects.create(name="Motel de Limpieza")
+        cls.actor = User.objects.create_user(
+            username="recepcion.limpia", password="Demo.1234", full_name="Recepción",
+            role=Role.RECEPTION, motel=cls.motel,
+        )
+        with use_motel(cls.motel):
+            cls.tipo = RoomType.objects.create(name="Sencilla", code="SEN", max_occupants=2)
+            cls.cuarto = Room.objects.create(
+                number="101", room_type=cls.tipo, status=RoomStatus.CLEANING
+            )
+
+    def test_cerrar_desde_recepcion_termina_la_tarea_abierta(self) -> None:
+        from apps.housekeeping.constants import CleaningTaskStatus, CleaningTaskType
+        from apps.housekeeping.models import CleaningTask
+
+        with use_motel(self.motel):
+            tarea = CleaningTask.objects.create(
+                room=self.cuarto, task_type=CleaningTaskType.CHECKOUT
+            )
+
+            cuarto = services.finish_cleaning(room_id=self.cuarto.pk, actor=self.actor)
+
+            tarea.refresh_from_db()
+
+        self.assertEqual(cuarto.status, RoomStatus.AVAILABLE)
+        self.assertEqual(tarea.status, CleaningTaskStatus.DONE)
+        self.assertIsNotNone(tarea.finished_at)
+
+    def test_sin_tarea_abierta_el_cuarto_se_libera_igual(self) -> None:
+        with use_motel(self.motel):
+            cuarto = services.finish_cleaning(room_id=self.cuarto.pk, actor=self.actor)
+
+        self.assertEqual(cuarto.status, RoomStatus.AVAILABLE)

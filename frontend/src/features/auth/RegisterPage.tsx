@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, Navigate } from 'react-router-dom'
 import { z } from 'zod'
@@ -8,6 +8,7 @@ import { LuArrowLeft, LuBuilding2, LuEye, LuEyeOff } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { PreparandoEspacio } from '@/features/auth/PreparandoEspacio'
 import { useSignup } from '@/features/auth/hooks'
 import { apiErrorMessage, apiFieldErrors } from '@/lib/axios'
 import { APP_FALLBACK_NAME } from '@/lib/brand'
@@ -29,6 +30,18 @@ const CAMPOS = ['business_name', 'admin_full_name', 'email', 'password'] as cons
  *  No es autocompletado real -- eso pide una lista que nadie va a mantener --
  *  sino ahorrarse teclear la parte que siempre se escribe igual. */
 const DOMINIOS = ['@gmail.com', '@outlook.com', '@hotmail.com', '@icloud.com']
+
+/** Identifica un intento de alta ante el servidor.
+ *
+ *  `crypto.randomUUID` no existe sin HTTPS ni en navegadores viejos, y quien se
+ *  registra puede llegar desde cualquiera; el respaldo basta porque la clave
+ *  solo tiene que ser única mientras dura un formulario. */
+function nuevaClaveDeIntento(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return `alta-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+}
 
 /** Alta de autoservicio: cuatro campos y adentro.
  *
@@ -63,6 +76,12 @@ export default function RegisterPage() {
     defaultValues: { business_name: '', admin_full_name: '', email: '', password: '' },
   })
 
+  // Una clave por intento de alta, no por clic. Mientras el usuario no
+  // recargue la página, todos sus reintentos comparten clave y el servidor
+  // devuelve la misma organización en vez de crear otra.
+  const intentoRef = useRef(nuevaClaveDeIntento())
+  const [inicioEspera, setInicioEspera] = useState(0)
+
   const correo = watch('email')
 
   // Las sugerencias solo estorban una vez que el dominio ya está escrito: se
@@ -72,19 +91,23 @@ export default function RegisterPage() {
 
   if (access) return <Navigate to={defaultRouteFor(user)} replace />
 
-  const onSubmit = handleSubmit((values) =>
-    signup.mutate(values, {
-      onError: (error) => {
-        // La API dice exactamente qué campo falló y por qué; hasta ahora todo
-        // eso terminaba resumido en un banner que no decía cuál era el malo.
-        const porCampo = apiFieldErrors(error)
-        const conocidos = CAMPOS.filter((campo) => porCampo[campo])
-        conocidos.forEach((campo, indice) =>
-          setError(campo, { message: porCampo[campo] }, { shouldFocus: indice === 0 }),
-        )
+  const onSubmit = handleSubmit((values) => {
+    setInicioEspera(Date.now())
+    return signup.mutate(
+      { ...values, attempt_key: intentoRef.current },
+      {
+        onError: (error) => {
+          // La API dice exactamente qué campo falló y por qué; hasta ahora todo
+          // eso terminaba resumido en un banner que no decía cuál era el malo.
+          const porCampo = apiFieldErrors(error)
+          const conocidos = CAMPOS.filter((campo) => porCampo[campo])
+          conocidos.forEach((campo, indice) =>
+            setError(campo, { message: porCampo[campo] }, { shouldFocus: indice === 0 }),
+          )
+        },
       },
-    }),
-  )
+    )
+  })
 
   // Si el error ya quedó pintado bajo su input, el banner solo repite.
   const errorGeneral =
@@ -114,134 +137,138 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        <div className="rounded-lg border bg-card p-6">
-          <form onSubmit={onSubmit} className="space-y-5" noValidate>
-            <div className="space-y-2">
-              <Label htmlFor="business_name">Nombre del negocio</Label>
-              <Input
-                id="business_name"
-                autoFocus
-                autoComplete="organization"
-                placeholder="Hospedaje Las Palmas"
-                aria-invalid={Boolean(errors.business_name)}
-                {...register('business_name')}
-              />
-              {errors.business_name ? (
-                <p role="alert" className="text-xs leading-relaxed text-destructive">
-                  {errors.business_name.message}
-                </p>
-              ) : null}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="admin_full_name">Tu nombre</Label>
-              <Input
-                id="admin_full_name"
-                autoComplete="name"
-                placeholder="Laura Domínguez"
-                aria-invalid={Boolean(errors.admin_full_name)}
-                {...register('admin_full_name')}
-              />
-              {errors.admin_full_name ? (
-                <p role="alert" className="text-xs leading-relaxed text-destructive">
-                  {errors.admin_full_name.message}
-                </p>
-              ) : null}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Correo</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                placeholder="laura@laspalmas.mx"
-                aria-invalid={Boolean(errors.email)}
-                {...register('email')}
-              />
-
-              {sugerirDominios ? (
-                <div className="flex flex-wrap gap-1.5 pt-0.5">
-                  {DOMINIOS.map((sufijo) => (
-                    <button
-                      key={sufijo}
-                      type="button"
-                      onClick={() => completarDominio(sufijo)}
-                      aria-label={`Completar como ${local}${sufijo}`}
-                      className={cn(
-                        'rounded-md border border-border/60 px-2 py-1 font-mono text-2xs',
-                        'text-muted-foreground transition-colors duration-150',
-                        'hover:border-foreground/25 hover:bg-accent hover:text-foreground',
-                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                      )}
-                    >
-                      {sufijo}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-
-              {errors.email ? (
-                <p role="alert" className="text-xs leading-relaxed text-destructive">
-                  {errors.email.message}
-                </p>
-              ) : sugerirDominios ? null : (
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  De aquí sale tu clave de acceso al sistema.
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
-              <div className="relative">
+        {signup.isPending ? (
+          <PreparandoEspacio desde={inicioEspera} onCancelar={() => signup.reset()} />
+        ) : (
+          <div className="rounded-lg border bg-card p-6">
+            <form onSubmit={onSubmit} className="space-y-5" noValidate>
+              <div className="space-y-2">
+                <Label htmlFor="business_name">Nombre del negocio</Label>
                 <Input
-                  id="password"
-                  type={verClave ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  className="pr-10"
-                  aria-invalid={Boolean(errors.password)}
-                  {...register('password')}
+                  id="business_name"
+                  autoFocus
+                  autoComplete="organization"
+                  placeholder="Hospedaje Las Palmas"
+                  aria-invalid={Boolean(errors.business_name)}
+                  {...register('business_name')}
                 />
-                <button
-                  type="button"
-                  onClick={() => setVerClave((visible) => !visible)}
-                  aria-label={verClave ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                  aria-pressed={verClave}
-                  className={cn(
-                    'absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-md',
-                    'text-muted-foreground transition-colors duration-150 hover:text-foreground',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
-                  )}
-                >
-                  {verClave ? (
-                    <LuEyeOff className="h-4 w-4" aria-hidden />
-                  ) : (
-                    <LuEye className="h-4 w-4" aria-hidden />
-                  )}
-                </button>
+                {errors.business_name ? (
+                  <p role="alert" className="text-xs leading-relaxed text-destructive">
+                    {errors.business_name.message}
+                  </p>
+                ) : null}
               </div>
-              {errors.password ? (
-                <p role="alert" className="text-xs leading-relaxed text-destructive">
-                  {errors.password.message}
+
+              <div className="space-y-2">
+                <Label htmlFor="admin_full_name">Tu nombre</Label>
+                <Input
+                  id="admin_full_name"
+                  autoComplete="name"
+                  placeholder="Laura Domínguez"
+                  aria-invalid={Boolean(errors.admin_full_name)}
+                  {...register('admin_full_name')}
+                />
+                {errors.admin_full_name ? (
+                  <p role="alert" className="text-xs leading-relaxed text-destructive">
+                    {errors.admin_full_name.message}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Correo</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="laura@laspalmas.mx"
+                  aria-invalid={Boolean(errors.email)}
+                  {...register('email')}
+                />
+
+                {sugerirDominios ? (
+                  <div className="flex flex-wrap gap-1.5 pt-0.5">
+                    {DOMINIOS.map((sufijo) => (
+                      <button
+                        key={sufijo}
+                        type="button"
+                        onClick={() => completarDominio(sufijo)}
+                        aria-label={`Completar como ${local}${sufijo}`}
+                        className={cn(
+                          'rounded-md border border-border/60 px-2 py-1 font-mono text-2xs',
+                          'text-muted-foreground transition-colors duration-150',
+                          'hover:border-foreground/25 hover:bg-accent hover:text-foreground',
+                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        )}
+                      >
+                        {sufijo}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+
+                {errors.email ? (
+                  <p role="alert" className="text-xs leading-relaxed text-destructive">
+                    {errors.email.message}
+                  </p>
+                ) : sugerirDominios ? null : (
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    De aquí sale tu clave de acceso al sistema.
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Contraseña</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={verClave ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    className="pr-10"
+                    aria-invalid={Boolean(errors.password)}
+                    {...register('password')}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setVerClave((visible) => !visible)}
+                    aria-label={verClave ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    aria-pressed={verClave}
+                    className={cn(
+                      'absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-md',
+                      'text-muted-foreground transition-colors duration-150 hover:text-foreground',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+                    )}
+                  >
+                    {verClave ? (
+                      <LuEyeOff className="h-4 w-4" aria-hidden />
+                    ) : (
+                      <LuEye className="h-4 w-4" aria-hidden />
+                    )}
+                  </button>
+                </div>
+                {errors.password ? (
+                  <p role="alert" className="text-xs leading-relaxed text-destructive">
+                    {errors.password.message}
+                  </p>
+                ) : null}
+              </div>
+
+              {errorGeneral ? (
+                <p
+                  role="alert"
+                  className="rounded-md border border-destructive/25 bg-destructive/5 px-3 py-2.5 text-sm leading-relaxed text-destructive"
+                >
+                  {errorGeneral}
                 </p>
               ) : null}
-            </div>
 
-            {errorGeneral ? (
-              <p
-                role="alert"
-                className="rounded-md border border-destructive/25 bg-destructive/5 px-3 py-2.5 text-sm leading-relaxed text-destructive"
-              >
-                {errorGeneral}
-              </p>
-            ) : null}
-
-            <Button type="submit" className="h-11 w-full lg:h-10" loading={signup.isPending}>
-              Crear cuenta y empezar
-            </Button>
-          </form>
-        </div>
+              <Button type="submit" className="h-11 w-full lg:h-10">
+                Crear cuenta y empezar
+              </Button>
+            </form>
+          </div>
+        )}
 
         <p className="text-center text-xs leading-relaxed text-muted-foreground">
           <Link

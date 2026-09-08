@@ -8,6 +8,9 @@ import { cn } from '@/lib/utils'
 /** El mismo tope que valida el servidor, para avisar antes de subir. */
 const MAX_BYTES = 2 * 1024 * 1024
 
+/** Lo que el servidor acepta, dicho antes de mandarlo. */
+const TIPOS_ACEPTADOS = ['image/png', 'image/jpeg', 'image/webp']
+
 interface Props {
   /** Foto ya guardada del producto, si tiene. */
   actual?: string | null
@@ -58,6 +61,15 @@ export function ProductImagePicker({ actual, categoria = '', onChange, className
 
   const elegir = (elegido: File | undefined): void => {
     if (!elegido) return
+    // El `accept` del campo solo filtra el explorador: se puede arrastrar un
+    // PDF, y algunas galerías de Android entregan HEIC. Se dice aquí, con la
+    // foto todavía en la mano, en vez de dejar que el servidor conteste un 400
+    // cuando ya se guardó todo lo demás. Un tipo vacío -- que también pasa en
+    // Android -- no se rechaza: de eso decide el servidor.
+    if (elegido.type && !TIPOS_ACEPTADOS.includes(elegido.type)) {
+      setError('Esa no es una imagen. Sube un PNG, JPG o WEBP.')
+      return
+    }
     if (elegido.size > MAX_BYTES) {
       setError('La imagen pesa más de 2 MB. Toma una nueva o elige otra más ligera.')
       return

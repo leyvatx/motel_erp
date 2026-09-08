@@ -619,3 +619,66 @@ class RegistroPublicoTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["results"], [])
+
+
+class RegistroIdempotenteTests(TestCase):
+    """Un reintento no puede dejar al usuario con dos negocios."""
+
+    def setUp(self) -> None:
+        cache.clear()
+
+    def payload(self, **cambios) -> dict:
+        datos = {
+            "business_name": "Hostal La Cañada",
+            "admin_full_name": "Efraín Ruiz",
+            "email": "efrain@lacanada.mx",
+            "password": "Canada.2026!segura",
+        }
+        datos.update(cambios)
+        return datos
+
+    def test_la_misma_clave_de_intento_no_crea_dos_organizaciones(self) -> None:
+        # El caso real: se pulsa "Crear cuenta", la respuesta se pierde, y el
+        # navegador reintenta con la misma clave.
+        cliente = APIClient()
+        primera = cliente.post(
+            REGISTRO_URL, self.payload(attempt_key="intento-1"), format="json"
+        )
+        segunda = cliente.post(
+            REGISTRO_URL, self.payload(attempt_key="intento-1"), format="json"
+        )
+
+        self.assertEqual(primera.status_code, 201)
+        self.assertEqual(segunda.status_code, 200)
+        self.assertEqual(primera.data["user"]["motel"], segunda.data["user"]["motel"])
+        self.assertEqual(Motel.all_objects.filter(name="Hostal La Cañada").count(), 1)
+
+    def test_el_mismo_correo_no_abre_un_segundo_negocio_en_silencio(self) -> None:
+        """Sin clave de intento, la defensa es el correo.
+
+        Dos negocios con el mismo correo comparten clave de empleado -- se
+        deriva del correo -- y al entrar sin decir la sucursal el sistema no
+        sabría a cuál. Mandar a entrar es más útil que duplicar en silencio.
+        """
+        cliente = APIClient()
+        cliente.post(REGISTRO_URL, self.payload(), format="json")
+        repetida = cliente.post(
+            REGISTRO_URL, self.payload(business_name="Otro Hostal"), format="json"
+        )
+
+        self.assertEqual(repetida.status_code, 409)
+        self.assertEqual(repetida.data["error"]["code"], "email_ya_registrado")
+        self.assertEqual(Motel.all_objects.filter(name="Otro Hostal").count(), 0)
+
+    def test_otro_correo_si_puede_dar_de_alta_su_negocio(self) -> None:
+        """La protección no puede volverse un candado para quien sí es nuevo."""
+        cliente = APIClient()
+        cliente.post(REGISTRO_URL, self.payload(), format="json")
+        otra = cliente.post(
+            REGISTRO_URL,
+            self.payload(email="rosa@otrositio.mx", business_name="Posada Otra"),
+            format="json",
+        )
+
+        self.assertEqual(otra.status_code, 201)
+        self.assertEqual(Motel.all_objects.filter(name="Posada Otra").count(), 1)

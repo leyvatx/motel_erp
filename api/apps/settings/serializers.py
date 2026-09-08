@@ -271,6 +271,10 @@ class RegistroPublicoSerializer(serializers.Serializer):
     admin_full_name = serializers.CharField(max_length=150, label="Nombre del administrador")
     email = serializers.EmailField(label="Correo")
     password = serializers.CharField(min_length=8, write_only=True, label="Contraseña")
+    # La genera el navegador una vez por intento de alta. Opcional para no
+    # romper a un cliente viejo, pero sin ella se pierde la protección contra
+    # crear dos organizaciones por un reintento.
+    attempt_key = serializers.CharField(required=False, allow_blank=True, max_length=64)
 
     def validate_business_name(self, value: str) -> str:
         nombre = value.strip()

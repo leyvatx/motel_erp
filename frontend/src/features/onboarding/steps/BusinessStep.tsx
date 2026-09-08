@@ -1,10 +1,18 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { PiImageSquare } from 'react-icons/pi'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { StepField, StepShell } from '@/features/onboarding/steps/StepShell'
-import { useBusinessProfile, useUpdateBusinessLogo, useUpdateBusinessProfile } from '@/features/config/hooks'
+import {
+  useBusinessProfile,
+  useUpdateBusinessLogo,
+  useUpdateBusinessProfile,
+} from '@/features/config/hooks'
+import { apiErrorMessage } from '@/lib/axios'
+
+/** Mismo tope que valida el servidor para el logotipo. */
+const MAX_BYTES = 512 * 1024
 
 export function BusinessStep({ onDone }: { onDone: () => void }) {
   const profile = useBusinessProfile()
@@ -12,8 +20,61 @@ export function BusinessStep({ onDone }: { onDone: () => void }) {
   const updateLogo = useUpdateBusinessLogo()
 
   const fileRef = useRef<HTMLInputElement>(null)
-  const [name, setName] = useState(profile.data?.name ?? '')
+  const [name, setName] = useState('')
   const [logo, setLogo] = useState<File | null>(null)
+  const [vistaPrevia, setVistaPrevia] = useState<string | null>(null)
+  const [errorArchivo, setErrorArchivo] = useState<string | null>(null)
+
+  /** El nombre que ya tiene el negocio, en cuanto llega.
+   *
+   *  Antes esto era `useState(profile.data?.name ?? '')`, que se evalúa en el
+   *  primer render -- cuando la consulta todavía no ha resuelto -- y no se
+   *  vuelve a mirar nunca. El campo se quedaba vacío aunque el negocio ya
+   *  tuviera nombre (el que se escribió al registrarse), y como "Continuar" se
+   *  habilita con el nombre, el botón aparecía muerto sin decir por qué.
+   *
+   *  Sólo se copia mientras el usuario no haya escrito: si ya está editando,
+   *  una respuesta tardía no puede pisarle lo tecleado. */
+  const tocado = useRef(false)
+  const nombreGuardado = profile.data?.name ?? ''
+  useEffect(() => {
+    if (!tocado.current && nombreGuardado) setName(nombreGuardado)
+  }, [nombreGuardado])
+
+  // La vista previa es un blob: se revoca al cambiarla o al salir, porque una
+  // imagen de cámara ocupa varios MB hasta que se suelta.
+  useEffect(() => {
+    if (!logo) {
+      setVistaPrevia(null)
+      return
+    }
+    const url = URL.createObjectURL(logo)
+    setVistaPrevia(url)
+    return () => URL.revokeObjectURL(url)
+  }, [logo])
+
+  const elegirLogo = (archivo: File | undefined): void => {
+    if (!archivo) return
+    if (archivo.size > MAX_BYTES) {
+      setErrorArchivo('El logotipo pesa más de 500 KB. Elige una imagen más ligera.')
+      return
+    }
+    setErrorArchivo(null)
+    setLogo(archivo)
+  }
+
+  const nombreListo = name.trim().length > 1
+  const logoListo = Boolean(logo) || Boolean(profile.data?.logo_url)
+
+  /** Qué falta para poder continuar, dicho en voz alta.
+   *
+   *  Un botón gris sin explicación es la forma más rápida de que alguien
+   *  abandone el asistente: no sabe si el sistema está roto o si le falta algo. */
+  const falta = !nombreListo
+    ? 'Escribe el nombre de tu negocio para continuar.'
+    : !logoListo
+      ? 'Sube un logotipo, o continúa sin él si prefieres ponerlo después.'
+      : null
 
   const submit = async (): Promise<void> => {
     await updateProfile.mutateAsync({ name: name.trim() })
@@ -22,11 +83,22 @@ export function BusinessStep({ onDone }: { onDone: () => void }) {
     onDone()
   }
 
+  const guardando = updateProfile.isPending || updateLogo.isPending
+  const errorGuardado =
+    updateProfile.isError || updateLogo.isError
+      ? apiErrorMessage(updateProfile.error ?? updateLogo.error, 'No se pudo guardar.')
+      : null
+
   return (
     <StepShell
-      valid={name.trim().length > 1}
-      submitting={updateProfile.isPending || updateLogo.isPending}
+      valid={nombreListo}
+      submitting={guardando}
       onSubmit={() => void submit()}
+      // El nombre es obligatorio; el logotipo no. Cuando sólo falta el
+      // logotipo, el botón lo dice en vez de prometer algo que no se hizo.
+      submitLabel={nombreListo && !logoListo ? 'Continuar sin logotipo' : 'Continuar'}
+      ayuda={falta}
+      loading={profile.isPending}
     >
       <StepField
         label="¿Cómo se llama tu negocio?"
@@ -36,7 +108,10 @@ export function BusinessStep({ onDone }: { onDone: () => void }) {
         <Input
           id="setup-name"
           value={name}
-          onChange={(event) => setName(event.target.value)}
+          onChange={(event) => {
+            tocado.current = true
+            setName(event.target.value)
+          }}
           placeholder="Sucursal Centro"
           autoFocus
         />
@@ -45,15 +120,19 @@ export function BusinessStep({ onDone }: { onDone: () => void }) {
       <StepField label="Logotipo (opcional)" htmlFor="setup-logo">
         <div className="flex items-center gap-3">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/40">
-            {logo ? (
-              <img src={URL.createObjectURL(logo)} alt="" className="h-full w-full object-contain" />
+            {vistaPrevia ?? profile.data?.logo_url ? (
+              <img
+                src={vistaPrevia ?? profile.data?.logo_url ?? ''}
+                alt=""
+                className="h-full w-full object-contain"
+              />
             ) : (
               <PiImageSquare className="h-5 w-5 text-muted-foreground" aria-hidden />
             )}
           </div>
           <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
             <PiImageSquare />
-            {logo ? 'Cambiar imagen' : 'Subir imagen'}
+            {logo ?? profile.data?.logo_url ? 'Cambiar imagen' : 'Subir imagen'}
           </Button>
           <input
             id="setup-logo"
@@ -61,10 +140,17 @@ export function BusinessStep({ onDone }: { onDone: () => void }) {
             type="file"
             accept=".png,.jpg,.jpeg,.webp"
             className="hidden"
-            onChange={(event) => setLogo(event.target.files?.[0] ?? null)}
+            onChange={(event) => elegirLogo(event.target.files?.[0])}
           />
         </div>
+        {errorArchivo ? <p className="mt-2 text-xs text-destructive">{errorArchivo}</p> : null}
       </StepField>
+
+      {errorGuardado ? (
+        <p role="alert" className="text-sm text-destructive">
+          {errorGuardado}
+        </p>
+      ) : null}
     </StepShell>
   )
 }

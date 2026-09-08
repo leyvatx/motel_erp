@@ -65,13 +65,15 @@ function conDatos({
   tipos,
   tarifas,
   habitaciones,
+  logo = null,
 }: {
   nombre: string
   tipos: number
   tarifas: number
   habitaciones: number
+  logo?: string | null
 }) {
-  vi.mocked(businessApi.profile).mockResolvedValue({ name: nombre } as never)
+  vi.mocked(businessApi.profile).mockResolvedValue({ name: nombre, logo_url: logo } as never)
   vi.mocked(frontdeskApi.roomTypes).mockResolvedValue(pagina(tipos) as never)
   vi.mocked(frontdeskApi.tariffBlocks).mockResolvedValue(pagina(tarifas) as never)
   vi.mocked(frontdeskApi.rooms).mockResolvedValue(pagina(habitaciones) as never)
@@ -97,21 +99,40 @@ describe('estado de configuración inicial', () => {
     expect(result.current.complete).toBe(false)
   })
 
-  it('da por hecho el paso del negocio en cuanto deja el nombre sembrado', async () => {
+  // La lista dice qué falta para poder rentar. Sin logotipo se renta igual, así
+  // que pedirlo dejaría el aviso puesto para siempre en un negocio ya operando.
+  it('un nombre propio sin logotipo ya deja hecho el paso del negocio', async () => {
     conDatos({ nombre: 'Cabañas del Lago', tipos: 0, tarifas: 0, habitaciones: 0 })
 
     const { result } = renderHook(() => useSetupStatus(), { wrapper: envoltura })
 
     await waitFor(() => expect(result.current.loading).toBe(false))
-    expect(result.current.pending.map((step) => step.id)).toEqual([
-      'roomType',
-      'tariff',
-      'rooms',
-    ])
+    expect(result.current.pending.map((step) => step.id)).toEqual(['roomType', 'tariff', 'rooms'])
   })
 
-  it('se declara completo cuando ya hay tipo, tarifa y habitaciones', async () => {
-    conDatos({ nombre: 'Cabañas del Lago', tipos: 2, tarifas: 3, habitaciones: 19 })
+  it('con nombre propio y logotipo, el paso del negocio queda hecho', async () => {
+    conDatos({
+      nombre: 'Cabañas del Lago',
+      logo: '/media/branding/lago.png',
+      tipos: 0,
+      tarifas: 0,
+      habitaciones: 0,
+    })
+
+    const { result } = renderHook(() => useSetupStatus(), { wrapper: envoltura })
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.pending.map((step) => step.id)).toEqual(['roomType', 'tariff', 'rooms'])
+  })
+
+  it('se declara completo cuando ya hay identidad, tipo, tarifa y habitaciones', async () => {
+    conDatos({
+      nombre: 'Cabañas del Lago',
+      logo: '/media/branding/lago.png',
+      tipos: 2,
+      tarifas: 3,
+      habitaciones: 19,
+    })
 
     const { result } = renderHook(() => useSetupStatus(), { wrapper: envoltura })
 
