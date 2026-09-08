@@ -46,8 +46,25 @@ export const inventoryApi = {
   products: (params?: ListParams): Promise<PaginatedResponse<Product>> =>
     get<PaginatedResponse<Product>>('/inventory/products/', { params }),
 
-  createProduct: (payload: Record<string, unknown>): Promise<Product> =>
-    post<Product, Record<string, unknown>>('/inventory/products/', payload),
+  /** Alta de producto, con foto opcional.
+   *
+   *  Con imagen viaja como multipart -- un `File` no cabe en JSON -- y axios
+   *  pone el `Content-Type` con su frontera; fijarlo a mano rompe el cuerpo.
+   *  Sin imagen sigue siendo JSON, como el resto del catálogo. */
+  createProduct: (payload: Record<string, unknown>, image?: File | null): Promise<Product> => {
+    if (!image) return post<Product, Record<string, unknown>>('/inventory/products/', payload)
+
+    const cuerpo = new FormData()
+    for (const [clave, valor] of Object.entries(payload)) {
+      if (valor === undefined || valor === null) continue
+      cuerpo.append(clave, String(valor))
+    }
+    cuerpo.append('image', image)
+
+    return post<Product, FormData>('/inventory/products/', cuerpo, {
+      headers: { 'Content-Type': undefined },
+    })
+  },
 
   createCategory: (payload: Record<string, unknown>): Promise<ProductCategory> =>
     post<ProductCategory, Record<string, unknown>>('/inventory/categories/', payload),

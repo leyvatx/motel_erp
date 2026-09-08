@@ -61,6 +61,13 @@ export default function HousekeepingPage() {
   const [notes, setNotes] = useState('')
 
   const board = useCleaningBoard(mine)
+  // Con el filtro "solo las mías" puesto, una lista vacía no significa que no
+  // haya trabajo: puede significar que nadie le ha asignado nada. Decirle
+  // "todas las habitaciones están limpias" a alguien que empieza su turno con
+  // cuartos sucios sin asignar es mentirle con confianza. Esta consulta solo
+  // sale cuando hace falta desempatar, y comparte caché con el botón "Ver
+  // todas", así que tocarlo no cuesta otra llamada.
+  const sinFiltrar = useCleaningBoard(false, mine)
   const maintenance = useMaintenanceReports()
   const performance = useCleaningPerformance()
   const start = useStartCleaning()
@@ -164,7 +171,14 @@ export default function HousekeepingPage() {
         <TabsContent value="board" className="flex min-h-0 flex-1 flex-col">
           {colaTactil ? (
             <div className="min-h-0 flex-1 overflow-auto scrollbar-thin">
-              <CleaningQueue tasks={tasks} isLoading={board.isLoading} />
+              <CleaningQueue
+                tasks={tasks}
+                isLoading={board.isLoading}
+                isError={board.isError}
+                onRetry={() => void board.refetch()}
+                sinAsignar={mine ? (sinFiltrar.data?.results.length ?? 0) : 0}
+                onVerTodas={() => setMine(false)}
+              />
             </div>
           ) : (
             <Card className="min-h-0 flex-1">

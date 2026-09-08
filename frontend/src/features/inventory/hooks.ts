@@ -252,8 +252,23 @@ function useCatalogCreate(
   })
 }
 
+/** Alta de producto: el catálogo es la única fuente de verdad.
+ *
+ *  Lo crea tanto Inventarios como la caja, y las dos invalidan lo mismo, así
+ *  que un producto dado de alta mientras se cobra aparece de inmediato en el
+ *  catálogo del punto de venta sin recargar nada. */
 export function useCreateProduct() {
-  return useCatalogCreate(inventoryApi.createProduct, 'Producto creado')
+  const invalidate = useInventoryInvalidation()
+
+  return useMutation({
+    mutationFn: ({ payload, image }: { payload: Record<string, unknown>; image?: File | null }) =>
+      inventoryApi.createProduct(payload, image),
+    onSuccess: () => {
+      invalidate()
+      toast.success('Producto creado')
+    },
+    onError: (error) => toast.error('No se pudo guardar', apiErrorMessage(error)),
+  })
 }
 
 export function useCreateCategory() {

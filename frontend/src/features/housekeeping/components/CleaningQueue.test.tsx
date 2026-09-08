@@ -53,6 +53,24 @@ describe('cola de limpieza', () => {
     expect(screen.getByText(/Cuando salga un huésped/)).toBeInTheDocument()
   })
 
+  // Felicitar a alguien que empieza su turno con cuartos sucios sin asignar es
+  // mentirle con confianza: la lista está vacía por el filtro, no por el trabajo.
+  it('distingue "no hay trabajo" de "el trabajo no es tuyo todavía"', () => {
+    const verTodas = vi.fn()
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={queryClient}>
+        <CleaningQueue tasks={[]} isLoading={false} sinAsignar={3} onVerTodas={verTodas} />
+      </QueryClientProvider>,
+    )
+
+    expect(screen.getByText('No tienes tareas asignadas')).toBeInTheDocument()
+    expect(screen.getByText(/3 habitaciones pendientes/)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /ver todas/i }))
+    expect(verTodas).toHaveBeenCalledTimes(1)
+  })
+
   it('la primera pendiente se señala como la siguiente', () => {
     pintar([tarea(1, '204', 'PENDING'), tarea(2, '205', 'PENDING')])
 

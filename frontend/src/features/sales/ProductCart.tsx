@@ -1,21 +1,12 @@
 import { useMemo, useRef, useState } from 'react'
-import {
-  PiBarcode,
-  PiBeerBottle,
-  PiCookie,
-  PiMinus,
-  PiPackage,
-  PiPlus,
-  PiSparkle,
-  PiTrash,
-} from 'react-icons/pi'
-import type { IconType } from 'react-icons'
+import { PiBarcode, PiMinus, PiPackage, PiPlus, PiTrash } from 'react-icons/pi'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { EmptyState } from '@/components/ui/states'
 import { QuickProductDialog } from '@/features/sales/QuickProductDialog'
+import { ProductIcon } from '@/features/inventory/productIcon'
 import type { Product } from '@/features/inventory/types'
 import { formatMoney, toNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -102,24 +93,6 @@ function recordarReciente(productId: number): number[] {
     // Almacenamiento bloqueado: se pierde el atajo, no la venta.
   }
   return lista
-}
-
-/** Ícono por familia de producto.
- *
- *  El catálogo no guarda fotografías -- añadirlas exige un campo de imagen en
- *  el backend, y eso no se resuelve desde aquí -- así que la tarjeta se apoya
- *  en la categoría para no ser un rectángulo de texto más. Da lo que una foto
- *  daría en la práctica: reconocer el producto sin leerlo. */
-const ICONO_POR_FAMILIA: { patron: RegExp; icono: IconType }[] = [
-  { patron: /bebida|refresc|cerveza|agua|licor|vino/i, icono: PiBeerBottle },
-  { patron: /botana|snack|dulce|comida|alimento/i, icono: PiCookie },
-  { patron: /amenidad|limpieza|higiene|servicio/i, icono: PiSparkle },
-]
-
-function iconoDe(product: Product): IconType {
-  return (
-    ICONO_POR_FAMILIA.find(({ patron }) => patron.test(product.category_name))?.icono ?? PiPackage
-  )
 }
 
 const TODOS = 'todos'
@@ -293,7 +266,6 @@ export function ProductPicker({
         >
           {filtered.map((product) => {
             const inCart = cart.lines.find((line) => line.product.id === product.id)
-            const Icono = iconoDe(product)
             const existencia = product.total_stock === null ? null : toNumber(product.total_stock)
             const agotado = product.is_stockable && existencia !== null && existencia <= 0
 
@@ -325,30 +297,44 @@ export function ProductPicker({
                     40 al texto deja "Agua embo...". El nombre completo es lo
                     que se lee de reojo; el ícono solo acompaña. */}
                 <div>
-                  <span
-                    className="flex h-7 w-7 items-center justify-center rounded-md bg-muted"
-                    aria-hidden
-                  >
-                    <Icono className="h-4 w-4 text-muted-foreground" />
+                  {/* La foto cuando existe, y el ícono de la familia cuando no.
+                      Los dos ocupan el mismo hueco para que la cuadrícula no se
+                      desalinee mientras el catálogo se va llenando de fotos. */}
+                  <span className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-md bg-muted">
+                    {product.image_url ? (
+                      <img src={product.image_url} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <ProductIcon
+                        categoria={product.category_name}
+                        className="h-4 w-4 text-muted-foreground"
+                      />
+                    )}
                   </span>
                   <p className="mt-2 line-clamp-2 text-sm font-medium leading-snug">
                     {product.name}
                   </p>
                 </div>
 
-                <div className="mt-2 flex items-end justify-between gap-2">
-                  <p className="text-base font-semibold tabular">
+                {/* El aviso de existencia va debajo del precio, no al lado:
+                    con cuatro columnas la tarjeta mide ~150 px y "quedan 3"
+                    se partía en dos renglones encima del importe. */}
+                <div className="mt-2">
+                  <p className="text-base font-semibold leading-none tabular">
                     {formatMoney(product.sale_price)}
                   </p>
                   {agotado ? (
-                    <span className="text-2xs font-medium text-status-occupied">
-                      Sin existencia
-                    </span>
+                    <p className="mt-1 text-2xs font-medium text-status-occupied">Sin existencia</p>
                   ) : existencia !== null && existencia <= 5 ? (
-                    <span className="text-2xs text-status-cleaning tabular">
+                    <p className="mt-1 text-2xs tabular text-status-cleaning">
                       quedan {existencia}
-                    </span>
-                  ) : null}
+                    </p>
+                  ) : (
+                    // Reserva el renglón para que las tarjetas de una misma
+                    // fila terminen a la misma altura.
+                    <p className="mt-1 text-2xs" aria-hidden>
+                      &nbsp;
+                    </p>
+                  )}
                 </div>
               </button>
             )

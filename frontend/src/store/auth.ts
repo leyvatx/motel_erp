@@ -104,6 +104,20 @@ const ROLE_SECTIONS: Record<Role, readonly string[]> = {
   HOUSEKEEPING: ['dashboard', 'housekeeping', 'inventory'],
 }
 
+/** Quién puede tocar catálogos, tarifas y configuración del negocio.
+ *
+ *  Espeja `CONFIG_MANAGE` del servidor, que es quien de verdad decide: esto
+ *  solo evita ofrecer un botón que va a terminar en 403. Recepción cobra y
+ *  renta, pero no da de alta productos ni cambia tarifas; si eso cambia,
+ *  cambia primero en `ROLE_PERMISSIONS` del backend y después aquí.
+ *
+ *  Vivía copiado en tres pantallas con tres nombres distintos. */
+export function canManageCatalog(user: User | null | undefined): boolean {
+  if (!user) return false
+  const role = user.is_corporate_user ? useAuthStore.getState().activeRole : user.role
+  return role === 'SUPERADMIN' || role === 'MANAGER'
+}
+
 export function canAccessSection(user: User | null | undefined, section: string): boolean {
   if (!user) return false
   if (user.is_platform_admin) return section === 'platform' || section === 'corporate'
@@ -116,8 +130,27 @@ export function canAccessSection(user: User | null | undefined, section: string)
   return ROLE_SECTIONS[user.role].includes(section)
 }
 
+/** Dónde aterriza cada quien al entrar.
+ *
+ *  El tablero es la pantalla de quien supervisa: resume el turno, la ocupación
+ *  y lo que necesita atención. Para quien opera es una escala de más: una
+ *  recepcionista entra a rentar cuartos y una camarista a ver su lista, y a los
+ *  dos les tocaba pasar por un resumen que no van a leer antes de llegar a su
+ *  trabajo. Aquí cada rol cae directo en su herramienta; el tablero sigue en el
+ *  menú para quien lo quiera.
+ */
+const RUTA_INICIAL: Record<Role, string> = {
+  SUPERADMIN: '/dashboard',
+  MANAGER: '/dashboard',
+  RECEPTION: '/frontdesk',
+  HOUSEKEEPING: '/housekeeping',
+}
+
 export function defaultRouteFor(user: User | null | undefined): string {
   if (user?.is_platform_admin) return '/platform'
-  if (user?.is_corporate_user) return '/corporate'
-  return '/dashboard'
+  if (user?.is_corporate_user) {
+    const { activeRole } = useAuthStore.getState()
+    return activeRole ? RUTA_INICIAL[activeRole] : '/corporate'
+  }
+  return user ? RUTA_INICIAL[user.role] : '/dashboard'
 }

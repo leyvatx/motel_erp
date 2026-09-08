@@ -28,9 +28,12 @@ function user(role: Role, platform = false): User {
 }
 
 describe('acceso por rol', () => {
-  it('envía al personal de la sucursal a su dashboard', () => {
-    expect(defaultRouteFor(user('RECEPTION'))).toBe('/dashboard')
-    expect(defaultRouteFor(user('HOUSEKEEPING'))).toBe('/dashboard')
+  // Entrar y ya estar en la herramienta: recepción no viene a leer un resumen,
+  // viene a rentar cuartos, y ama de llaves viene a ver su lista.
+  it('deja a cada rol en su herramienta, no en un resumen', () => {
+    expect(defaultRouteFor(user('RECEPTION'))).toBe('/frontdesk')
+    expect(defaultRouteFor(user('HOUSEKEEPING'))).toBe('/housekeeping')
+    expect(defaultRouteFor(user('MANAGER'))).toBe('/dashboard')
   })
 
   it('mantiene al administrador global fuera de la operación', () => {
@@ -59,8 +62,12 @@ describe('acceso por rol', () => {
     expect(defaultRouteFor(corporate)).toBe('/corporate')
     expect(canAccessSection(corporate, 'corporate')).toBe(true)
     expect(canAccessSection(corporate, 'dashboard')).toBe(false)
-    useAuthStore.getState().setActiveMotel(8, 'Motel Norte', 'MANAGER')
+    useAuthStore.getState().setActiveMotel(8, 'Sucursal Norte', 'MANAGER')
     expect(canAccessSection(corporate, 'dashboard')).toBe(true)
+    // Ya dentro de una sucursal, el corporativo aterriza como el rol que ejerce.
+    expect(defaultRouteFor(corporate)).toBe('/dashboard')
+    useAuthStore.getState().setActiveMotel(8, 'Sucursal Norte', 'RECEPTION')
+    expect(defaultRouteFor(corporate)).toBe('/frontdesk')
     useAuthStore.getState().clearActiveMotel()
   })
 })

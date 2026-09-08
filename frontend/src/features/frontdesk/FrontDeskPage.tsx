@@ -28,8 +28,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { EmptyState } from '@/components/ui/states'
-import { useAuthStore } from '@/store/auth'
+import { EmptyState, ErrorState } from '@/components/ui/states'
+import { canManageCatalog, useAuthStore } from '@/store/auth'
 import { RentRoomDialog } from '@/features/frontdesk/components/RentRoomDialog'
 import { RoomActionsDialog } from '@/features/frontdesk/components/RoomActionsDialog'
 import { RelojOperativo } from '@/features/frontdesk/components/RelojOperativo'
@@ -67,9 +67,7 @@ export default function FrontDeskPage() {
   const finishCleaning = useFinishCleaning()
   const requestCleaning = useRequestCleaning()
   const openContextMenu = useRowContextMenu()
-  const canConfigure = useAuthStore(
-    (state) => state.user?.role === 'MANAGER' || state.user?.role === 'SUPERADMIN',
-  )
+  const canConfigure = useAuthStore((state) => canManageCatalog(state.user))
 
   useExpirationAlerts()
 
@@ -362,7 +360,21 @@ export default function FrontDeskPage() {
         <span className="hidden lg:inline"> · clic derecho o ⋯ para más acciones</span>
       </p>
 
-      {grid.isLoading ? (
+      {/* Tres finales distintos, y la diferencia importa: "no hay cuartos" es
+          una configuración pendiente, "no coincide nada" es un filtro puesto, y
+          "no pudimos cargar" es un problema que se reintenta. Pintar los tres
+          como una lista vacía hacía creer que se habían borrado las
+          habitaciones justo cuando el servidor no contestaba. */}
+      {grid.isError ? (
+        <Card>
+          <ErrorState
+            title="No pudimos cargar las habitaciones"
+            description="El tablero no llegó. Puede ser la conexión o que el servidor esté despertando; tus datos están intactos."
+            onRetry={() => void grid.refetch()}
+            retrying={grid.isFetching}
+          />
+        </Card>
+      ) : grid.isLoading ? (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-2.5 sm:grid-cols-[repeat(auto-fill,minmax(190px,1fr))]">
           {Array.from({ length: 18 }).map((_, index) => (
             <Skeleton key={index} className="h-[8rem] rounded-xl" />

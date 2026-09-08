@@ -236,11 +236,27 @@ def create_order(
     actor,
     order_type: str = OrderType.ROOM_SERVICE,
     notes: str = "",
+    deliver: bool = True,
 ) -> Order:
     """Registra un consumo, descuenta inventario y lo carga al folio.
 
     El descuento de inventario y el cargo a la cuenta ocurren en la misma
     transacción: o pasan los dos, o no pasa ninguno.
+
+    ``deliver`` marca la orden como entregada en el mismo acto, que es lo que
+    de verdad pasa en este negocio: la cerveza se saca del frigobar y se le da
+    al huésped ahí mismo, y el refresco del mostrador cambia de manos mientras
+    se cobra. Nadie despacha después.
+
+    No es un detalle cosmético. ``close_folio`` se niega a cerrar una cuenta
+    con ordenes sin entregar, y como ninguna pantalla marcaba la entrega, el
+    resultado era que **una habitación con cualquier consumo ya no podía hacer
+    check-out** y **una venta de mostrador nunca llegaba a cerrarse**. El
+    cajero veía el error, volvia a pulsar, y cobraba dos veces.
+
+    Queda como parámetro -- y no como comportamiento fijo -- porque el día que
+    exista una comanda de cocina con pantalla de despacho, esa sí nace sin
+    entregar y se marca cuando sale del fogón.
     """
     if not items:
         raise DomainError("La orden necesita al menos un producto.", code="empty_order")
@@ -251,13 +267,16 @@ def create_order(
 
     warehouse = Warehouse.objects.get(pk=warehouse_id, is_active=True)
 
+    ahora = timezone.now()
     order = Order.objects.create(
         code=_next_order_code(),
         folio=folio,
         order_type=order_type,
-        status=OrderStatus.PLACED,
+        status=OrderStatus.DELIVERED if deliver else OrderStatus.PLACED,
         warehouse=warehouse,
-        placed_at=timezone.now(),
+        placed_at=ahora,
+        delivered_at=ahora if deliver else None,
+        delivered_by=actor if deliver else None,
         notes=notes,
         created_by=actor,
     )
@@ -339,6 +358,8 @@ def create_order(
         order=order,
     )
     signals.order_created.send(sender=Order, order=order, actor=actor)
+    if deliver:
+        signals.order_delivered.send(sender=Order, order=order, actor=actor)
     return order
 
 
@@ -688,3 +709,69 @@ def cancel_folio(*, folio_id: int, reason: str, actor) -> Folio:
         update_fields=["status", "cancellation_reason", "closed_at", "closed_by", "updated_at"]
     )
     return folio
+
+
+@transaction.atomic
+def counter_sale(
+    *,
+    warehouse_id: int,
+    items: Sequence[OrderItemInput],
+    method: str,
+    actor,
+    tendered_amount: Decimal | None = None,
+    reference: str = "",
+    notes: str = "",
+    attempt_key: str = "",
+) -> Folio:
+    """La venta de mostrador completa, en una sola transacción.
+
+    Abrir la cuenta, descontar el inventario, cobrar y cerrar son cuatro cosas
+    que solo tienen sentido juntas. Repartidas en cuatro llamadas HTTP -- como
+    estaban -- cualquier corte a medio camino dejaba una cuenta abierta con
+    mercancía ya descontada, o peor: el pago aplicado y la cuenta sin cerrar,
+    que en el corte de caja aparece como faltante. Aquí, o pasa todo o no pasa
+    nada.
+
+    ``attempt_key`` cierra el otro agujero: el reintento. La clave viaja desde
+    el navegador y se guarda junto al folio; si la misma clave vuelve, se
+    devuelve el folio que ya se cobró en vez de cobrar otra vez. Doble clic,
+    red que se cae después de que el servidor ya cobró, o el cajero que pulsa
+    de nuevo porque no vio respuesta: los tres terminan en el mismo ticket.
+    """
+    from apps.sales.models import SaleAttempt
+
+    if attempt_key:
+        previo = SaleAttempt.objects.filter(key=attempt_key).select_related("folio").first()
+        if previo is not None:
+            return previo.folio
+
+    folio = open_folio(actor=actor, folio_type=FolioType.COUNTER, notes=notes)
+    create_order(
+        folio_id=folio.pk,
+        warehouse_id=warehouse_id,
+        items=items,
+        actor=actor,
+        order_type=OrderType.COUNTER,
+        notes=notes,
+    )
+
+    folio = lock_folio(folio.pk)
+    recalculate_folio(folio)
+
+    register_payment(
+        folio_id=folio.pk,
+        method=method,
+        amount=folio.total,
+        tendered_amount=tendered_amount,
+        reference=reference,
+        actor=actor,
+    )
+    cerrado = close_folio(folio_id=folio.pk, actor=actor)
+
+    if attempt_key:
+        # La restricción única es la que de verdad protege: si dos peticiones
+        # con la misma clave entran a la vez, la segunda choca aquí y su
+        # transacción entera se deshace -- incluido el cobro.
+        SaleAttempt.objects.create(key=attempt_key[:64], folio=cerrado)
+
+    return cerrado

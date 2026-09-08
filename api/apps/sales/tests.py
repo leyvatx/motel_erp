@@ -6,6 +6,7 @@ from decimal import Decimal
 
 
 from common.exceptions import DomainError, InsufficientStock
+from common.utils import ZERO
 
 from apps.inventory.constants import MovementType, ProductKind, WarehouseType
 from apps.inventory.models import Product, ProductCategory, StockMovement, Warehouse, WarehouseStock
@@ -14,7 +15,14 @@ from apps.inventory.services import register_entry
 from apps.rooms import services as frontdesk
 from apps.rooms.models import Room, RoomType, TariffBlock
 from apps.sales import services
-from apps.sales.constants import ChargeType, FolioStatus, OrderStatus, PaymentMethod
+from apps.sales.models import Folio, Payment
+from apps.sales.constants import (
+    ChargeType,
+    FolioStatus,
+    FolioType,
+    OrderStatus,
+    PaymentMethod,
+)
 from apps.users.constants import Role
 from apps.users.models import User
 from common.testing import SucursalTestCase
@@ -229,3 +237,112 @@ class FolioLifecycleTests(SalesTestCase):
                 items=[{"product_id": self.product.pk, "quantity": Decimal("1")}],
                 actor=self.user,
             )
+
+
+class VentaMostradorTests(SalesTestCase):
+    """La venta de mostrador completa, que antes no llegaba a cerrarse."""
+
+    def _items(self, cantidad: str = "2"):
+        return [{"product_id": self.product.pk, "quantity": Decimal(cantidad)}]
+
+    def test_la_venta_se_cobra_y_se_cierra_en_una_sola_operacion(self) -> None:
+        # La regresión que vigila: `close_folio` rechaza cuentas con ordenes
+        # sin entregar, y el mostrador nunca marcaba la entrega. La secuencia
+        # de cuatro llamadas moria aqui, despues de haber cobrado.
+        folio = services.counter_sale(
+            warehouse_id=self.warehouse.pk,
+            items=self._items(),
+            method=PaymentMethod.CASH,
+            tendered_amount=Decimal("100.00"),
+            actor=self.user,
+        )
+
+        self.assertEqual(folio.status, FolioStatus.CLOSED)
+        self.assertEqual(folio.total, Decimal("90.00"))
+        self.assertEqual(folio.balance, ZERO)
+        self.assertEqual(folio.orders.first().status, OrderStatus.DELIVERED)
+
+    def test_la_misma_clave_no_cobra_dos_veces(self) -> None:
+        # Doble clic, o la respuesta que se perdio y el navegador reintenta.
+        primera = services.counter_sale(
+            warehouse_id=self.warehouse.pk,
+            items=self._items("1"),
+            method=PaymentMethod.CASH,
+            tendered_amount=Decimal("50.00"),
+            actor=self.user,
+            attempt_key="intento-1",
+        )
+        segunda = services.counter_sale(
+            warehouse_id=self.warehouse.pk,
+            items=self._items("1"),
+            method=PaymentMethod.CASH,
+            tendered_amount=Decimal("50.00"),
+            actor=self.user,
+            attempt_key="intento-1",
+        )
+
+        self.assertEqual(primera.pk, segunda.pk)
+        self.assertEqual(Folio.objects.filter(folio_type=FolioType.COUNTER).count(), 1)
+        self.assertEqual(Payment.objects.filter(folio=primera).count(), 1)
+
+    def test_una_venta_distinta_si_se_cobra(self) -> None:
+        """La protección no puede volverse un candado: otra clave, otra venta."""
+        primera = services.counter_sale(
+            warehouse_id=self.warehouse.pk,
+            items=self._items("1"),
+            method=PaymentMethod.CASH,
+            tendered_amount=Decimal("50.00"),
+            actor=self.user,
+            attempt_key="intento-1",
+        )
+        segunda = services.counter_sale(
+            warehouse_id=self.warehouse.pk,
+            items=self._items("1"),
+            method=PaymentMethod.CASH,
+            tendered_amount=Decimal("50.00"),
+            actor=self.user,
+            attempt_key="intento-2",
+        )
+
+        self.assertNotEqual(primera.pk, segunda.pk)
+
+    def test_sin_existencias_no_queda_cuenta_abierta_ni_cobro(self) -> None:
+        """Lo que justifica que sea una transacción y no cuatro llamadas."""
+        antes = Folio.objects.filter(folio_type=FolioType.COUNTER).count()
+
+        with self.assertRaises(InsufficientStock):
+            services.counter_sale(
+                warehouse_id=self.warehouse.pk,
+                items=self._items("999"),
+                method=PaymentMethod.CASH,
+                tendered_amount=Decimal("99999.00"),
+                actor=self.user,
+                attempt_key="intento-fallido",
+            )
+
+        self.assertEqual(Folio.objects.filter(folio_type=FolioType.COUNTER).count(), antes)
+        self.assertFalse(Payment.objects.filter(folio__folio_type=FolioType.COUNTER).exists())
+
+
+class SalidaConConsumoTests(SalesTestCase):
+    def test_una_habitacion_con_consumo_puede_hacer_check_out(self) -> None:
+        """El bloqueo que dejaba ocupada para siempre a cualquier habitación
+        donde el huésped hubiera comprado algo."""
+        services.create_order(
+            folio_id=self.folio.pk,
+            warehouse_id=self.warehouse.pk,
+            items=[{"product_id": self.product.pk, "quantity": Decimal("1")}],
+            actor=self.user,
+        )
+        self.folio.refresh_from_db()
+        total = self.folio.total
+
+        stay = frontdesk.checkout_stay(
+            stay_id=self.stay.pk,
+            actor=self.user,
+            payments=[{"method": PaymentMethod.CASH, "amount": total, "tendered_amount": total}],
+        )
+
+        self.assertEqual(stay.status, "CLOSED")
+        self.folio.refresh_from_db()
+        self.assertEqual(self.folio.status, FolioStatus.CLOSED)

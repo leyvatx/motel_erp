@@ -13,7 +13,7 @@ from decimal import Decimal
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.core.validators import MinValueValidator
+from django.core.validators import FileExtensionValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
 
@@ -23,6 +23,7 @@ from common.utils import ZERO
 
 from apps.inventory.constants import (
     MOVEMENT_SIGN,
+    PRODUCT_IMAGE_EXTENSIONS,
     MovementType,
     ProductKind,
     UnitOfMeasure,
@@ -110,6 +111,13 @@ class Product(BaseModel):
     )
     unit = models.CharField(
         "Unidad", max_length=12, choices=UnitOfMeasure.choices, default=UnitOfMeasure.PIECE
+    )
+    image = models.FileField(
+        "Fotografia",
+        upload_to="productos/",
+        blank=True,
+        validators=[FileExtensionValidator(PRODUCT_IMAGE_EXTENSIONS)],
+        help_text="Se ve en la tarjeta del punto de venta. Opcional.",
     )
     is_sellable = models.BooleanField("Se vende al huesped", default=True)
     is_stockable = models.BooleanField(

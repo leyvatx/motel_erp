@@ -13,6 +13,7 @@ from apps.sales.constants import ChargeType, FolioStatus, FolioType
 from apps.sales.models import Folio, FolioCharge, Order, OrderItem, Payment
 from apps.users.constants import PermissionCode
 from apps.sales.serializers import (
+    CounterSaleSerializer,
     CreateOrderSerializer,
     DiscountInputSerializer,
     FolioListSerializer,
@@ -65,6 +66,7 @@ class FolioViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Ge
     serializer_class = FolioSerializer
     required_permissions = {
         "open_counter": [PermissionCode.FOLIO_CHARGE],
+        "counter_sale": [PermissionCode.PAYMENT_REGISTER],
         "add_charge": [PermissionCode.FOLIO_CHARGE],
         "cancel_charge": [PermissionCode.FOLIO_VOID],
         "discount": [PermissionCode.FOLIO_DISCOUNT],
@@ -95,6 +97,35 @@ class FolioViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Ge
             actor=request.user,
             folio_type=FolioType.COUNTER,
             notes=serializer.validated_data.get("notes", ""),
+        )
+        return Response(
+            FolioSerializer(folio_detail_queryset().get(pk=folio.pk)).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @extend_schema(request=CounterSaleSerializer, responses=FolioSerializer)
+    @action(detail=False, methods=["post"], url_path="counter-sale")
+    def counter_sale(self, request) -> Response:
+        """Cobra una venta de mostrador de una sola vez.
+
+        Sustituye la secuencia abrir-cuenta / crear-orden / pagar / cerrar que
+        el punto de venta hacía en cuatro peticiones. Cuatro peticiones son
+        tres oportunidades de quedarse a medias con dinero de por medio; esta
+        es atómica y, con ``attempt_key``, no cobra dos veces aunque se repita.
+        """
+        serializer = CounterSaleSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        datos = dict(serializer.validated_data)
+
+        folio = services.counter_sale(
+            actor=request.user,
+            warehouse_id=datos["warehouse_id"],
+            items=datos["items"],
+            method=datos["method"],
+            tendered_amount=datos.get("tendered_amount"),
+            reference=datos.get("reference", ""),
+            notes=datos.get("notes", ""),
+            attempt_key=datos.get("attempt_key", ""),
         )
         return Response(
             FolioSerializer(folio_detail_queryset().get(pk=folio.pk)).data,

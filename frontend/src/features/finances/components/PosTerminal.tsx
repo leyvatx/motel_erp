@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { PiBed, PiReceipt } from 'react-icons/pi'
 
@@ -22,6 +22,7 @@ import { useChargeToRoom, useSalesWarehouse } from '@/features/sales/hooks'
 import { toastApiError } from '@/features/finances/shiftGuard'
 import { salesApi } from '@/features/sales/api'
 import { formatMoney, toNumber } from '@/lib/format'
+import { canManageCatalog, useAuthStore } from '@/store/auth'
 import { queryKeys } from '@/lib/queryClient'
 import { playSuccessTone } from '@/lib/sound'
 import type { PaymentMethod } from '@/types/api'
@@ -34,12 +35,32 @@ const METHODS: { value: PaymentMethod; label: string }[] = [
 
 const QUICK_CASH = [50, 100, 200, 500, 1000]
 
+/** Identifica un intento de venta ante el servidor.
+ *
+ *  `crypto.randomUUID` no existe en contextos sin HTTPS ni en navegadores
+ *  viejos, y una terminal de mostrador puede ser cualquiera de las dos cosas;
+ *  el respaldo basta porque la clave solo tiene que ser única dentro de la
+ *  sucursal y del rato que dura una venta. */
+function nuevoIntento(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+}
+
 export function PosTerminal() {
   const queryClient = useQueryClient()
   const cart = useCart()
   const [method, setMethod] = useState<PaymentMethod>('CASH')
   const [tendered, setTendered] = useState('')
   const [destination, setDestination] = useState<string>('counter')
+
+  const intentoRef = useRef(nuevoIntento())
+
+  // El alta rápida solo se ofrece a quien el servidor va a dejar guardar.
+  // Ofrecerla a recepción llenaba el formulario para terminar en un 403 con el
+  // cliente esperando.
+  const puedeCrearProductos = useAuthStore((state) => canManageCatalog(state.user))
 
   const { data: products, isLoading } = useSellableProducts()
   const salesWarehouse = useSalesWarehouse()
@@ -58,37 +79,36 @@ export function PosTerminal() {
   const resetCart = (): void => {
     cart.clear()
     setTendered('')
+    // Carrito nuevo, intento nuevo. Mientras no se vacíe, todos los reintentos
+    // comparten clave y el servidor los reconoce como el mismo cobro.
+    intentoRef.current = nuevoIntento()
   }
 
   const chargeToRoom = useChargeToRoom({
     folioId: targetStay?.folio_id ?? null,
+    stayId: targetStay?.id ?? null,
     roomNumber: target?.number ?? '',
   })
 
   const checkout = useMutation({
-    mutationFn: async () => {
+    mutationFn: () => {
       if (!salesWarehouse) throw new Error('No hay almacén de venta configurado.')
 
-      const folio = await salesApi.openCounter('Venta de mostrador')
-      await salesApi.createOrder({
-        folio_id: folio.id,
+      return salesApi.counterSale({
         warehouse_id: salesWarehouse.id,
-        order_type: 'COUNTER',
         items: cart.items,
-      })
-      await salesApi.payment(folio.id, {
         method,
-        amount: cart.total.toFixed(2),
+        notes: 'Venta de mostrador',
+        attempt_key: intentoRef.current,
         ...(method === 'CASH' && tendered ? { tendered_amount: tendered } : {}),
       })
-      return salesApi.close(folio.id)
     },
     onSuccess: (folio) => {
       resetCart()
       playSuccessTone()
       void queryClient.invalidateQueries({ queryKey: ['inventory'] })
       void queryClient.invalidateQueries({ queryKey: queryKeys.finances.currentShift })
-      toast.success(`Venta ${folio.code} cerrada`, 'Ticket enviado a la impresora.')
+      toast.success(`Venta ${folio.code} cobrada`, `Total ${formatMoney(folio.total)}.`)
     },
     onError: (error) => toastApiError('No se pudo completar la venta', error),
   })
@@ -141,7 +161,7 @@ export function PosTerminal() {
             catalog={products?.results ?? []}
             isLoading={isLoading}
             cart={cart}
-            allowCreate
+            allowCreate={puedeCrearProductos}
           />
         </CardContent>
       </Card>

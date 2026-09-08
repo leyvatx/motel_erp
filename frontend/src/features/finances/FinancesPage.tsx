@@ -5,7 +5,7 @@ import { ModuleHelp } from '@/components/layout/ModuleHelp'
 import { PageShell, TableScroll } from '@/components/layout/PageShell'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { EmptyState } from '@/components/ui/states'
+import { EmptyState, ErrorState } from '@/components/ui/states'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
@@ -103,7 +103,20 @@ export default function FinancesPage() {
 }
 
 function ShiftHistory() {
-  const { data, isLoading } = useShifts()
+  const { data, isLoading, isError, isFetching, refetch } = useShifts()
+
+  if (isError) {
+    return (
+      <Card className="min-h-0 flex-1">
+        <ErrorState
+          title="No pudimos cargar los cortes"
+          description="El historial no llegó. Los turnos cerrados siguen guardados; esto es un problema de conexión."
+          onRetry={() => void refetch()}
+          retrying={isFetching}
+        />
+      </Card>
+    )
+  }
 
   return (
     <Card className="min-h-0 flex-1">

@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import timedelta
 from decimal import Decimal
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.utils import timezone
 from rest_framework.test import APIClient
@@ -12,7 +13,13 @@ from rest_framework.test import APIClient
 from common.exceptions import DomainError, ImmutableRecordError, InsufficientStock
 
 from apps.inventory import services
-from apps.inventory.constants import MovementType, ProductKind, PurchaseStatus, WarehouseType
+from apps.inventory.constants import (
+    MovementType,
+    ProductKind,
+    PurchaseStatus,
+    UnitOfMeasure,
+    WarehouseType,
+)
 from apps.inventory.models import (
     Product,
     ProductCategory,
@@ -24,6 +31,7 @@ from apps.inventory.models import (
     WarehouseStock,
     Supplier,
 )
+from apps.inventory.serializers import ProductSerializer
 from apps.settings.models import Motel
 from apps.users.constants import Role
 from apps.users.models import User
@@ -387,3 +395,36 @@ class CostVisibilityTests(TestCase):
         fila = response.data["results"][0]
         self.assertNotIn("unit_cost", fila)
         self.assertNotIn("total_cost", fila)
+
+
+class ProductoConImagenTests(InventoryTestCase):
+    """El alta con foto viaja como multipart, y eso cambia como DRF lee los booleanos."""
+
+    def test_un_producto_creado_con_imagen_nace_activo(self) -> None:
+        # La regresion: en multipart, un booleano ausente vale `False` (como una
+        # casilla sin marcar). Con `is_active` escribible, el producto se creaba
+        # dado de baja y no aparecia en el catalogo del punto de venta.
+        imagen = SimpleUploadedFile(
+            "foto.png", b"\x89PNG\r\n\x1a\n" + b"0" * 32, content_type="image/png"
+        )
+        serializer = ProductSerializer(
+            data={
+                "sku": "SND-001",
+                "name": "Sandwich de jamon",
+                "category": self.categoria.pk,
+                "unit": UnitOfMeasure.PIECE,
+                "sale_price": "55.00",
+                "tax_rate": "0.00",
+                "default_min_stock": "0",
+                "is_sellable": True,
+                "is_stockable": True,
+                "track_expiration": False,
+                "image": imagen,
+            }
+        )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        producto = serializer.save()
+
+        self.assertTrue(producto.is_active)
+        self.assertTrue(producto.image.name.startswith("productos/"))
+        self.assertIsNotNone(ProductSerializer(producto).data["image_url"])

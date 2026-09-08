@@ -45,6 +45,8 @@ export interface Product {
   category_name: string
   unit: string
   unit_display: string
+  /** Ruta de la fotografía, o `null` si el producto todavía no tiene una. */
+  image_url: string | null
   is_sellable: boolean
   is_stockable: boolean
   track_expiration: boolean

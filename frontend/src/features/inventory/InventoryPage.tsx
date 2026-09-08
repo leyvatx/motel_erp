@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ErrorState } from '@/components/ui/states'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Table,
@@ -52,7 +53,7 @@ import { useExpiringLots, useLowStock, useStocks, useWarehouses } from '@/featur
 import type { WarehouseStock } from '@/features/inventory/types'
 import { formatDate, formatQuantity, toNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import { useAuthStore } from '@/store/auth'
+import { canManageCatalog, useAuthStore } from '@/store/auth'
 
 type View = 'all' | 'low' | 'expiring'
 type Section = 'stock' | 'purchases' | 'suppliers' | 'catalogs'
@@ -60,7 +61,7 @@ type Section = 'stock' | 'purchases' | 'suppliers' | 'catalogs'
 export default function InventoryPage() {
   const user = useAuthStore((state) => state.user)
   const esMovil = useEsMovil()
-  const canManagePurchases = user?.role === 'SUPERADMIN' || user?.role === 'MANAGER'
+  const canManagePurchases = canManageCatalog(user)
   const [movement, setMovement] = useState<MovementMode | null>(null)
   const [detail, setDetail] = useState<WarehouseStock | null>(null)
   const [search, setSearch] = useState('')
@@ -264,6 +265,8 @@ export default function InventoryPage() {
                   <StockCards
                     rows={rows}
                     isLoading={stocks.isLoading}
+                    isError={stocks.isError}
+                    onRetry={() => void stocks.refetch()}
                     emptyTitle={
                       view === 'low' ? 'Nada bajo mínimo' : 'Sin existencias que coincidan'
                     }
@@ -276,6 +279,13 @@ export default function InventoryPage() {
                     actionsFor={actionsFor}
                   />
                 </div>
+              ) : stocks.isError ? (
+                <ErrorState
+                  title="No pudimos cargar las existencias"
+                  description="El inventario no llegó. Nada se perdió: es la conexión con el servidor."
+                  onRetry={() => void stocks.refetch()}
+                  retrying={stocks.isFetching}
+                />
               ) : stocks.isLoading ? (
                 <Skeleton className="min-h-0 flex-1 rounded-lg" />
               ) : (

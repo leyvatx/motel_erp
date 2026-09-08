@@ -118,3 +118,14 @@ export interface TicketPreview {
   is_reprint: boolean
   preview: string
 }
+
+export interface CounterSalePayload {
+  warehouse_id: number
+  items: { product_id: number; quantity: string }[]
+  method: PaymentMethod
+  tendered_amount?: string
+  reference?: string
+  notes?: string
+  /** Identifica el intento de venta, no la petición: el reintento repite clave. */
+  attempt_key?: string
+}

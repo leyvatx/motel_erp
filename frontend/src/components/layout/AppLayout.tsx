@@ -43,7 +43,7 @@ export function AppLayout() {
           </div>
         </main>
 
-        <MobileTabBar />
+        <MobileTabBar onOpenMenu={() => setMenuOpen(true)} />
       </div>
 
       <OpenShiftDialog />

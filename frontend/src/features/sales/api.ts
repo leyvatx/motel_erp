@@ -1,6 +1,7 @@
 import { get, post } from '@/lib/axios'
 import type { ListParams, PaginatedResponse } from '@/types/api'
 import type {
+  CounterSalePayload,
   CreateOrderPayload,
   Folio,
   Order,
@@ -19,6 +20,15 @@ export const salesApi = {
 
   openCounter: (notes?: string): Promise<Folio> =>
     post<Folio, { notes?: string }>('/sales/folios/open-counter/', { notes }),
+
+  /** La venta de mostrador entera en una llamada.
+   *
+   *  Antes eran cuatro -- abrir cuenta, crear orden, pagar, cerrar -- y entre
+   *  una y otra cabía un corte de red con la mercancía ya descontada y el
+   *  dinero ya cobrado. `attempt_key` es la que evita el cobro doble cuando el
+   *  navegador reintenta: mientras el carrito no cambie, viaja la misma. */
+  counterSale: (payload: CounterSalePayload): Promise<Folio> =>
+    post<Folio, CounterSalePayload>('/sales/folios/counter-sale/', payload),
 
   addCharge: (
     folioId: number,

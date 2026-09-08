@@ -515,6 +515,25 @@ formulario pide escribirlo si el intento falla. Los folios siguen la misma
 regla: el consecutivo es por motel y dos propiedades pueden emitir el mismo el
 mismo día.
 
+## Venta de mostrador
+
+`POST /sales/folios/counter-sale/` cobra una venta completa en una transacción:
+abre la cuenta, descuenta el inventario, registra el pago y cierra el folio. O
+pasan las cuatro cosas o no pasa ninguna.
+
+Antes eran cuatro llamadas encadenadas desde el navegador, y entre una y otra
+cabía un corte de red con mercancía ya descontada y dinero ya cobrado. El cuerpo
+acepta `attempt_key`: una clave que el navegador genera **por intento de venta**
+—no por petición—, se guarda junto al folio (`SaleAttempt`) y hace que un
+reintento devuelva el mismo ticket en vez de cobrar dos veces. Doble clic, red
+caída después de que el servidor ya cobró, o el cajero que vuelve a pulsar porque
+no vio respuesta: los tres terminan en un solo cargo.
+
+Los consumos se marcan entregados en el momento en que se registran, porque es
+lo que ocurre en el mostrador y en el frigobar: la mercancía cambia de manos
+mientras se cobra. `create_order(deliver=False)` queda disponible para el día que
+exista una comanda con despacho diferido.
+
 ## Compras e inventario
 
 Inventarios incorpora cuatro vistas: existencias, compras, proveedores y
@@ -527,6 +546,27 @@ Las órdenes nunca se eliminan. Un borrador puede enviarse o cancelarse, una
 orden enviada puede recibirse, y una recepción parcial permanece abierta hasta
 completar sus partidas. Todo el flujo pertenece al motel activo y requiere el
 permiso `inventory.purchase`.
+
+### Fotografías de producto
+
+El catálogo guarda una imagen opcional por producto (`productos/` en `MEDIA_ROOT`,
+2 MB, PNG/JPG/WEBP). Se agrega al dar de alta desde Inventarios o desde la caja,
+subiendo un archivo o tomando la foto con la cámara trasera del teléfono
+(`capture="environment"`). El alta viaja como multipart sólo cuando lleva imagen.
+
+Sin fotografía la tarjeta del punto de venta no queda hueca: muestra un ícono
+deducido del nombre de la categoría (bebidas, botanas, amenidades, blancos). Esa
+es la cuarta opción del flujo y la que usa la mayoría de los negocios, que dan de
+alta productos con un cliente enfrente y no tienen fotos preparadas.
+
+**Buscar imágenes en la web no está implementado, a propósito.** Requiere un
+proveedor con licencia explícita para este uso (Unsplash, Pexels o un banco
+contratado), su credencial por entorno y un proxy en el backend —la clave nunca
+puede vivir en el navegador—. Integrarlo sin poder ejercitarlo contra el
+proveedor real produce código que falla el día que alguien lo usa, así que la
+opción no se ofrece en la interfaz en lugar de ofrecerse rota. El punto de
+extensión es el mismo `ProductImagePicker`: una cuarta fuente que entregue un
+`File` encaja sin tocar el resto del flujo.
 
 ## Personalización por sucursal
 

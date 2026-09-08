@@ -4,10 +4,16 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+from django.core.validators import FileExtensionValidator
 from rest_framework import serializers
 from django.db import transaction
 
-from apps.inventory.constants import MovementType, PurchaseStatus
+from apps.inventory.constants import (
+    PRODUCT_IMAGE_EXTENSIONS,
+    PRODUCT_IMAGE_MAX_BYTES,
+    MovementType,
+    PurchaseStatus,
+)
 from apps.inventory.models import (
     Product,
     ProductCategory,
@@ -51,12 +57,37 @@ class ProductCategorySerializer(serializers.ModelSerializer):
         fields = ("id", "name", "kind", "kind_display", "description", "sort_order", "is_active")
 
 
+class ProductImageField(serializers.FileField):
+    """Fotografia del producto, con tope de peso.
+
+    El limite no es cosmetico: el catalogo del punto de venta se carga entero
+    en cada turno, y una terminal de mostrador suele estar en la misma red que
+    el resto de la operacion. Diez fotos de camara sin recortar hacen que abrir
+    la caja tarde mas que cobrar.
+    """
+
+    def __init__(self, **kwargs):
+        kwargs.setdefault("validators", [FileExtensionValidator(PRODUCT_IMAGE_EXTENSIONS)])
+        super().__init__(**kwargs)
+
+    def to_internal_value(self, data):
+        archivo = super().to_internal_value(data)
+        if archivo.size > PRODUCT_IMAGE_MAX_BYTES:
+            raise serializers.ValidationError(
+                f"La imagen pesa {archivo.size // 1024} KB; el limite es "
+                f"{PRODUCT_IMAGE_MAX_BYTES // 1024} KB."
+            )
+        return archivo
+
+
 class ProductSerializer(CostVisibilityMixin, serializers.ModelSerializer):
     cost_fields = ("last_cost", "average_cost")
 
     category_name = serializers.CharField(source="category.name", read_only=True)
     unit_display = serializers.CharField(source="get_unit_display", read_only=True)
     total_stock = serializers.SerializerMethodField()
+    image = ProductImageField(required=False, allow_null=True)
+    image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -69,6 +100,8 @@ class ProductSerializer(CostVisibilityMixin, serializers.ModelSerializer):
             "category_name",
             "unit",
             "unit_display",
+            "image",
+            "image_url",
             "is_sellable",
             "is_stockable",
             "track_expiration",
@@ -80,7 +113,22 @@ class ProductSerializer(CostVisibilityMixin, serializers.ModelSerializer):
             "total_stock",
             "is_active",
         )
-        read_only_fields = ("last_cost", "average_cost")
+        # `is_active` es de solo lectura a proposito: la baja de un producto
+        # pasa por el borrado logico (`perform_destroy`), no por un campo del
+        # formulario. Dejarlo escribible tenia una consecuencia silenciosa: al
+        # mandar el alta como multipart -- que es lo que exige subir la foto --
+        # DRF interpreta un booleano ausente como `False`, igual que una casilla
+        # sin marcar en un formulario HTML. Resultado: cualquier producto creado
+        # con imagen nacia dado de baja y no aparecia en el catalogo.
+        read_only_fields = ("last_cost", "average_cost", "is_active")
+        extra_kwargs = {"image": {"write_only": True}}
+
+    def get_image_url(self, product: Product) -> str | None:
+        """Ruta relativa al sitio, igual que el logotipo del negocio."""
+        if not product.image:
+            return None
+        url = product.image.url
+        return url if url.startswith(("http://", "https://", "/")) else f"/{url}"
 
     def get_total_stock(self, product: Product) -> Decimal | None:
         """Existencia total anotada en la vista (``total_stock``)."""

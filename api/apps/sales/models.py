@@ -14,7 +14,7 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
 
-from common.models import BaseModel
+from common.models import BaseModel, ImmutableModel
 from common.utils import ZERO
 
 from apps.sales.constants import (
@@ -361,3 +361,40 @@ class Receipt(BaseModel):
 
     def __str__(self) -> str:
         return f"{self.get_kind_display()} - {self.folio or self.order}"
+
+
+class SaleAttempt(ImmutableModel):
+    """Huella de un cobro ya realizado, para que un reintento no cobre dos veces.
+
+    Una venta de mostrador es una sola pulsación de "Cobrar" que por dentro
+    abre cuenta, descuenta inventario, registra el pago y cierra. Si la
+    respuesta se pierde en el camino -- red intermitente, el contenedor que se
+    reinicia, el cajero que vuelve a pulsar porque no vio nada -- el navegador
+    repite la petición y sin esta tabla acabaría con dos folios, dos salidas de
+    inventario y dos entradas en el cajón.
+
+    La clave la genera el navegador *una vez por intento de venta*, no por
+    petición: mientras el carrito sea el mismo, todos los reintentos comparten
+    clave y todos reciben el mismo folio. Vaciar el carrito genera una nueva.
+
+    Es inmutable a propósito: es evidencia de un cobro, y reescribirla borraría
+    justo lo que la hace útil en una aclaración.
+    """
+
+    key = models.CharField("Clave de intento", max_length=64, editable=False)
+    folio = models.ForeignKey(
+        Folio,
+        verbose_name="Cuenta resultante",
+        on_delete=models.PROTECT,
+        related_name="sale_attempts",
+    )
+
+    class Meta(ImmutableModel.Meta):
+        verbose_name = "Intento de venta"
+        verbose_name_plural = "Intentos de venta"
+        constraints = [
+            models.UniqueConstraint(fields=["motel", "key"], name="uniq_sale_attempt_key"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.key} -> {self.folio.code}"

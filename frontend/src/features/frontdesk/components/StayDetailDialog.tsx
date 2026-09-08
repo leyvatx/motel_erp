@@ -56,12 +56,23 @@ export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
     if (open) setPanel('detail')
   }, [open, stayId])
 
+  // Falló de verdad, en contraste con "ya no estamos preguntando".
+  //
+  // Al cerrar el diálogo la consulta se deshabilita y `stay` vuelve a quedar
+  // vacío sin que nada haya salido mal. Tratar esas dos situaciones igual hacía
+  // que cada cierre -- incluido el que sigue a un cobro correcto -- destellara
+  // "No se pudo abrir la renta" durante la animación de salida. Quien acababa
+  // de cobrar $400 leía un error justo después.
+  const fallo = Boolean(error) && !isLoading
+
   // El encabezado lo pone el contenedor, así que el título de cada rama se
   // decide aquí arriba en vez de repetirse dentro de cada una.
   const titulo = isLoading ? (
     'Abriendo la renta'
-  ) : !stay ? (
+  ) : fallo ? (
     'No se pudo abrir la renta'
+  ) : !stay ? (
+    'Renta'
   ) : (
     <span className="flex items-center gap-2">
       Habitación {stay.room_number}
@@ -71,9 +82,11 @@ export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
 
   const descripcion = isLoading
     ? undefined
-    : !stay
+    : fallo
       ? apiErrorMessage(error, 'La renta no se pudo cargar.')
-      : `${stay.code} - ${stay.room_type_name} / ${stay.tariff_block_name}`
+      : stay
+        ? `${stay.code} - ${stay.room_type_name} / ${stay.tariff_block_name}`
+        : undefined
 
   return (
     <ResponsiveDialog
@@ -84,9 +97,7 @@ export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
       className="max-w-xl"
     >
       <div className="space-y-4">
-        {isLoading ? (
-          <Skeleton className="h-32 w-full" />
-        ) : !stay ? (
+        {fallo ? (
           /* Sin esta rama el esqueleto era también el estado de error: al
              fallar la consulta isLoading vuelve a false pero stay se queda en
              undefined, así que la condición seguía siendo cierta y el diálogo
@@ -99,6 +110,8 @@ export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
               Reintentar
             </Button>
           </div>
+        ) : isLoading || !stay ? (
+          <Skeleton className="h-32 w-full" />
         ) : (
           <>
             <StayTimer expiresAt={stay.expires_at} />
@@ -121,34 +134,64 @@ export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
               balance={stay.folio_balance}
             />
 
+            {/* Jerarquía de acciones, no una fila de cuatro iguales.
+             *
+             *  "Cobrar y salir" es lo que termina la renta y lo que se hace en
+             *  el 90 % de las aperturas de este diálogo: va solo, ancho
+             *  completo y como acción principal. Consumo y extender son
+             *  intermedios y quedan debajo, a la mitad.
+             *
+             *  Cancelar la renta se sacó de esa fila a propósito. Decía sólo
+             *  "Cancelar" al lado de "Cobrar", del mismo tamaño, y en el resto
+             *  del sistema "Cancelar" significa "cierra esto sin hacer nada";
+             *  aquí significa revertir la renta completa. Quien buscaba salir
+             *  del diálogo tenía la acción destructiva bajo el pulgar. Ahora
+             *  lleva su nombre entero, vive aparte y sigue pidiendo motivo
+             *  escrito antes de ejecutarse. */}
+            {panel === 'detail' ? (
+              <div className="space-y-2">
+                <Button className="h-11 w-full text-base" onClick={() => setPanel('checkout')}>
+                  <PiCreditCard className="h-4 w-4" />
+                  Cobrar y salir
+                  {toNumber(stay.folio_balance) > 0 ? (
+                    <span className="font-semibold tabular">{formatMoney(stay.folio_balance)}</span>
+                  ) : null}
+                </Button>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="outline" className="h-11" onClick={() => setPanel('charge')}>
+                    <PiBasket className="h-4 w-4" />
+                    Agregar consumo
+                  </Button>
+                  <Button variant="outline" className="h-11" onClick={() => setPanel('extend')}>
+                    <PiPlus className="h-4 w-4" />
+                    Extender tiempo
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+
             {panel === 'detail' ? (
               <div className="rounded-lg border p-3">
                 <p className="mb-2 text-xs font-medium text-muted-foreground">
                   Rastro de esta renta
                 </p>
-                <div className="max-h-56 overflow-y-auto scrollbar-thin pr-1">
+                <div className="max-h-40 overflow-y-auto scrollbar-thin pr-1">
                   <StayTimeline stayId={stay.id} folioId={stay.folio_id} />
                 </div>
               </div>
             ) : null}
 
             {panel === 'detail' ? (
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                <Button variant="outline" onClick={() => setPanel('charge')}>
-                  <PiBasket className="h-4 w-4" />
-                  Consumo
-                </Button>
-                <Button variant="outline" onClick={() => setPanel('extend')}>
-                  <PiPlus className="h-4 w-4" />
-                  Extender
-                </Button>
-                <Button onClick={() => setPanel('checkout')}>
-                  <PiCreditCard className="h-4 w-4" />
-                  Cobrar
-                </Button>
-                <Button variant="destructive" onClick={() => setPanel('cancel')}>
+              <div className="flex justify-center border-t pt-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => setPanel('cancel')}
+                >
                   <PiProhibit className="h-4 w-4" />
-                  Cancelar
+                  Cancelar la renta
                 </Button>
               </div>
             ) : null}
@@ -156,6 +199,7 @@ export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
             {panel === 'charge' ? (
               <ChargePanel
                 folioId={stay.folio_id}
+                stayId={stay.id}
                 roomNumber={stay.room_number}
                 onDone={() => setPanel('detail')}
               />
@@ -254,16 +298,18 @@ function FolioBreakdown({
 
 function ChargePanel({
   folioId,
+  stayId,
   roomNumber,
   onDone,
 }: {
   folioId: number | null
+  stayId: number
   roomNumber: string
   onDone: () => void
 }) {
   const { data: products, isLoading } = useSellableProducts()
   const cart = useCart()
-  const charge = useChargeToRoom({ folioId, roomNumber })
+  const charge = useChargeToRoom({ folioId, stayId, roomNumber })
 
   if (!folioId) {
     return (

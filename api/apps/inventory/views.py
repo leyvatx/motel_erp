@@ -7,6 +7,7 @@ from django.db.models import F, Sum
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
 from common.pagination import LargePagination
@@ -79,6 +80,9 @@ class ProductViewSet(viewsets.ModelViewSet):
         total_stock=Sum("stocks__quantity")
     )
     serializer_class = ProductSerializer
+    # La foto llega como multipart desde el telefono o el explorador de
+    # archivos; el alta rapida de la caja sigue mandando JSON sin imagen.
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     required_permissions = CATALOG_PERMISSIONS
     filterset_fields = ["category", "is_sellable", "is_stockable", "track_expiration", "is_active"]
     search_fields = ["sku", "name", "barcode"]

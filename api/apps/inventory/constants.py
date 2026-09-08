@@ -73,3 +73,13 @@ MOVEMENT_SIGN: dict[str, int] = {
 
 INBOUND_MOVEMENTS = frozenset(k for k, v in MOVEMENT_SIGN.items() if v > 0)
 OUTBOUND_MOVEMENTS = frozenset(k for k, v in MOVEMENT_SIGN.items() if v < 0)
+
+
+# Fotografia del producto: la que se ve en la tarjeta del punto de venta.
+#
+# 2 MB es holgado para una foto de producto ya recortada y sigue siendo poco
+# para una terminal de mostrador que carga el catalogo entero en cada turno.
+# Las extensiones son las que produce cualquier telefono con `capture`.
+PRODUCT_IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "webp"]
+
+PRODUCT_IMAGE_MAX_BYTES = 2 * 1024 * 1024

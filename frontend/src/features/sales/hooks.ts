@@ -30,9 +30,11 @@ export function useSalesWarehouse(): Warehouse | undefined {
 interface RoomOrderArgs {
   folioId: number | null
   roomNumber: string
+  /** La renta a la que pertenece la cuenta, para refrescar su saldo. */
+  stayId?: number | null
 }
 
-export function useChargeToRoom({ folioId, roomNumber }: RoomOrderArgs) {
+export function useChargeToRoom({ folioId, roomNumber, stayId }: RoomOrderArgs) {
   const queryClient = useQueryClient()
   const warehouse = useSalesWarehouse()
 
@@ -54,6 +56,10 @@ export function useChargeToRoom({ folioId, roomNumber }: RoomOrderArgs) {
       void queryClient.invalidateQueries({ queryKey: ['inventory'] })
       void queryClient.invalidateQueries({ queryKey: queryKeys.frontdesk.grid })
       if (folioId) void queryClient.invalidateQueries({ queryKey: queryKeys.sales.folio(folioId) })
+      // Sin esto el diálogo de la renta seguía mostrando el saldo de antes del
+      // consumo, y el importe a cobrar salía corto: el huésped se iba debiendo
+      // justo lo que se le acababa de cargar.
+      if (stayId) void queryClient.invalidateQueries({ queryKey: queryKeys.frontdesk.stay(stayId) })
       toast.success(
         `Cargado a la habitación ${roomNumber}`,
         `Consumo ${order.code} por ${formatMoney(order.total)}. Se cobra al salir.`,

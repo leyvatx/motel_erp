@@ -217,6 +217,25 @@ class CreateOrderSerializer(serializers.Serializer):
     items = OrderItemInputSerializer(many=True, allow_empty=False)
 
 
+class CounterSaleSerializer(serializers.Serializer):
+    """Venta de mostrador completa: lo que antes eran cuatro llamadas.
+
+    ``attempt_key`` la genera el navegador una vez por intento de venta. No es
+    obligatoria -- un cliente viejo sigue funcionando -- pero sin ella se
+    pierde la protección contra el cobro doble.
+    """
+
+    warehouse_id = serializers.IntegerField()
+    items = OrderItemInputSerializer(many=True, allow_empty=False)
+    method = serializers.ChoiceField(choices=PaymentMethod.choices)
+    tendered_amount = serializers.DecimalField(
+        max_digits=12, decimal_places=2, required=False, min_value=Decimal("0")
+    )
+    reference = serializers.CharField(required=False, allow_blank=True, max_length=60)
+    notes = serializers.CharField(required=False, allow_blank=True, max_length=500)
+    attempt_key = serializers.CharField(required=False, allow_blank=True, max_length=64)
+
+
 class PaymentInputSerializer(serializers.Serializer):
     method = serializers.ChoiceField(choices=PaymentMethod.choices)
     amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"))

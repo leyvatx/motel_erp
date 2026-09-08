@@ -29,6 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { ProductImagePicker } from '@/features/inventory/components/ProductImagePicker'
 import {
   useCategories,
   useCreateCategory,
@@ -170,6 +171,7 @@ function CatalogDialog({
 function ProductForm({ close }: { close: () => void }) {
   const categories = useCategories()
   const create = useCreateProduct()
+  const [foto, setFoto] = useState<File | null>(null)
   const [form, setForm] = useState({
     sku: '',
     barcode: '',
@@ -194,9 +196,22 @@ function ProductForm({ close }: { close: () => void }) {
         className="space-y-4"
         onSubmit={(event) => {
           event.preventDefault()
-          create.mutate({ ...form, category: Number(form.category) }, { onSuccess: close })
+          create.mutate(
+            { payload: { ...form, category: Number(form.category) }, image: foto },
+            { onSuccess: close },
+          )
         }}
       >
+        <div className="space-y-2">
+          <Label>Imagen</Label>
+          <ProductImagePicker
+            categoria={
+              categories.data?.results.find((item) => String(item.id) === form.category)?.name ?? ''
+            }
+            onChange={setFoto}
+          />
+        </div>
+
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>SKU</Label>

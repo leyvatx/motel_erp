@@ -1,7 +1,7 @@
 import { PiPackage } from 'react-icons/pi'
 
 import { RowActions, type RowAction } from '@/components/ui/row-actions'
-import { EmptyState } from '@/components/ui/states'
+import { EmptyState, ErrorState } from '@/components/ui/states'
 import type { WarehouseStock } from '@/features/inventory/types'
 import { formatQuantity, toNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils'
 interface Props {
   rows: WarehouseStock[]
   isLoading: boolean
+  isError?: boolean
+  onRetry?: () => void
   emptyTitle: string
   emptyDescription: string
   onDetail: (row: WarehouseStock) => void
@@ -28,11 +30,26 @@ interface Props {
 export function StockCards({
   rows,
   isLoading,
+  isError = false,
+  onRetry,
   emptyTitle,
   emptyDescription,
   onDetail,
   actionsFor,
 }: Props) {
+  // Una bodega sin existencias y una consulta que falló se ven idénticas si
+  // las dos son una lista vacía; la primera invita a comprar, la segunda a
+  // reintentar.
+  if (isError) {
+    return (
+      <ErrorState
+        title="No pudimos cargar las existencias"
+        description="El inventario no llegó. Nada se perdió: es la conexión con el servidor."
+        onRetry={onRetry}
+      />
+    )
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-2">

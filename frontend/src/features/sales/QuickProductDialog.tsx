@@ -11,9 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ProductImagePicker } from '@/features/inventory/components/ProductImagePicker'
 import { useCategories, useCreateProduct } from '@/features/inventory/hooks'
 import type { Product } from '@/features/inventory/types'
-import { apiFieldErrors } from '@/lib/axios'
+import { apiErrorMessage, apiFieldErrors } from '@/lib/axios'
 
 const UNIDADES = [
   { value: 'PIECE', label: 'Pieza' },
@@ -73,6 +74,7 @@ export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onC
   const [categoria, setCategoria] = useState('')
   const [unidad, setUnidad] = useState<string>('PIECE')
   const [inventariable, setInventariable] = useState(true)
+  const [foto, setFoto] = useState<File | null>(null)
 
   const listaCategorias = categories.data?.results ?? []
   const categoriaElegida = categoria || (listaCategorias[0] ? String(listaCategorias[0].id) : '')
@@ -82,17 +84,20 @@ export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onC
   const guardar = (): void => {
     create.mutate(
       {
-        sku: skuDesdeNombre(nombre),
-        barcode: '',
-        name: nombre.trim(),
-        category: Number(categoriaElegida),
-        unit: unidad,
-        sale_price: Number(precio).toFixed(2),
-        tax_rate: '0.00',
-        default_min_stock: '0',
-        is_sellable: true,
-        is_stockable: inventariable,
-        track_expiration: false,
+        payload: {
+          sku: skuDesdeNombre(nombre),
+          barcode: '',
+          name: nombre.trim(),
+          category: Number(categoriaElegida),
+          unit: unidad,
+          sale_price: Number(precio).toFixed(2),
+          tax_rate: '0.00',
+          default_min_stock: '0',
+          is_sellable: true,
+          is_stockable: inventariable,
+          track_expiration: false,
+        },
+        image: foto,
       },
       {
         onSuccess: (producto) => {
@@ -100,6 +105,7 @@ export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onC
           setNombre('')
           setPrecio('')
           setInventariable(true)
+          setFoto(null)
           onOpenChange(false)
         },
       },
@@ -195,6 +201,19 @@ export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onC
           ) : null}
         </div>
 
+        {/* Al final y opcional: quien está cobrando con alguien enfrente
+            escribe nombre y precio y ya puede guardar. La foto se agrega ahora
+            si hay tiempo, o después desde Inventarios. */}
+        <div className="space-y-2">
+          <Label>Imagen (opcional)</Label>
+          <ProductImagePicker
+            categoria={
+              listaCategorias.find((item) => String(item.id) === categoriaElegida)?.name ?? ''
+            }
+            onChange={setFoto}
+          />
+        </div>
+
         <label className="flex items-start gap-2.5 rounded-lg bg-muted/50 p-3 text-sm">
           <input
             type="checkbox"
@@ -210,9 +229,13 @@ export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onC
           </span>
         </label>
 
+        {/* El motivo real, no una suposición. Decía siempre "revisa que el
+            nombre no exista" y eso escondía lo que de verdad pasaba -- por
+            ejemplo que el rol no tiene permiso de catálogo -- dejando al cajero
+            corrigiendo un nombre que estaba bien. */}
         {create.isError && Object.keys(errores).length === 0 ? (
           <p role="alert" className="text-sm text-destructive">
-            No se pudo guardar. Revisa que el nombre no exista ya en el catálogo.
+            {apiErrorMessage(create.error, 'No se pudo guardar el producto.')}
           </p>
         ) : null}
       </div>

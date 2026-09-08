@@ -1,9 +1,16 @@
 import { useState } from 'react'
-import { PiCheck, PiCheckCircle, PiPlay, PiSparkle, PiWarning } from 'react-icons/pi'
+import {
+  PiCheck,
+  PiCheckCircle,
+  PiClipboardText,
+  PiPlay,
+  PiSparkle,
+  PiWarning,
+} from 'react-icons/pi'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { EmptyState } from '@/components/ui/states'
+import { EmptyState, ErrorState } from '@/components/ui/states'
 import { ReportMaintenanceDialog } from '@/features/housekeeping/components/ReportMaintenanceDialog'
 import { useFinishCleaningTask, useStartCleaning } from '@/features/housekeeping/hooks'
 import type { CleaningTask } from '@/features/housekeeping/types'
@@ -20,6 +27,11 @@ function tiempo(task: CleaningTask): string {
 interface Props {
   tasks: CleaningTask[]
   isLoading: boolean
+  isError?: boolean
+  onRetry?: () => void
+  /** Cuántas tareas hay en total cuando la lista está filtrada a las propias. */
+  sinAsignar?: number
+  onVerTodas?: () => void
 }
 
 /**
@@ -35,13 +47,33 @@ interface Props {
  * Al terminar una, la tarjeta desaparece de la lista y la siguiente sube sola:
  * nadie tiene que volver a buscar dónde iba.
  */
-export function CleaningQueue({ tasks, isLoading }: Props) {
+export function CleaningQueue({
+  tasks,
+  isLoading,
+  isError = false,
+  onRetry,
+  sinAsignar = 0,
+  onVerTodas,
+}: Props) {
   const start = useStartCleaning()
   const finish = useFinishCleaningTask()
 
   const [cerrando, setCerrando] = useState<CleaningTask | null>(null)
   const [notas, setNotas] = useState('')
   const [reportando, setReportando] = useState<CleaningTask | null>(null)
+
+  // "No pudimos cargar" y "no hay nada que limpiar" se ven igual si los dos
+  // son una lista vacía, y para quien empieza su turno son opuestos: uno
+  // significa descansa, el otro significa reintenta.
+  if (isError) {
+    return (
+      <ErrorState
+        title="No pudimos cargar tus tareas"
+        description="La lista no llegó. Vuelve a intentarlo; si sigue igual, avisa a recepción."
+        onRetry={onRetry}
+      />
+    )
+  }
 
   if (isLoading) {
     return (
@@ -54,6 +86,27 @@ export function CleaningQueue({ tasks, isLoading }: Props) {
   }
 
   if (tasks.length === 0) {
+    // Dos vacíos distintos: "ya no hay trabajo" y "el trabajo no es tuyo
+    // todavía". El segundo necesita un botón, no una felicitación.
+    if (sinAsignar > 0) {
+      return (
+        <EmptyState
+          title="No tienes tareas asignadas"
+          description={`Hay ${sinAsignar} ${
+            sinAsignar === 1 ? 'habitación pendiente' : 'habitaciones pendientes'
+          } que nadie ha tomado.`}
+          icon={<PiClipboardText className="h-8 w-8" aria-hidden />}
+          action={
+            onVerTodas ? (
+              <Button className="h-11" onClick={onVerTodas}>
+                Ver todas las pendientes
+              </Button>
+            ) : null
+          }
+        />
+      )
+    }
+
     return (
       <EmptyState
         title="No hay nada pendiente"
