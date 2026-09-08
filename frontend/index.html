@@ -13,6 +13,31 @@
     <title>Sistema de gestión</title>
 
     <!--
+      El fondo, desde el primer byte.
+
+      La hoja de estilos pesa 68 kB y bloquea el pintado: entre que llega el
+      HTML y llega el CSS, el documento no tiene color propio y el navegador
+      pinta su blanco. En tema claro no se nota; en tema oscuro es un
+      fogonazo blanco a pantalla completa antes de cada carga.
+
+      Estos dos colores son los mismos tokens `--background` de `index.css`
+      (claro `0 0% 100%`, oscuro `0 0% 4%`), escritos en hexadecimal porque
+      aquí todavía no existen las variables. Si alguna vez cambian allá,
+      cambian aquí: es la única duplicación que se paga a cambio de no
+      parpadear.
+    -->
+    <style>
+      :root {
+        color-scheme: light;
+        background-color: #ffffff;
+      }
+      :root.dark {
+        color-scheme: dark;
+        background-color: #0a0a0a;
+      }
+    </style>
+
+    <!--
       Tema antes del primer pintado.
 
       Sin esto la aplicación arranca en claro -- lo que dice el CSS por defecto

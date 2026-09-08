@@ -9,8 +9,26 @@ import { ForbiddenPage, NotFoundPage, RouteErrorPage } from '@/pages/ErrorPages'
 import { defaultRouteFor, useAuthStore } from '@/store/auth'
 
 const LandingPage = lazy(() => import('@/features/marketing/LandingPage'))
-const LoginPage = lazy(() => import('@/features/auth/LoginPage'))
 const RegisterPage = lazy(() => import('@/features/auth/RegisterPage'))
+
+/** El acceso se pide de inmediato, sin esperar a que se renderice su ruta.
+ *
+ *  El problema no era que fuera un trozo aparte, sino que se pedía **en
+ *  cascada**: el navegador no descubría que lo necesitaba hasta terminar de
+ *  ejecutar el paquete principal. Medido contra el servidor real, el principal
+ *  cerraba a los 116 ms y el del acceso no arrancaba hasta los 164 -- y
+ *  mientras tanto se pintaba un esqueleto en lugar del formulario. Con el
+ *  servicio despertando de su sueño, esos milisegundos son segundos.
+ *
+ *  Llamar al import aquí arriba lanza la descarga en cuanto se evalúa este
+ *  archivo, en paralelo con todo lo demás. Meterlo al paquete principal también
+ *  lo arreglaba, pero arrastraba consigo el formulario, el validador y el
+ *  diálogo: 95 kB más para todo el mundo, en cada visita, a cambio de un
+ *  destello. La descarga anticipada cuesta cero.
+ */
+const cargarAcceso = () => import('@/features/auth/LoginPage')
+const LoginPage = lazy(cargarAcceso)
+void cargarAcceso()
 const DashboardPage = lazy(() => import('@/features/dashboard/DashboardPage'))
 const FrontDeskPage = lazy(() => import('@/features/frontdesk/FrontDeskPage'))
 const InventoryPage = lazy(() => import('@/features/inventory/InventoryPage'))
@@ -34,12 +52,16 @@ function Inicio() {
 
   if (access) return <Navigate to={defaultRouteFor(user)} replace />
   return (
-    <Lazy>
+    <LazyPublico>
       <LandingPage />
-    </Lazy>
+    </LazyPublico>
   )
 }
 
+/** La espera dentro de la aplicación: dos bloques con la forma de lo que viene.
+ *
+ *  Funciona porque se pinta **dentro** del layout, con su menú y su barra ya
+ *  puestos alrededor. */
 function PageFallback() {
   return (
     <div className="space-y-4">
@@ -49,8 +71,27 @@ function PageFallback() {
   )
 }
 
+/** La espera de una pantalla pública: el lienzo, no un esqueleto.
+ *
+ *  Landing y registro ocupan la ventana entera y no tienen layout alrededor.
+ *  El esqueleto de arriba, ahí, son dos barras grises flotando sobre blanco en
+ *  la esquina: no se parece a nada de lo que viene después y se lee como una
+ *  página rota. Pintar el mismo fondo con la misma retícula hace que la llegada
+ *  del contenido sea eso -- una llegada -- y no un cambio de pantalla. */
+function LienzoPublico() {
+  return (
+    <div className="relative min-h-dvh bg-background">
+      <div className="grid-surface grid-fade pointer-events-none absolute inset-0" aria-hidden />
+    </div>
+  )
+}
+
 function Lazy({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageFallback />}>{children}</Suspense>
+}
+
+function LazyPublico({ children }: { children: React.ReactNode }) {
+  return <Suspense fallback={<LienzoPublico />}>{children}</Suspense>
 }
 
 const routes: RouteObject[] = [
@@ -59,18 +100,18 @@ const routes: RouteObject[] = [
     path: '/login',
     errorElement: <RouteErrorPage />,
     element: (
-      <Lazy>
+      <LazyPublico>
         <LoginPage />
-      </Lazy>
+      </LazyPublico>
     ),
   },
   {
     path: '/registro',
     errorElement: <RouteErrorPage />,
     element: (
-      <Lazy>
+      <LazyPublico>
         <RegisterPage />
-      </Lazy>
+      </LazyPublico>
     ),
   },
   { path: '/sin-acceso', element: <ForbiddenPage /> },
