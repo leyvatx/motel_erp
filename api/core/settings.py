@@ -168,6 +168,12 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    # Entre la sesión y CommonMiddleware, que es donde Django lo pide: necesita
+    # la sesión para poder leerla y tiene que correr antes de que se resuelva
+    # la URL. Con él, la API contesta en el idioma que pide el navegador por
+    # `Accept-Language` -- el frontend lo manda en cada petición -- en vez de
+    # siempre en español.
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -264,6 +270,14 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = "es-mx"
+
+# Los dos que se hablan. Sin esta lista, `LocaleMiddleware` acepta el centenar
+# de idiomas que trae Django y un navegador en portugués se llevaría media
+# interfaz en portugués y media en español, que es peor que no traducir.
+LANGUAGES = [
+    ("es", "Español"),
+    ("en", "English"),
+]
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True

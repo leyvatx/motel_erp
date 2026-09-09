@@ -24,3 +24,9 @@ if (!window.matchMedia) {
     dispatchEvent: () => false,
   })) as unknown as typeof window.matchMedia
 }
+
+// El idioma de las pruebas se fija en español, que es el de las cadenas que
+// afirman. Sin esto lo decide `navigator.language` de la máquina que corre la
+// suite: la misma prueba pasa en una laptop en español y falla en una en
+// inglés, que es la peor clase de prueba -- la que depende de dónde se corre.
+localStorage.setItem('erp-idioma', 'es')

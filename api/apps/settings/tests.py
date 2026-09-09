@@ -833,3 +833,57 @@ class AccesoDualTests(TestCase):
 
     def test_un_correo_que_no_existe_no_entra(self) -> None:
         self.assertEqual(self.entrar("nadie@ningunlado.mx").status_code, 401)
+
+
+class IdiomaDeLaApiTests(TestCase):
+    """La API contesta en el idioma que pide el navegador.
+
+    El frontend manda `Accept-Language` en cada petición; sin
+    ``LocaleMiddleware`` Django lo ignoraba y devolvía todo en español, así que
+    una pantalla en inglés mostraba sus errores en otro idioma.
+    """
+
+    def setUp(self) -> None:
+        cache.clear()
+
+    def payload(self, **cambios) -> dict:
+        datos = {
+            "business_name": "Riverside Inn",
+            "admin_full_name": "Karen Fields",
+            "email": "karen@riverside.example",
+            "username": "karen",
+            "phone": "555 908 7766",
+            "operation_size": OperationSize.HASTA_10,
+            "password": "12345678",
+        }
+        datos.update(cambios)
+        return datos
+
+    def razon(self, respuesta) -> str:
+        return " ".join(respuesta.data["error"]["details"]["password"])
+
+    def test_en_ingles_la_contrasena_se_rechaza_en_ingles(self) -> None:
+        respuesta = APIClient().post(
+            REGISTRO_URL, self.payload(), format="json", HTTP_ACCEPT_LANGUAGE="en"
+        )
+
+        self.assertEqual(respuesta.status_code, 400)
+        self.assertIn("password", self.razon(respuesta).lower())
+
+    def test_en_espanol_la_misma_contrasena_se_rechaza_en_espanol(self) -> None:
+        respuesta = APIClient().post(
+            REGISTRO_URL, self.payload(), format="json", HTTP_ACCEPT_LANGUAGE="es"
+        )
+
+        self.assertEqual(respuesta.status_code, 400)
+        self.assertIn("contraseña", self.razon(respuesta).lower())
+
+    def test_un_idioma_que_no_hablamos_cae_en_espanol(self) -> None:
+        # `LANGUAGES` acota a los dos que sí existen: sin eso, un navegador en
+        # portugués se llevaba media interfaz traducida a medias.
+        respuesta = APIClient().post(
+            REGISTRO_URL, self.payload(), format="json", HTTP_ACCEPT_LANGUAGE="pt-BR"
+        )
+
+        self.assertEqual(respuesta.status_code, 400)
+        self.assertIn("contraseña", self.razon(respuesta).lower())

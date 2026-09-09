@@ -53,23 +53,31 @@
     -->
     <script>
       ;(function () {
-        try {
-          // La portada pública no hereda la marca de nadie. Es la primera
-          // pantalla que ve un visitante nuevo y salía con el color del último
-          // motel que se abrió en este navegador -- aunque su sesión ya se
-          // hubiera cerrado -- porque este guion corre antes que la aplicación
-          // y no preguntaba de quién era la pantalla.
-          if (location.pathname === '/') return
+        var raiz = document.documentElement
 
+        // Dos cosas distintas, guardadas aparte porque no son de la misma
+        // persona. El claro/oscuro es de quien mira -- vale en toda la
+        // aplicación, también en la portada, también sin sesión -- y los
+        // colores son del negocio, que en la portada pública no pinta nada: ahí
+        // un visitante nuevo veía la marca del último motel abierto en este
+        // navegador, aunque su sesión ya se hubiera cerrado.
+        try {
+          var modo = localStorage.getItem('erp-modo')
+          if (modo === 'dark') raiz.classList.add('dark')
+        } catch (e) {
+          /* Almacenamiento bloqueado: arranca en claro, como antes. */
+        }
+
+        if (location.pathname === '/') return
+
+        try {
           var crudo = localStorage.getItem('erp-tema-resuelto')
           if (!crudo) return
           var tema = JSON.parse(crudo)
-          var raiz = document.documentElement
-          if (tema.dark) raiz.classList.add('dark')
           if (tema.density) raiz.dataset.density = tema.density
           for (var nombre in tema.vars) raiz.style.setProperty(nombre, tema.vars[nombre])
         } catch (e) {
-          /* Almacenamiento bloqueado o dato corrupto: arranca en claro, como antes. */
+          /* Dato corrupto: arranca con los colores del CSS. */
         }
       })()
     </script>

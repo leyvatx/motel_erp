@@ -1,7 +1,9 @@
+import { useTranslation } from 'react-i18next'
 import { NavLink } from 'react-router-dom'
 import { PiDotsThreeOutline } from 'react-icons/pi'
 
 import { NAV_GROUPS } from '@/components/layout/navigation'
+import { etiquetaDeSeccion } from '@/components/layout/navigation'
 import { cn } from '@/lib/utils'
 import { canAccessSection, useAuthStore } from '@/store/auth'
 
@@ -61,6 +63,7 @@ interface Props {
  *   navegación, es ruido.
  */
 export function MobileTabBar({ onOpenMenu }: Props) {
+  const { t } = useTranslation()
   const user = useAuthStore((state) => state.user)
 
   const operacion = NAV_GROUPS.find((group) => group.id === 'daily')?.items ?? []
@@ -109,7 +112,7 @@ export function MobileTabBar({ onOpenMenu }: Props) {
                   isActive && 'font-medium',
                 )}
               >
-                {item.label}
+                {etiquetaDeSeccion(t, item.section, item.label)}
               </span>
             </>
           )}
@@ -126,7 +129,7 @@ export function MobileTabBar({ onOpenMenu }: Props) {
         aria-label="Ver todas las secciones"
       >
         <PiDotsThreeOutline className="h-5 w-5 shrink-0" aria-hidden />
-        <span className="text-2xs leading-none">Más</span>
+        <span className="text-2xs leading-none">{t('nav.mas')}</span>
       </button>
     </nav>
   )

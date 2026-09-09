@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { Link, Navigate } from 'react-router-dom'
 import { z } from 'zod'
 import { LuArrowLeft, LuBuilding2, LuEye, LuEyeOff } from 'react-icons/lu'
@@ -103,6 +104,7 @@ function nuevaClaveDeIntento(): string {
  *  lo abandona.
  */
 export default function RegisterPage() {
+  const { t } = useTranslation()
   const access = useAuthStore((state) => state.access)
   const user = useAuthStore((state) => state.user)
   const signup = useSignup()
@@ -454,7 +456,7 @@ export default function RegisterPage() {
               ) : null}
 
               <Button type="submit" className="h-11 w-full lg:h-10">
-                Crear cuenta y empezar
+                {t('acceso.crearCuenta')}
               </Button>
             </form>
           </div>
@@ -466,7 +468,7 @@ export default function RegisterPage() {
             className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground"
           >
             <LuArrowLeft className="h-3 w-3" aria-hidden />
-            Ya tengo cuenta
+            {t('acceso.yaTengoCuenta')}
           </Link>
         </p>
       </div>

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import {
   LuArrowRight,
@@ -15,6 +16,8 @@ import {
   LuVault,
 } from 'react-icons/lu'
 
+import { LanguageToggle } from '@/components/LanguageToggle'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { APP_FALLBACK_NAME } from '@/lib/brand'
@@ -812,7 +815,11 @@ function Marca() {
       >
         <LuBed className="h-3.5 w-3.5" />
       </span>
-      <span className="whitespace-nowrap text-sm font-semibold tracking-tight text-foreground">
+      {/* El nombre desaparece en el teléfono y queda la marca sola. Con el
+          tema, el idioma y el botón de alta, la franja no daba para 160 px de
+          texto: se salía de la pantalla. El nombre sigue en el título de la
+          pestaña y a dos dedos de scroll, en el titular. */}
+      <span className="hidden whitespace-nowrap text-sm font-semibold tracking-tight text-foreground sm:inline">
         {APP_FALLBACK_NAME}
       </span>
     </span>
@@ -876,6 +883,7 @@ const BOTON_PRINCIPAL = cn(
 )
 
 export default function LandingPage() {
+  const { t } = useTranslation()
   const [paso, setPaso] = useState(APAGADO)
   // `lg` es donde la columna pegajosa deja de caber junto al texto.
   const angosta = useMediaQuery('(max-width: 1023px)')
@@ -893,9 +901,9 @@ export default function LandingPage() {
   }, [setNeutra])
 
   useEffect(() => {
-    document.title = `${APP_FALLBACK_NAME} · Hospedaje y estancias ágiles`
+    document.title = `${APP_FALLBACK_NAME} · ${t('portada.titulo')}`
     setFavicon(null)
-  }, [])
+  }, [t])
 
   return (
     <div className="min-h-dvh bg-background text-foreground antialiased">
@@ -921,17 +929,28 @@ export default function LandingPage() {
                 'hover:bg-accent hover:text-accent-foreground',
               )}
             >
-              Cómo funciona
+              {t('portada.comoFunciona')}
             </a>
+
+            {/* Tema e idioma también aquí, sin sesión. Quien llega de noche
+                puede bajarle a la pantalla y leerlo en su idioma antes de
+                decidir si crea una cuenta. */}
+            <ThemeToggle />
+            <LanguageToggle />
+
             <Link
               to="/login"
               className={cn(
-                'whitespace-nowrap rounded-lg px-3 py-2 text-sm transition-colors duration-200',
+                // Oculto en el teléfono por espacio, no por importancia: quien
+                // vuelve a entrar lo tiene en el cierre de la página y en la
+                // ruta que ya conoce. Lo que no puede faltar arriba es la
+                // acción de alguien que llega por primera vez.
+                'hidden whitespace-nowrap rounded-lg px-3 py-2 text-sm transition-colors duration-200 sm:block',
                 SUAVE,
                 'hover:bg-accent hover:text-accent-foreground',
               )}
             >
-              Entrar
+              {t('portada.entrar')}
             </Link>
             <Link
               to="/registro"
@@ -940,7 +959,7 @@ export default function LandingPage() {
                 'transition-colors duration-200 hover:bg-primary/90',
               )}
             >
-              Crear cuenta
+              {t('portada.crearCuenta')}
             </Link>
           </div>
         </nav>
@@ -995,13 +1014,13 @@ export default function LandingPage() {
                   className="h-1.5 w-1.5 rounded-full bg-status-available motion-safe:animate-pulse"
                   aria-hidden
                 />
-                Hospitalidad por turnos
+                {t('portada.heroEtiqueta')}
               </p>
 
               <h1 className="text-balance text-[clamp(2.75rem,8.5vw,7rem)] font-semibold leading-[0.92] tracking-[-0.045em]">
-                Tu operación
+                {t('portada.heroTituloA')}
                 <br />
-                <span className="text-brand-accent">en una pantalla.</span>
+                <span className="text-brand-accent">{t('portada.heroTituloB')}</span>
               </h1>
 
               <p
@@ -1010,13 +1029,12 @@ export default function LandingPage() {
                   SUAVE,
                 )}
               >
-                Habitaciones, tiempos, consumos y caja. Lo que hoy vive en una libreta y en tres
-                cabezas, en un tablero que todo el turno mira igual.
+                {t('portada.heroTexto')}
               </p>
 
               <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <Link to="/registro" className={cn(BOTON_PRINCIPAL, 'w-full px-7 sm:w-auto')}>
-                  Crear cuenta y configurar
+                  {t('portada.heroPrincipal')}
                   <LuArrowRight
                     className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none"
                     aria-hidden
@@ -1031,7 +1049,7 @@ export default function LandingPage() {
                     'hover:bg-accent',
                   )}
                 >
-                  Ver cómo funciona
+                  {t('portada.heroSecundario')}
                 </a>
               </div>
             </div>

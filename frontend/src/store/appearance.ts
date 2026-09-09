@@ -83,6 +83,16 @@ export const useAlcanceDeMarca = create<AlcanceDeMarca>()((set) => ({
   setNeutra: (neutra) => set({ neutra }),
 }))
 
+/** Qué tema toca cuando no hay negocio que lo dicte.
+ *
+ *  `business` significa "lo que diga la sucursal", y en la portada no hay
+ *  sucursal: ahí esa preferencia se traduce a seguir al sistema operativo, que
+ *  es lo que un sitio público debe hacer cuando nadie eligió nada. Una elección
+ *  explícita del visitante manda sobre las dos cosas. */
+export function temaParaInvitado(preferencia: ThemePreference): ThemeMode {
+  return preferencia === 'business' ? 'system' : preferencia
+}
+
 function hexToHsl(hex: string): string {
   const value = hex.replace('#', '')
   const red = Number.parseInt(value.slice(0, 2), 16) / 255
@@ -120,6 +130,16 @@ function readableForeground(hex: string): string {
  *  del primer pintado; si tuviera que esperar a React, el usuario vería la
  *  aplicación en claro y después el salto a oscuro, en cada recarga. */
 export const CLAVE_TEMA_PREPINTADO = 'erp-tema-resuelto'
+
+/** Claro u oscuro, decidido por quien mira. Aparte de la marca a propósito.
+ *
+ *  Los colores de `erp-tema-resuelto` son del negocio y no pueden salir en la
+ *  portada pública -- ahí un visitante vería la marca de un motel ajeno. Pero
+ *  claro/oscuro no es del negocio: es de los ojos de quien está enfrente, a las
+ *  tres de la mañana, en el mismo navegador. Guardado por separado se puede
+ *  aplicar siempre, también antes de iniciar sesión y también en la portada,
+ *  sin arrastrar nada del inquilino. */
+export const CLAVE_MODO = 'erp-modo'
 
 export interface TemaResuelto {
   dark: boolean
@@ -159,6 +179,14 @@ export function applyAppearance(
   root.classList.toggle('dark', dark)
   for (const [nombre, valor] of Object.entries(vars)) root.style.setProperty(nombre, valor)
   root.dataset.density = density
+
+  // El modo se guarda siempre, incluso cuando la marca no. Es lo que permite
+  // que la portada respete el claro/oscuro elegido sin heredar un solo color.
+  try {
+    localStorage.setItem(CLAVE_MODO, dark ? 'dark' : 'light')
+  } catch {
+    /* Almacenamiento bloqueado: se pierde el pre-pintado, no la sesión. */
+  }
 
   if (!persistir) return
 

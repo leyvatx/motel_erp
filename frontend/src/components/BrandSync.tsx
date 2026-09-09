@@ -7,6 +7,7 @@ import { configureFormatting } from '@/lib/format'
 import {
   APARIENCIA_NEUTRA,
   applyAppearance,
+  temaParaInvitado,
   useAlcanceDeMarca,
   useAppearanceStore,
 } from '@/store/appearance'
@@ -52,9 +53,10 @@ export function BrandSync(): null {
 
   useEffect(() => {
     const appearance = source ?? APARIENCIA_NEUTRA
-    // La portada también ignora el tema del negocio: se pinta en claro, que es
-    // como se ve un sitio público, sin arrastrar el modo oscuro de la terminal.
-    const preferencia = neutra ? 'light' : theme
+    // La portada ignora los colores del negocio, pero no el claro/oscuro de
+    // quien mira: eso es suyo, no del inquilino. Sin negocio que lo dicte,
+    // `business` pasa a seguir al sistema operativo.
+    const preferencia = neutra ? temaParaInvitado(theme) : theme
     const aplicar = (): void => applyAppearance(preferencia, density, appearance, !neutra)
 
     aplicar()

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { NavLink, useLocation } from 'react-router-dom'
 import { PiCaretDown } from 'react-icons/pi'
 
@@ -9,6 +10,7 @@ import {
   isConfigSection,
   type NavItem,
 } from '@/components/layout/navigation'
+import { etiquetaDeGrupo, etiquetaDeSeccion } from '@/components/layout/navigation'
 import { cn } from '@/lib/utils'
 import { canAccessSection, useAuthStore } from '@/store/auth'
 import { useUiStore } from '@/store/ui'
@@ -67,6 +69,7 @@ function NavEntry({
   expanded: boolean
   onNavigate?: () => void
 }) {
+  const { t } = useTranslation()
   const { pathname } = useLocation()
   const conSubmenu = item.section === 'config' && expanded && pathname.startsWith('/config')
 
@@ -99,7 +102,7 @@ function NavEntry({
                 expanded ? 'opacity-100' : 'w-0 opacity-0',
               )}
             >
-              {item.label}
+              {etiquetaDeSeccion(t, item.section, item.label)}
             </span>
           </>
         )}
@@ -111,6 +114,7 @@ function NavEntry({
 }
 
 export function SidebarNav({ expanded, onNavigate }: Props) {
+  const { t } = useTranslation()
   const user = useAuthStore((state) => state.user)
   const navGroups = useUiStore((state) => state.navGroups)
   const toggleNavGroup = useUiStore((state) => state.toggleNavGroup)
@@ -147,11 +151,11 @@ export function SidebarNav({ expanded, onNavigate }: Props) {
                     )}
                     aria-hidden
                   />
-                  {group.label}
+                  {etiquetaDeGrupo(t, group.id, group.label)}
                 </button>
               ) : (
                 <p className="px-3 pb-1.5 text-2xs font-medium uppercase tracking-wider text-sidebar-foreground/50">
-                  {group.label}
+                  {etiquetaDeGrupo(t, group.id, group.label)}
                 </p>
               )
             ) : (
@@ -161,12 +165,7 @@ export function SidebarNav({ expanded, onNavigate }: Props) {
             {abierto ? (
               <ul className="space-y-0.5">
                 {group.items.map((item) => (
-                  <NavEntry
-                    key={item.to}
-                    item={item}
-                    expanded={expanded}
-                    onNavigate={onNavigate}
-                  />
+                  <NavEntry key={item.to} item={item} expanded={expanded} onNavigate={onNavigate} />
                 ))}
               </ul>
             ) : null}

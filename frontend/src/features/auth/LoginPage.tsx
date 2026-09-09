@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { Link, Navigate } from 'react-router-dom'
 import { z } from 'zod'
 import { PiArrowLeft, PiBed } from 'react-icons/pi'
@@ -29,6 +30,7 @@ const loginSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
+  const { t } = useTranslation()
   const [ayudaAbierta, setAyudaAbierta] = useState(false)
   const access = useAuthStore((state) => state.access)
   const user = useAuthStore((state) => state.user)
@@ -65,7 +67,7 @@ export default function LoginPage() {
         className="absolute left-3 top-3 inline-flex h-11 items-center gap-1.5 rounded-lg px-3 text-sm text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/40 sm:left-5 sm:top-5"
       >
         <PiArrowLeft className="h-4 w-4" aria-hidden />
-        Volver al sitio
+        {t('acceso.volverAlSitio')}
       </Link>
 
       <div className="relative w-full max-w-[22rem] space-y-8">
@@ -149,7 +151,7 @@ export default function LoginPage() {
             ) : null}
 
             <Button type="submit" className="h-11 w-full lg:h-10" loading={login.isPending}>
-              Entrar
+              {t('acceso.entrar')}
             </Button>
           </form>
         </div>
@@ -173,7 +175,7 @@ export default function LoginPage() {
               to="/registro"
               className="font-medium text-foreground underline-offset-2 hover:underline"
             >
-              Crear una cuenta para mi negocio
+              {t('acceso.crearCuentaNegocio')}
             </Link>
           </div>
         </div>

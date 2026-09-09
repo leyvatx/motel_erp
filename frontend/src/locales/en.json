@@ -1,0 +1,50 @@
+{
+  "idioma": {
+    "etiqueta": "Language",
+    "es": "Spanish",
+    "en": "English"
+  },
+  "portada": {
+    "comoFunciona": "How it works",
+    "entrar": "Sign in",
+    "crearCuenta": "Create account",
+    "titulo": "Hospitality Management",
+    "heroEtiqueta": "Room control, shift by shift",
+    "heroTituloA": "Your operation",
+    "heroTituloB": "on one screen.",
+    "heroTexto": "Rooms, timers, charges and cash. What lives today in a notebook and three people's heads, on one board the whole shift reads the same way.",
+    "heroPrincipal": "Create account and set up",
+    "heroSecundario": "See how it works"
+  },
+  "acceso": {
+    "entrar": "Sign in",
+    "crearCuenta": "Create account and start",
+    "yaTengoCuenta": "I already have an account",
+    "crearCuentaNegocio": "Create an account for my property",
+    "volverAlSitio": "Back to the site"
+  },
+  "nav": {
+    "platform": "Properties",
+    "corporate": "Corporate",
+    "dashboard": "Home",
+    "frontdesk": "Front desk",
+    "reservations": "Reservations",
+    "housekeeping": "Housekeeping",
+    "inventory": "Inventory",
+    "finances": "Cash",
+    "reports": "Reports",
+    "audit": "Audit",
+    "users": "Users",
+    "config": "Settings",
+    "grupoPlataforma": "Property Management System",
+    "grupoOperacion": "Operations",
+    "grupoGestion": "Management",
+    "mas": "More"
+  },
+  "tema": {
+    "oscuro": "Dark theme",
+    "claro": "Light theme",
+    "aOscuro": "Switch to dark theme",
+    "aClaro": "Switch to light theme"
+  }
+}

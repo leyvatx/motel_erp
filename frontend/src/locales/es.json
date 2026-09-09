@@ -1,0 +1,50 @@
+{
+  "idioma": {
+    "etiqueta": "Idioma",
+    "es": "Español",
+    "en": "Inglés"
+  },
+  "portada": {
+    "comoFunciona": "Cómo funciona",
+    "entrar": "Entrar",
+    "crearCuenta": "Crear cuenta",
+    "titulo": "Hospedaje y estancias ágiles",
+    "heroEtiqueta": "Hospitalidad por turnos",
+    "heroTituloA": "Tu operación",
+    "heroTituloB": "en una pantalla.",
+    "heroTexto": "Habitaciones, tiempos, consumos y caja. Lo que hoy vive en una libreta y en tres cabezas, en un tablero que todo el turno mira igual.",
+    "heroPrincipal": "Crear cuenta y configurar",
+    "heroSecundario": "Ver cómo funciona"
+  },
+  "acceso": {
+    "entrar": "Entrar",
+    "crearCuenta": "Crear cuenta y empezar",
+    "yaTengoCuenta": "Ya tengo cuenta",
+    "crearCuentaNegocio": "Crear una cuenta para mi negocio",
+    "volverAlSitio": "Volver al sitio"
+  },
+  "nav": {
+    "platform": "Sucursales",
+    "corporate": "Corporativo",
+    "dashboard": "Inicio",
+    "frontdesk": "Recepción",
+    "reservations": "Reservaciones",
+    "housekeeping": "Ama de llaves",
+    "inventory": "Inventarios",
+    "finances": "Caja",
+    "reports": "Reportes",
+    "audit": "Auditoría",
+    "users": "Usuarios",
+    "config": "Configuración",
+    "grupoPlataforma": "Plataforma",
+    "grupoOperacion": "Operación",
+    "grupoGestion": "Gestión",
+    "mas": "Más"
+  },
+  "tema": {
+    "oscuro": "Tema oscuro",
+    "claro": "Tema claro",
+    "aOscuro": "Cambiar a tema oscuro",
+    "aClaro": "Cambiar a tema claro"
+  }
+}

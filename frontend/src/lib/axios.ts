@@ -7,6 +7,7 @@ import axios, {
 } from 'axios'
 
 import { useToastStore } from '@/components/ui/toast'
+import { idiomaActual } from '@/lib/i18n'
 import { syncServerTime } from '@/lib/serverTime'
 import { authSnapshot, useAuthStore } from '@/store/auth'
 import { navegarA } from '@/lib/navigation'
@@ -163,6 +164,12 @@ plain.interceptors.response.use(undefined, async (error: AxiosError) => {
 })
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  // El idioma de quien está mirando, en cada petición. Django lo lee con
+  // `LocaleMiddleware` y contesta en ese idioma: los mensajes que vienen del
+  // servidor -- validaciones de contraseña, campos requeridos -- llegan en el
+  // mismo idioma que la pantalla en vez de siempre en español.
+  config.headers.set('Accept-Language', idiomaActual())
+
   const access = authSnapshot.access()
   if (access) {
     config.headers.set('Authorization', `Bearer ${access}`)

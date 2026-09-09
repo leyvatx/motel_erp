@@ -99,3 +99,33 @@ const ALL_ITEMS: readonly NavItem[] = NAV_GROUPS.flatMap((group) => group.items)
 export function sectionTitle(pathname: string): string | undefined {
   return ALL_ITEMS.find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`))?.label
 }
+
+/** La etiqueta del menú en el idioma de quien mira.
+ *
+ *  Las etiquetas de arriba siguen en español a propósito: son el respaldo
+ *  cuando falta una traducción, y con `defaultValue` una clave sin traducir
+ *  sale legible en vez de salir como `nav.frontdesk`. La clave es la sección,
+ *  que ya existía y no cambia de nombre entre idiomas.
+ */
+export function etiquetaDeSeccion(
+  t: (clave: string, opciones?: { defaultValue: string }) => string,
+  seccion: string,
+  respaldo: string,
+): string {
+  return t(`nav.${seccion}`, { defaultValue: respaldo })
+}
+
+/** Los encabezados del menú, que no son secciones sino agrupaciones. */
+const GRUPO_I18N: Record<string, string> = {
+  platform: 'grupoPlataforma',
+  daily: 'grupoOperacion',
+  management: 'grupoGestion',
+}
+
+export function etiquetaDeGrupo(
+  t: (clave: string, opciones?: { defaultValue: string }) => string,
+  grupo: string,
+  respaldo: string,
+): string {
+  return t(`nav.${GRUPO_I18N[grupo] ?? grupo}`, { defaultValue: respaldo })
+}

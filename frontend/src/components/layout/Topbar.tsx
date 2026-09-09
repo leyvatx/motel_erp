@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { useEffect, useState } from 'react'
 import {
   PiKey,
@@ -6,7 +7,9 @@ import {
   PiSignOut,
   PiSpeakerHigh,
   PiSpeakerSlash,
+  PiCheck,
   PiSun,
+  PiTranslate,
 } from 'react-icons/pi'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
@@ -31,6 +34,9 @@ import { useLogout } from '@/features/auth/hooks'
 import { cn } from '@/lib/utils'
 import { useAppearanceStore } from '@/store/appearance'
 import { useAuthStore } from '@/store/auth'
+import { cambiarIdioma, idiomaActual, IDIOMAS } from '@/lib/i18n'
+import { LanguageToggle } from '@/components/LanguageToggle'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { realtimeChannels } from '@/lib/websocket'
 import { useUiStore } from '@/store/ui'
 import type { ConnectionState } from '@/types/realtime'
@@ -44,9 +50,21 @@ export function Topbar({ connection, onOpenMenu }: Props) {
   const user = useAuthStore((state) => state.user)
   const soundAlerts = useUiStore((state) => state.soundAlerts)
   const setSoundAlerts = useUiStore((state) => state.setSoundAlerts)
-  const theme = useAppearanceStore((state) => state.theme)
   const setTheme = useAppearanceStore((state) => state.setTheme)
   const logout = useLogout()
+
+  const { t } = useTranslation()
+  // Lo que hay en pantalla ahora, que no siempre es lo que dice la preferencia.
+  const [modoEnPantalla, setModoEnPantalla] = useState<'light' | 'dark'>(() =>
+    document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+  )
+  useEffect(() => {
+    const observador = new MutationObserver(() =>
+      setModoEnPantalla(document.documentElement.classList.contains('dark') ? 'dark' : 'light'),
+    )
+    observador.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    return () => observador.disconnect()
+  }, [])
 
   const [stayId, setStayId] = useState<number | null>(null)
   const [passwordOpen, setPasswordOpen] = useState(false)
@@ -158,15 +176,14 @@ export function Topbar({ connection, onOpenMenu }: Props) {
           </>
         ) : null}
 
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="hidden h-11 w-11 sm:inline-flex lg:h-8 lg:w-8"
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          aria-label="Cambiar tema"
-        >
-          {theme === 'dark' ? <PiSun /> : <PiMoon />}
-        </Button>
+        {/* El mismo control que la portada, no uno parecido: así el icono
+            dice siempre lo que hay en pantalla. El de antes miraba la
+            preferencia y no el resultado, y con una sucursal configurada en
+            oscuro el primer clic volvía a poner oscuro -- clic sin efecto. */}
+        <span className="hidden sm:contents">
+          <ThemeToggle />
+          <LanguageToggle />
+        </span>
 
         {operational ? (
           <>
@@ -198,13 +215,31 @@ export function Topbar({ connection, onOpenMenu }: Props) {
               <p className="text-xs text-muted-foreground">{user?.username}</p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            {/* En el teléfono no caben nueve controles en la franja de arriba,
+                así que tema e idioma viven aquí, con la misma altura de dedo.
+                El tema se lee de la pantalla y no de la preferencia: con una
+                sucursal configurada en oscuro, `theme` vale `business` y el
+                primer toque volvía a poner oscuro -- un toque sin efecto. */}
             <DropdownMenuItem
-              className="sm:hidden"
-              onSelect={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="h-11 sm:hidden"
+              onSelect={() => setTheme(modoEnPantalla === 'dark' ? 'light' : 'dark')}
             >
-              {theme === 'dark' ? <PiSun /> : <PiMoon />}
-              {theme === 'dark' ? 'Tema claro' : 'Tema oscuro'}
+              {modoEnPantalla === 'dark' ? <PiSun /> : <PiMoon />}
+              {modoEnPantalla === 'dark' ? t('tema.claro') : t('tema.oscuro')}
             </DropdownMenuItem>
+            {IDIOMAS.map((codigo) => (
+              <DropdownMenuItem
+                key={codigo}
+                className="h-11 sm:hidden"
+                onSelect={() => cambiarIdioma(codigo)}
+              >
+                <PiTranslate />
+                {t(`idioma.${codigo}`)}
+                {idiomaActual() === codigo ? (
+                  <PiCheck className="ml-auto h-3.5 w-3.5" aria-hidden />
+                ) : null}
+              </DropdownMenuItem>
+            ))}
             {operational ? (
               <DropdownMenuItem className="sm:hidden" onSelect={() => setSoundAlerts(!soundAlerts)}>
                 {soundAlerts ? <PiSpeakerSlash /> : <PiSpeakerHigh />}
