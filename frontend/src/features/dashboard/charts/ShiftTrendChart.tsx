@@ -19,7 +19,11 @@ interface Props {
   loading?: boolean
 }
 
-function Etiqueta({ active, payload, label }: {
+function Etiqueta({
+  active,
+  payload,
+  label,
+}: {
   active?: boolean
   payload?: { payload: ShiftTrendHour }[]
   label?: string
@@ -90,12 +94,7 @@ export function ShiftTrendChart({ hours, loading }: Props) {
           allowDecimals={false}
         />
         <Tooltip content={<Etiqueta />} cursor={{ stroke: 'hsl(var(--border))' }} />
-        <Legend
-          verticalAlign="top"
-          height={22}
-          iconSize={8}
-          wrapperStyle={{ fontSize: 11 }}
-        />
+        <Legend verticalAlign="top" height={22} iconSize={8} wrapperStyle={{ fontSize: 11 }} />
         <Bar
           yAxisId="rentas"
           dataKey="rentals"

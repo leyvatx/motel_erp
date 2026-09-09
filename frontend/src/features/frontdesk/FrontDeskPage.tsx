@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
   PiArrowsClockwise,
   PiBed,
@@ -50,6 +51,7 @@ import { formatCountdown } from '@/lib/format'
 import { secondsUntil } from '@/lib/serverTime'
 
 export default function FrontDeskPage() {
+  const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
   const [rentRoom, setRentRoom] = useState<RoomGridItem | null>(null)
@@ -120,13 +122,13 @@ export default function FrontDeskPage() {
         { key: 'detail', label: 'Ver renta', icon: <PiEye />, onSelect: () => setStayId(stay.id) },
         {
           key: 'extend',
-          label: 'Extender tiempo',
+          label: t('recepcion.extenderTiempo'),
           icon: <PiPlus />,
           onSelect: () => setStayId(stay.id),
         },
         {
           key: 'checkout',
-          label: 'Cobrar y cerrar',
+          label: t('recepcion.cobrarYCerrar'),
           icon: <PiCreditCard />,
           separated: true,
           onSelect: () => setStayId(stay.id),
@@ -150,21 +152,21 @@ export default function FrontDeskPage() {
         : []),
       {
         key: 'rent',
-        label: arriving && rentable ? 'Rentar a otra persona' : 'Rentar',
+        label: arriving && rentable ? t('recepcion.rentarAOtraPersona') : t('recepcion.rentar'),
         icon: <PiBed />,
         disabled: !rentable,
         onSelect: () => setRentRoom(room),
       },
       {
         key: 'clean',
-        label: 'Marcar limpieza terminada',
+        label: t('recepcion.marcarLimpiezaTerminada'),
         icon: <PiSparkle />,
         disabled: room.status !== 'CLEANING',
         onSelect: () => finishCleaning.mutate(room.id),
       },
       {
         key: 'maintenance',
-        label: 'Enviar a mantenimiento',
+        label: t('recepcion.enviarAMantenimiento'),
         icon: <PiWrench />,
         separated: true,
         disabled: room.status === 'MAINTENANCE',
@@ -224,8 +226,8 @@ export default function FrontDeskPage() {
             <Input
               value={busqueda}
               onChange={(event) => setBusqueda(event.target.value)}
-              placeholder="Cuarto, placas o huésped"
-              aria-label="Buscar habitación"
+              placeholder={t('recepcion.buscarPlaceholder')}
+              aria-label={t('recepcion.buscarHabitacion')}
               className="h-11 w-full pl-8 sm:h-9"
             />
           </div>
@@ -234,12 +236,12 @@ export default function FrontDeskPage() {
             <Select value={floorFilter} onValueChange={setFloorFilter}>
               <SelectTrigger
                 className="h-11 w-auto min-w-[7rem] sm:h-9"
-                aria-label="Filtrar por piso"
+                aria-label={t('recepcion.filtrarPorPiso')}
               >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos los pisos</SelectItem>
+                <SelectItem value="all">{t('recepcion.todosLosPisos')}</SelectItem>
                 {floors.map((floor) => (
                   <SelectItem key={floor} value={String(floor)}>
                     Piso {floor}
@@ -253,12 +255,12 @@ export default function FrontDeskPage() {
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger
                 className="h-11 w-auto min-w-[8rem] sm:h-9"
-                aria-label="Filtrar por tipo"
+                aria-label={t('recepcion.filtrarPorTipo')}
               >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos los tipos</SelectItem>
+                <SelectItem value="all">{t('recepcion.todosLosTipos')}</SelectItem>
                 {types.map(([id, name]) => (
                   <SelectItem key={id} value={String(id)}>
                     {name}
@@ -282,24 +284,24 @@ export default function FrontDeskPage() {
               void summary.refetch()
             }}
             loading={grid.isFetching}
-            aria-label="Actualizar"
+            aria-label={t('recepcion.actualizar')}
           >
             <PiArrowsClockwise />
-            <span className="hidden lg:inline">Actualizar</span>
+            <span className="hidden lg:inline">{t('recepcion.actualizar')}</span>
           </Button>
 
           <Button variant="outline" className="h-11 w-11 p-0 sm:h-9 sm:w-auto sm:px-3" asChild>
-            <Link to="/reservations" aria-label="Reservaciones">
+            <Link to="/reservations" aria-label={t('recepcion.reservaciones')}>
               <PiCalendar />
-              <span className="hidden lg:inline">Reservaciones</span>
+              <span className="hidden lg:inline">{t('recepcion.reservaciones')}</span>
             </Link>
           </Button>
 
           {canConfigure ? (
             <Button variant="outline" className="h-11 w-11 p-0 sm:h-9 sm:w-auto sm:px-3" asChild>
-              <Link to="/config" aria-label="Habitaciones y tarifas">
+              <Link to="/config" aria-label={t('recepcion.habitacionesYTarifas')}>
                 <PiGear />
-                <span className="hidden lg:inline">Tarifas</span>
+                <span className="hidden lg:inline">{t('recepcion.tarifas')}</span>
               </Link>
             </Button>
           ) : null}
@@ -348,18 +350,18 @@ export default function FrontDeskPage() {
               ))}
             </div>
             <Button asChild variant="ghost" size="sm">
-              <Link to="/reservations">Ver todas</Link>
+              <Link to="/reservations">{t('recepcion.verTodas')}</Link>
             </Button>
           </CardContent>
         </Card>
       ) : null}
 
       <p className="text-xs text-muted-foreground">
-        {rooms.length} de {allRooms.length} habitaciones
+        {t('recepcion.deHabitaciones', { visibles: rooms.length, total: allRooms.length })}
         {/* El clic derecho quedó como atajo de quien opera con mouse todo el
             día; el mismo menú está en el botón ⋯ de cada tarjeta, que es lo
             único que existe en una tableta. */}
-        <span className="hidden lg:inline"> · clic derecho o ⋯ para más acciones</span>
+        <span className="hidden lg:inline"> {t('recepcion.clicDerechoAtajo')}</span>
       </p>
 
       {/* Tres finales distintos, y la diferencia importa: "no hay cuartos" es
@@ -370,15 +372,15 @@ export default function FrontDeskPage() {
       {estadoGrid === 'error' ? (
         <Card>
           <ErrorState
-            title="No pudimos cargar las habitaciones"
-            description="El tablero no llegó. Puede ser la conexión o que el servidor esté despertando; tus datos están intactos."
+            title={t('recepcion.noPudimosCargar')}
+            description={t('recepcion.noLlegoElTablero')}
             onRetry={() => void grid.refetch()}
             retrying={grid.isFetching}
           />
         </Card>
       ) : estadoGrid === 'sin-conexion' ? (
         <Card>
-          <OfflineState descripcion="Tus habitaciones siguen ahí. El tablero se llena en cuanto vuelva la red." />
+          <OfflineState descripcion={t('recepcion.habitacionesSiguenAhi')} />
         </Card>
       ) : estadoGrid === 'cargando' ? (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-2.5 sm:grid-cols-[repeat(auto-fill,minmax(190px,1fr))]">
@@ -391,20 +393,22 @@ export default function FrontDeskPage() {
           <EmptyState
             title={
               allRooms.length === 0
-                ? 'Todavía no hay habitaciones dadas de alta'
-                : 'Ningún cuarto coincide con lo que buscas'
+                ? t('recepcion.sinHabitaciones')
+                : t('recepcion.ningunCuartoCoincide')
             }
             description={
               allRooms.length === 0
-                ? 'Las habitaciones se dan de alta en Configuración. Sin ellas no se puede rentar nada.'
-                : 'Prueba con otro piso, otro tipo, o borra lo que escribiste en el buscador.'
+                ? t('recepcion.sinHabitacionesDetalle')
+                : t('recepcion.pruebaConOtroPiso')
             }
             icon={<PiBed className="h-8 w-8" aria-hidden />}
             action={
               allRooms.length === 0 ? (
                 canConfigure ? (
                   <Button asChild>
-                    <Link to="/config?seccion=habitaciones">Dar de alta habitaciones</Link>
+                    <Link to="/config?seccion=habitaciones">
+                      {t('recepcion.darDeAltaHabitaciones')}
+                    </Link>
                   </Button>
                 ) : null
               ) : (
@@ -417,7 +421,7 @@ export default function FrontDeskPage() {
                     setStatusFilter(null)
                   }}
                 >
-                  Quitar filtros
+                  {t('recepcion.quitarFiltros')}
                 </Button>
               )
             }

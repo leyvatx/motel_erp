@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { PiBed, PiSignIn, PiSparkle, PiWrench } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { Button } from '@/components/ui/button'
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export function RoomActionsDialog({ room, open, onOpenChange, onRent }: Props) {
+  const { t } = useTranslation()
   const finishCleaning = useFinishCleaning()
   const outOfService = useSetOutOfService()
   const { data: reservation } = useRoomReservation(open && room ? room.id : null)
@@ -59,8 +61,8 @@ export function RoomActionsDialog({ room, open, onOpenChange, onRent }: Props) {
 
         {reservation && rentable ? (
           <div className="rounded-md border border-brand-accent/40 bg-brand-accent/5 px-3 py-2 text-xs">
-            Este cuarto tiene la reservación <strong>{reservation.code}</strong> a nombre de{' '}
-            <strong>{reservation.guest_name || 'huésped sin nombre'}</strong>, para el{' '}
+            {t('recepcion.tieneReservacion')} <strong>{reservation.code}</strong> a nombre de{' '}
+            <strong>{reservation.guest_name || t('recepcion.huespedSinNombre')}</strong>, para el{' '}
             {formatDateTime(reservation.scheduled_start)}. Regístrala como llegada para no dejarla
             como no-show.
           </div>
@@ -81,7 +83,7 @@ export function RoomActionsDialog({ room, open, onOpenChange, onRent }: Props) {
               onClick={() => onRent(room)}
             >
               <PiBed className="h-4 w-4" />
-              {reservation ? 'Rentar a otra persona' : 'Rentar'}
+              {reservation ? t('recepcion.rentarAOtraPersona') : t('recepcion.rentar')}
             </Button>
           ) : null}
 
@@ -93,7 +95,7 @@ export function RoomActionsDialog({ room, open, onOpenChange, onRent }: Props) {
               onClick={() => finishCleaning.mutate(room.id, { onSuccess: close })}
             >
               <PiSparkle className="h-4 w-4" />
-              Marcar limpieza terminada
+              {t('recepcion.marcarLimpiezaTerminada')}
             </Button>
           ) : null}
 
@@ -104,23 +106,23 @@ export function RoomActionsDialog({ room, open, onOpenChange, onRent }: Props) {
               onClick={() => setShowReason(true)}
             >
               <PiWrench className="h-4 w-4" />
-              Enviar a mantenimiento
+              {t('recepcion.enviarAMantenimiento')}
             </Button>
           ) : null}
         </div>
 
         {showReason ? (
           <div className="space-y-3 rounded-md border p-4">
-            <Label htmlFor="oos-reason">Motivo</Label>
+            <Label htmlFor="oos-reason">{t('recepcion.motivo')}</Label>
             <Input
               id="oos-reason"
               value={reason}
               onChange={(event) => setReason(event.target.value)}
-              placeholder="Fuga en la regadera"
+              placeholder={t('recepcion.fugaRegadera')}
             />
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowReason(false)}>
-                Volver
+                {t('recepcion.volver')}
               </Button>
               <Button
                 variant="warning"
@@ -130,7 +132,7 @@ export function RoomActionsDialog({ room, open, onOpenChange, onRent }: Props) {
                   outOfService.mutate({ roomId: room.id, reason }, { onSuccess: close })
                 }
               >
-                Confirmar
+                {t('recepcion.confirmar')}
               </Button>
             </div>
           </div>

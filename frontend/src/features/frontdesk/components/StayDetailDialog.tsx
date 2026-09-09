@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { PiBasket, PiBed, PiClock, PiCreditCard, PiPlus, PiProhibit } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -50,6 +51,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
 ]
 
 export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
+  const { t } = useTranslation()
   const { data: stay, isLoading, isFetching, error, refetch } = useStay(open ? stayId : null)
   const [panel, setPanel] = useState<Panel>('detail')
   const folio = useFolio(open && stay?.folio_id ? stay.folio_id : null)
@@ -70,9 +72,9 @@ export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
   // El encabezado lo pone el contenedor, así que el título de cada rama se
   // decide aquí arriba en vez de repetirse dentro de cada una.
   const titulo = isLoading ? (
-    'Abriendo la renta'
+    t('recepcion.abriendoLaRenta')
   ) : fallo ? (
-    'No se pudo abrir la renta'
+    t('recepcion.noSePudoAbrirLaRenta')
   ) : !stay ? (
     'Renta'
   ) : (
@@ -85,7 +87,7 @@ export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
   const descripcion = isLoading
     ? undefined
     : fallo
-      ? apiErrorMessage(error, 'La renta no se pudo cargar.')
+      ? apiErrorMessage(error, t('recepcion.noSeCargo'))
       : stay
         ? `${stay.code} - ${stay.room_type_name} / ${stay.tariff_block_name}`
         : undefined
@@ -106,10 +108,10 @@ export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
              se quedaba cargando para siempre, sin decir qué pasó. */
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cerrar
+              {t('recepcion.cerrar')}
             </Button>
             <Button loading={isFetching} onClick={() => void refetch()}>
-              Reintentar
+              {t('recepcion.reintentar')}
             </Button>
           </div>
         ) : isLoading || !stay ? (
@@ -119,12 +121,12 @@ export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
             <StayTimer expiresAt={stay.expires_at} />
 
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-              <Field label="Entrada" value={formatDateTime(stay.check_in_at)} />
-              <Field label="Vence" value={formatDateTime(stay.expires_at)} />
-              <Field label="Ocupantes" value={String(stay.occupants)} />
-              <Field label="Placas" value={stay.vehicle_plate || '-'} />
-              <Field label="Huesped" value={stay.guest_name || '-'} />
-              <Field label="Registro" value={stay.created_by_name ?? '-'} />
+              <Field label={t('recepcion.entrada')} value={formatDateTime(stay.check_in_at)} />
+              <Field label={t('recepcion.vence')} value={formatDateTime(stay.expires_at)} />
+              <Field label={t('recepcion.ocupantes')} value={String(stay.occupants)} />
+              <Field label={t('recepcion.placas')} value={stay.vehicle_plate || '-'} />
+              <Field label={t('recepcion.huesped')} value={stay.guest_name || '-'} />
+              <Field label={t('recepcion.registro')} value={stay.created_by_name ?? '-'} />
             </dl>
 
             <Separator />
@@ -163,11 +165,11 @@ export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
                 <div className="grid grid-cols-2 gap-2">
                   <Button variant="outline" className="h-11" onClick={() => setPanel('charge')}>
                     <PiBasket className="h-4 w-4" />
-                    Agregar consumo
+                    {t('recepcion.agregarConsumo')}
                   </Button>
                   <Button variant="outline" className="h-11" onClick={() => setPanel('extend')}>
                     <PiPlus className="h-4 w-4" />
-                    Extender tiempo
+                    {t('recepcion.extenderTiempo')}
                   </Button>
                 </div>
               </div>
@@ -176,7 +178,7 @@ export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
             {panel === 'detail' ? (
               <div className="rounded-lg border p-3">
                 <p className="mb-2 text-xs font-medium text-muted-foreground">
-                  Rastro de esta renta
+                  {t('recepcion.rastroDeEstaRenta')}
                 </p>
                 <div className="max-h-40 overflow-y-auto scrollbar-thin pr-1">
                   <StayTimeline stayId={stay.id} folioId={stay.folio_id} />
@@ -193,7 +195,7 @@ export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
                   onClick={() => setPanel('cancel')}
                 >
                   <PiProhibit className="h-4 w-4" />
-                  Cancelar la renta
+                  {t('recepcion.cancelarLaRenta')}
                 </Button>
               </div>
             ) : null}
@@ -255,10 +257,11 @@ function FolioBreakdown({
   total: string | null
   balance: string | null
 }) {
+  const { t } = useTranslation()
   return (
     <div className="rounded-lg border">
       <div className="flex items-baseline justify-between border-b px-3 py-2">
-        <span className="text-xs font-medium text-muted-foreground">Cuenta</span>
+        <span className="text-xs font-medium text-muted-foreground">{t('recepcion.cuenta')}</span>
         <div className="text-right">
           <p className="text-xl font-bold tabular">{formatMoney(total)}</p>
           <p className="text-xs text-muted-foreground">Por cobrar {formatMoney(balance)}</p>
@@ -272,7 +275,7 @@ function FolioBreakdown({
         </div>
       ) : charges.length === 0 ? (
         <p className="px-3 py-4 text-center text-xs text-muted-foreground">
-          Sin cargos registrados todavía.
+          {t('recepcion.sinCargos')}
         </p>
       ) : (
         <ul className="max-h-44 divide-y overflow-y-auto scrollbar-thin">
@@ -309,6 +312,7 @@ function ChargePanel({
   roomNumber: string
   onDone: () => void
 }) {
+  const { t } = useTranslation()
   const { data: products, isLoading } = useSellableProducts()
   const cart = useCart()
   const charge = useChargeToRoom({ folioId, stayId, roomNumber })
@@ -316,12 +320,10 @@ function ChargePanel({
   if (!folioId) {
     return (
       <div className="rounded-md border p-4">
-        <p className="text-sm text-muted-foreground">
-          Esta renta no tiene una cuenta abierta, así que no se le puede cargar consumo.
-        </p>
+        <p className="text-sm text-muted-foreground">{t('recepcion.sinCuentaAbierta')}</p>
         <div className="mt-3 flex justify-end">
           <Button variant="outline" onClick={onDone}>
-            Volver
+            {t('recepcion.volver')}
           </Button>
         </div>
       </div>
@@ -343,7 +345,7 @@ function ChargePanel({
       <CartLines cart={cart} className="max-h-40" />
 
       <div className="flex items-baseline justify-between">
-        <span className="text-sm text-muted-foreground">Total</span>
+        <span className="text-sm text-muted-foreground">{t('recepcion.total')}</span>
         <span className="text-2xl font-semibold tracking-tight tabular">
           {formatMoney(cart.total)}
         </span>
@@ -355,7 +357,7 @@ function ChargePanel({
 
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onDone}>
-          Volver
+          {t('recepcion.volver')}
         </Button>
         <Button
           disabled={cart.lines.length === 0}
@@ -415,16 +417,17 @@ function ExtendPanel({
   roomType: number
   onDone: () => void
 }) {
+  const { t } = useTranslation()
   const { data: blocks } = useTariffBlocks(roomType)
   const extend = useExtendStay(stayId)
   const [blockId, setBlockId] = useState<string>('')
 
   return (
     <div className="space-y-3 rounded-md border p-4">
-      <Label htmlFor="extend-block">Bloque a agregar</Label>
+      <Label htmlFor="extend-block">{t('recepcion.bloqueAAgregar')}</Label>
       <Select value={blockId} onValueChange={setBlockId}>
         <SelectTrigger id="extend-block">
-          <SelectValue placeholder="Elige el tiempo" />
+          <SelectValue placeholder={t('recepcion.eligeElTiempo')} />
         </SelectTrigger>
         <SelectContent>
           {(blocks?.results ?? []).map((block) => (
@@ -437,14 +440,14 @@ function ExtendPanel({
 
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onDone}>
-          Volver
+          {t('recepcion.volver')}
         </Button>
         <Button
           disabled={!blockId}
           loading={extend.isPending}
           onClick={() => extend.mutate({ tariff_block_id: Number(blockId) }, { onSuccess: onDone })}
         >
-          Extender
+          {t('recepcion.extender')}
         </Button>
       </div>
     </div>
@@ -462,6 +465,7 @@ function CheckoutPanel({
   onDone: () => void
   onCancel: () => void
 }) {
+  const { t } = useTranslation()
   const checkout = useCheckoutStay(stayId)
   const turno = useCurrentShift()
   const [method, setMethod] = useState<PaymentMethod>('CASH')
@@ -478,16 +482,16 @@ function CheckoutPanel({
   if (!turno.isPending && turno.data === null) {
     return (
       <div className="space-y-3 rounded-md border p-4">
-        <p className="text-sm font-medium">Falta abrir el turno de caja</p>
+        <p className="text-sm font-medium">{t('recepcion.faltaAbrirTurno')}</p>
         <p className="text-xs leading-relaxed text-muted-foreground">
           El cobro entra al corte del turno y ahora mismo no hay ninguno abierto. Ábrelo con el
           efectivo con el que empiezas y vuelve aquí; la habitación sigue activa mientras tanto.
         </p>
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onCancel}>
-            Volver
+            {t('recepcion.volver')}
           </Button>
-          <Button onClick={openShiftDialog}>Abrir turno de caja</Button>
+          <Button onClick={openShiftDialog}>{t('recepcion.abrirTurnoDeCaja')}</Button>
         </div>
       </div>
     )
@@ -497,7 +501,7 @@ function CheckoutPanel({
     <div className="space-y-3 rounded-md border p-4">
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
-          <Label htmlFor="method">Método de pago</Label>
+          <Label htmlFor="method">{t('recepcion.metodoDePago')}</Label>
           <Select value={method} onValueChange={(value) => setMethod(value as PaymentMethod)}>
             <SelectTrigger id="method">
               <SelectValue />
@@ -513,7 +517,7 @@ function CheckoutPanel({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="amount">Importe</Label>
+          <Label htmlFor="amount">{t('recepcion.importe')}</Label>
           <Input
             id="amount"
             inputMode="decimal"
@@ -525,7 +529,7 @@ function CheckoutPanel({
 
       {method === 'CASH' ? (
         <div className="space-y-2">
-          <Label htmlFor="tendered">Efectivo recibido</Label>
+          <Label htmlFor="tendered">{t('recepcion.efectivoRecibido')}</Label>
           <Input
             id="tendered"
             inputMode="decimal"
@@ -534,20 +538,18 @@ function CheckoutPanel({
           />
           {change > 0 ? (
             <p className="text-sm">
-              Cambio: <span className="font-semibold tabular">{formatMoney(change)}</span>
+              {t('recepcion.cambio')}{' '}
+              <span className="font-semibold tabular">{formatMoney(change)}</span>
             </p>
           ) : null}
         </div>
       ) : null}
 
-      <p className="text-xs text-muted-foreground">
-        El servidor agrega el recargo por tiempo excedido si aplica, cierra la cuenta e imprime el
-        ticket.
-      </p>
+      <p className="text-xs text-muted-foreground">{t('recepcion.avisoRecargo')}</p>
 
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onCancel}>
-          Volver
+          {t('recepcion.volver')}
         </Button>
         <Button
           loading={checkout.isPending}
@@ -567,7 +569,7 @@ function CheckoutPanel({
             )
           }
         >
-          Cobrar y cerrar
+          {t('recepcion.cobrarYCerrar')}
         </Button>
       </div>
     </div>
@@ -583,25 +585,24 @@ function CancelPanel({
   onDone: () => void
   onCancel: () => void
 }) {
+  const { t } = useTranslation()
   const cancel = useCancelStay(stayId)
   const [reason, setReason] = useState('')
 
   return (
     <div className="space-y-3 rounded-md border border-status-occupied/40 p-4">
-      <Label htmlFor="reason">Motivo de la cancelación</Label>
+      <Label htmlFor="reason">{t('recepcion.motivoCancelacion')}</Label>
       <Input
         id="reason"
         value={reason}
         onChange={(event) => setReason(event.target.value)}
-        placeholder="Se capturo el cuarto equivocado"
+        placeholder={t('recepcion.cuartoEquivocado')}
       />
-      <p className="text-xs text-muted-foreground">
-        La renta no se borra: queda cancelada en la bitácora con tu usuario y el motivo.
-      </p>
+      <p className="text-xs text-muted-foreground">{t('recepcion.avisoCancelacion')}</p>
 
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onCancel}>
-          Volver
+          {t('recepcion.volver')}
         </Button>
         <Button
           variant="destructive"
@@ -609,7 +610,7 @@ function CancelPanel({
           loading={cancel.isPending}
           onClick={() => cancel.mutate(reason, { onSuccess: onDone })}
         >
-          Cancelar renta
+          {t('recepcion.cancelarRenta')}
         </Button>
       </div>
     </div>

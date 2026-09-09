@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { PiCube, PiFolderPlus, PiPackage, PiPlus } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -43,6 +44,7 @@ import { formatMoney, formatQuantity } from '@/lib/format'
 type DialogMode = 'product' | 'category' | 'warehouse' | null
 
 export function CatalogPanel() {
+  const { t } = useTranslation()
   const [search, setSearch] = useState('')
   const [dialog, setDialog] = useState<DialogMode>(null)
   const products = useProducts({ search: search || undefined, page_size: 100 })
@@ -54,18 +56,18 @@ export function CatalogPanel() {
         <Input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Buscar producto..."
+          placeholder={t('inventario.buscarProducto')}
           className="max-w-xs"
         />
         <div className="ml-auto flex flex-wrap gap-2">
           <Button size="sm" variant="outline" onClick={() => setDialog('category')}>
-            <PiFolderPlus /> Categoría
+            <PiFolderPlus /> {t('inventario.categoria')}
           </Button>
           <Button size="sm" variant="outline" onClick={() => setDialog('warehouse')}>
-            <PiCube /> Almacén
+            <PiCube /> {t('inventario.almacen')}
           </Button>
           <Button size="sm" onClick={() => setDialog('product')}>
-            <PiPackage /> Producto
+            <PiPackage /> {t('inventario.producto')}
           </Button>
         </div>
       </div>
@@ -75,10 +77,10 @@ export function CatalogPanel() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Producto</TableHead>
-                  <TableHead>Categoría</TableHead>
-                  <TableHead className="text-right">Existencia</TableHead>
-                  <TableHead className="text-right">Venta</TableHead>
+                  <TableHead>{t('inventario.producto')}</TableHead>
+                  <TableHead>{t('inventario.categoria')}</TableHead>
+                  <TableHead className="text-right">{t('inventario.existencia')}</TableHead>
+                  <TableHead className="text-right">{t('inventario.venta')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -94,7 +96,7 @@ export function CatalogPanel() {
                         {product.is_stockable ? (
                           formatQuantity(product.total_stock ?? '0')
                         ) : (
-                          <Badge variant="secondary">Servicio</Badge>
+                          <Badge variant="secondary">{t('inventario.servicio')}</Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-right tabular">
@@ -103,7 +105,7 @@ export function CatalogPanel() {
                     </TableRow>
                   ))
                 ) : (
-                  <TableEmpty colSpan={4} message="No hay productos." />
+                  <TableEmpty colSpan={4} message={t('inventario.sinProductos')} />
                 )}
               </TableBody>
             </Table>
@@ -112,16 +114,14 @@ export function CatalogPanel() {
         <Card>
           <CardContent className="p-0">
             <div className="border-b px-4 py-3">
-              <h3 className="font-semibold">Almacenes</h3>
-              <p className="text-xs text-muted-foreground">
-                Puntos físicos o lógicos de existencia
-              </p>
+              <h3 className="font-semibold">{t('inventario.almacenes')}</h3>
+              <p className="text-xs text-muted-foreground">{t('inventario.puntosFisicos')}</p>
             </div>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Clave</TableHead>
-                  <TableHead>Nombre</TableHead>
+                  <TableHead>{t('inventario.clave')}</TableHead>
+                  <TableHead>{t('inventario.nombre')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -169,6 +169,7 @@ function CatalogDialog({
 }
 
 function ProductForm({ close }: { close: () => void }) {
+  const { t } = useTranslation()
   const categories = useCategories()
   const create = useCreateProduct()
   const [foto, setFoto] = useState<File | null>(null)
@@ -190,7 +191,7 @@ function ProductForm({ close }: { close: () => void }) {
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Nuevo producto o servicio</DialogTitle>
+        <DialogTitle>{t('inventario.nuevoProductoOServicio')}</DialogTitle>
       </DialogHeader>
       <form
         className="space-y-4"
@@ -203,7 +204,7 @@ function ProductForm({ close }: { close: () => void }) {
         }}
       >
         <div className="space-y-2">
-          <Label>Imagen</Label>
+          <Label>{t('inventario.imagen')}</Label>
           <ProductImagePicker
             categoria={
               categories.data?.results.find((item) => String(item.id) === form.category)?.name ?? ''
@@ -214,7 +215,7 @@ function ProductForm({ close }: { close: () => void }) {
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label>SKU</Label>
+            <Label>{t('inventario.sku')}</Label>
             <Input
               value={form.sku}
               onChange={(e) => set('sku', e.target.value.toUpperCase())}
@@ -222,14 +223,14 @@ function ProductForm({ close }: { close: () => void }) {
             />
           </div>
           <div className="space-y-2">
-            <Label>Nombre</Label>
+            <Label>{t('inventario.nombre')}</Label>
             <Input value={form.name} onChange={(e) => set('name', e.target.value)} required />
           </div>
           <div className="space-y-2">
-            <Label>Categoría</Label>
+            <Label>{t('inventario.categoria')}</Label>
             <Select value={form.category} onValueChange={(value) => set('category', value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecciona" />
+                <SelectValue placeholder={t('inventario.selecciona')} />
               </SelectTrigger>
               <SelectContent>
                 {categories.data?.results.map((category) => (
@@ -241,22 +242,22 @@ function ProductForm({ close }: { close: () => void }) {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Unidad</Label>
+            <Label>{t('inventario.unidad')}</Label>
             <Select value={form.unit} onValueChange={(value) => set('unit', value)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="PIECE">Pieza</SelectItem>
-                <SelectItem value="PACK">Paquete</SelectItem>
+                <SelectItem value="PIECE">{t('inventario.pieza')}</SelectItem>
+                <SelectItem value="PACK">{t('inventario.paquete')}</SelectItem>
                 <SelectItem value="BOX">Caja</SelectItem>
-                <SelectItem value="LITER">Litro</SelectItem>
-                <SelectItem value="KILOGRAM">Kilogramo</SelectItem>
+                <SelectItem value="LITER">{t('inventario.litro')}</SelectItem>
+                <SelectItem value="KILOGRAM">{t('inventario.kilogramo')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Precio de venta</Label>
+            <Label>{t('inventario.precioDeVenta')}</Label>
             <Input
               type="number"
               min="0"
@@ -267,7 +268,7 @@ function ProductForm({ close }: { close: () => void }) {
             />
           </div>
           <div className="space-y-2">
-            <Label>Stock mínimo sugerido</Label>
+            <Label>{t('inventario.stockMinimoSugerido')}</Label>
             <Input
               type="number"
               min="0"
@@ -277,11 +278,11 @@ function ProductForm({ close }: { close: () => void }) {
             />
           </div>
           <div className="space-y-2">
-            <Label>Código de barras</Label>
+            <Label>{t('inventario.codigoDeBarras')}</Label>
             <Input value={form.barcode} onChange={(e) => set('barcode', e.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label>Impuesto (0.16 = 16%)</Label>
+            <Label>{t('inventario.impuestoDetalle')}</Label>
             <Input
               type="number"
               min="0"
@@ -293,27 +294,27 @@ function ProductForm({ close }: { close: () => void }) {
         </div>
         <div className="flex flex-wrap gap-4 rounded-lg border p-3 text-sm">
           <Check
-            label="Controla existencias"
+            label={t('inventario.controlaExistencias')}
             checked={form.is_stockable}
             onChange={(value) => set('is_stockable', value)}
           />
           <Check
-            label="Se puede vender"
+            label={t('inventario.sePuedeVender')}
             checked={form.is_sellable}
             onChange={(value) => set('is_sellable', value)}
           />
           <Check
-            label="Controla caducidad"
+            label={t('inventario.controlaCaducidad')}
             checked={form.track_expiration}
             onChange={(value) => set('track_expiration', value)}
           />
         </div>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={close}>
-            Cancelar
+            {t('inventario.cancelar')}
           </Button>
           <Button type="submit" disabled={create.isPending || !form.category}>
-            <PiPlus /> Crear producto
+            <PiPlus /> {t('inventario.crearProducto')}
           </Button>
         </DialogFooter>
       </form>
@@ -322,13 +323,14 @@ function ProductForm({ close }: { close: () => void }) {
 }
 
 function CategoryForm({ close }: { close: () => void }) {
+  const { t } = useTranslation()
   const create = useCreateCategory()
   const [name, setName] = useState('')
   const [kind, setKind] = useState('OTHER')
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Nueva categoría</DialogTitle>
+        <DialogTitle>{t('inventario.nuevaCategoria')}</DialogTitle>
       </DialogHeader>
       <form
         className="space-y-4"
@@ -338,32 +340,32 @@ function CategoryForm({ close }: { close: () => void }) {
         }}
       >
         <div className="space-y-2">
-          <Label>Nombre</Label>
+          <Label>{t('inventario.nombre')}</Label>
           <Input value={name} onChange={(e) => setName(e.target.value)} required />
         </div>
         <div className="space-y-2">
-          <Label>Familia</Label>
+          <Label>{t('inventario.familia')}</Label>
           <Select value={kind} onValueChange={setKind}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="FOOD">Alimentos</SelectItem>
-              <SelectItem value="BEVERAGE">Bebidas</SelectItem>
+              <SelectItem value="FOOD">{t('inventario.alimentos')}</SelectItem>
+              <SelectItem value="BEVERAGE">{t('inventario.bebidas')}</SelectItem>
               <SelectItem value="CLEANING">Limpieza</SelectItem>
-              <SelectItem value="LINEN">Blancos</SelectItem>
-              <SelectItem value="AMENITY">Amenidades</SelectItem>
-              <SelectItem value="SHOP">Tienda</SelectItem>
-              <SelectItem value="OTHER">Otros</SelectItem>
+              <SelectItem value="LINEN">{t('inventario.blancos')}</SelectItem>
+              <SelectItem value="AMENITY">{t('inventario.amenidades')}</SelectItem>
+              <SelectItem value="SHOP">{t('inventario.tienda')}</SelectItem>
+              <SelectItem value="OTHER">{t('inventario.otros')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={close}>
-            Cancelar
+            {t('inventario.cancelar')}
           </Button>
           <Button type="submit" disabled={create.isPending}>
-            Crear categoría
+            {t('inventario.crearCategoria')}
           </Button>
         </DialogFooter>
       </form>
@@ -372,6 +374,7 @@ function CategoryForm({ close }: { close: () => void }) {
 }
 
 function WarehouseForm({ close }: { close: () => void }) {
+  const { t } = useTranslation()
   const create = useCreateWarehouse()
   const [form, setForm] = useState({
     code: '',
@@ -385,7 +388,7 @@ function WarehouseForm({ close }: { close: () => void }) {
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Nuevo almacén</DialogTitle>
+        <DialogTitle>{t('inventario.nuevoAlmacen')}</DialogTitle>
       </DialogHeader>
       <form
         className="space-y-4"
@@ -396,7 +399,7 @@ function WarehouseForm({ close }: { close: () => void }) {
       >
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label>Clave</Label>
+            <Label>{t('inventario.clave')}</Label>
             <Input
               value={form.code}
               onChange={(e) => set('code', e.target.value.toUpperCase())}
@@ -404,11 +407,11 @@ function WarehouseForm({ close }: { close: () => void }) {
             />
           </div>
           <div className="space-y-2">
-            <Label>Nombre</Label>
+            <Label>{t('inventario.nombre')}</Label>
             <Input value={form.name} onChange={(e) => set('name', e.target.value)} required />
           </div>
           <div className="space-y-2">
-            <Label>Tipo</Label>
+            <Label>{t('inventario.tipo')}</Label>
             <Select
               value={form.warehouse_type}
               onValueChange={(value) => set('warehouse_type', value)}
@@ -417,31 +420,31 @@ function WarehouseForm({ close }: { close: () => void }) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="GENERAL">General</SelectItem>
-                <SelectItem value="KITCHEN">Cocina</SelectItem>
-                <SelectItem value="BAR">Bar</SelectItem>
-                <SelectItem value="HOUSEKEEPING">Ama de llaves</SelectItem>
-                <SelectItem value="MINIBAR">Frigobar</SelectItem>
-                <SelectItem value="SHOP">Tienda</SelectItem>
+                <SelectItem value="GENERAL">{t('inventario.general')}</SelectItem>
+                <SelectItem value="KITCHEN">{t('inventario.cocina')}</SelectItem>
+                <SelectItem value="BAR">{t('inventario.bar')}</SelectItem>
+                <SelectItem value="HOUSEKEEPING">{t('inventario.amaDeLlaves')}</SelectItem>
+                <SelectItem value="MINIBAR">{t('inventario.frigobar')}</SelectItem>
+                <SelectItem value="SHOP">{t('inventario.tienda')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Ubicación</Label>
+            <Label>{t('inventario.ubicacion')}</Label>
             <Input value={form.location} onChange={(e) => set('location', e.target.value)} />
           </div>
         </div>
         <Check
-          label="Usar por defecto para ventas"
+          label={t('inventario.usarPorDefectoVentas')}
           checked={form.is_default_for_sales}
           onChange={(value) => set('is_default_for_sales', value)}
         />
         <DialogFooter>
           <Button type="button" variant="outline" onClick={close}>
-            Cancelar
+            {t('inventario.cancelar')}
           </Button>
           <Button type="submit" disabled={create.isPending}>
-            Crear almacén
+            {t('inventario.crearAlmacen')}
           </Button>
         </DialogFooter>
       </form>

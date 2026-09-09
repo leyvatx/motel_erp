@@ -120,7 +120,7 @@ export function BusinessStep({ onDone }: { onDone: () => void }) {
       <StepField label="Logotipo (opcional)" htmlFor="setup-logo">
         <div className="flex items-center gap-3">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/40">
-            {vistaPrevia ?? profile.data?.logo_url ? (
+            {(vistaPrevia ?? profile.data?.logo_url) ? (
               <img
                 src={vistaPrevia ?? profile.data?.logo_url ?? ''}
                 alt=""
@@ -130,9 +130,14 @@ export function BusinessStep({ onDone }: { onDone: () => void }) {
               <PiImageSquare className="h-5 w-5 text-muted-foreground" aria-hidden />
             )}
           </div>
-          <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => fileRef.current?.click()}
+          >
             <PiImageSquare />
-            {logo ?? profile.data?.logo_url ? 'Cambiar imagen' : 'Subir imagen'}
+            {(logo ?? profile.data?.logo_url) ? 'Cambiar imagen' : 'Subir imagen'}
           </Button>
           <input
             id="setup-logo"

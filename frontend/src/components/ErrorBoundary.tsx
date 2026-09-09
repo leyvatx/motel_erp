@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 
 import { Button } from '@/components/ui/button'
+import i18n from '@/lib/i18n'
 import { ErrorState } from '@/components/ui/states'
 
 interface Props {
@@ -42,8 +43,8 @@ export class ErrorBoundary extends Component<Props, State> {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-background p-6">
         <ErrorState
-          title="Algo se rompió en esta pantalla"
-          description="El error quedó registrado. Puedes volver a intentarlo; si se repite, cierra la sesión y vuelve a entrar."
+          title={i18n.t('comun.algoSeRompio')}
+          description={i18n.t('comun.errorRegistrado')}
           onRetry={() => this.setState({ error: null })}
           secondaryAction={
             <Button

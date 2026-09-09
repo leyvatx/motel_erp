@@ -1,4 +1,5 @@
 import { PiPackage } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { RowActions, type RowAction } from '@/components/ui/row-actions'
 import { EmptyState, ErrorState, OfflineState } from '@/components/ui/states'
@@ -39,23 +40,22 @@ export function StockCards({
   onDetail,
   actionsFor,
 }: Props) {
+  const { t } = useTranslation()
   // Una bodega sin existencias y una consulta que falló se ven idénticas si
   // las dos son una lista vacía; la primera invita a comprar, la segunda a
   // reintentar.
   if (isError) {
     return (
       <ErrorState
-        title="No pudimos cargar las existencias"
-        description="El inventario no llegó. Nada se perdió: es la conexión con el servidor."
+        title={t('inventario.noPudimosExistencias')}
+        description={t('inventario.inventarioNoLlego')}
         onRetry={onRetry}
       />
     )
   }
 
   if (sinConexion) {
-    return (
-      <OfflineState descripcion="Sin red no podemos leer las existencias." />
-    )
+    return <OfflineState descripcion={t('inventario.sinRed')} />
   }
 
   if (isLoading) {
@@ -120,7 +120,7 @@ export function StockCards({
                 <p className="mt-1 text-2xs text-status-occupied">no se puede vender</p>
               ) : row.is_below_minimum ? (
                 <p className="mt-1 text-2xs text-status-occupied">
-                  {faltante > 0 ? `faltan ${formatQuantity(faltante)}` : 'en el mínimo'}
+                  {faltante > 0 ? `faltan ${formatQuantity(faltante)}` : t('inventario.enElMinimo')}
                 </p>
               ) : (
                 <p className="mt-1 text-2xs text-muted-foreground">

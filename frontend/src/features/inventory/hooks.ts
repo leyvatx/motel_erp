@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import i18n from '@/lib/i18n'
 
 import { toast } from '@/components/ui/toast'
 import {
@@ -95,9 +96,13 @@ export function useStockEntry() {
     mutationFn: (payload: StockEntryPayload) => inventoryApi.entry(payload),
     onSuccess: (movement) => {
       invalidate()
-      toast.success('Entrada registrada', `${movement.product_name}: +${movement.quantity}`)
+      toast.success(
+        i18n.t('inventario.entradaRegistrada'),
+        `${movement.product_name}: +${movement.quantity}`,
+      )
     },
-    onError: (error) => toast.error('No se pudo registrar la entrada', apiErrorMessage(error)),
+    onError: (error) =>
+      toast.error(i18n.t('inventario.noSePudoRegistrarEntrada'), apiErrorMessage(error)),
   })
 }
 
@@ -108,9 +113,10 @@ export function useStockWaste() {
     mutationFn: (payload: StockWastePayload) => inventoryApi.waste(payload),
     onSuccess: () => {
       invalidate()
-      toast.warning('Merma registrada', 'Quedo asentada en el Kardex con su motivo.')
+      toast.warning(i18n.t('inventario.mermaRegistrada'), i18n.t('inventario.quedoAsentada'))
     },
-    onError: (error) => toast.error('No se pudo registrar la merma', apiErrorMessage(error)),
+    onError: (error) =>
+      toast.error(i18n.t('inventario.noSePudoRegistrarMerma'), apiErrorMessage(error)),
   })
 }
 
@@ -121,9 +127,9 @@ export function useStockTransfer() {
     mutationFn: (payload: StockTransferPayload) => inventoryApi.transfer(payload),
     onSuccess: () => {
       invalidate()
-      toast.success('Traspaso realizado')
+      toast.success(i18n.t('inventario.traspasoRealizado'))
     },
-    onError: (error) => toast.error('No se pudo traspasar', apiErrorMessage(error)),
+    onError: (error) => toast.error(i18n.t('inventario.noSePudoTraspasar'), apiErrorMessage(error)),
   })
 }
 
@@ -134,9 +140,9 @@ export function useStockAdjustment() {
     mutationFn: (payload: StockAdjustmentPayload) => inventoryApi.adjust(payload),
     onSuccess: () => {
       invalidate()
-      toast.success('Ajuste aplicado', 'El diferencial quedó en el Kardex.')
+      toast.success(i18n.t('inventario.ajusteAplicado'), i18n.t('inventario.diferencialKardex'))
     },
-    onError: (error) => toast.error('No se pudo ajustar', apiErrorMessage(error)),
+    onError: (error) => toast.error(i18n.t('inventario.noSePudoAjustar'), apiErrorMessage(error)),
   })
 }
 
@@ -155,9 +161,9 @@ export function useSetStockLevels() {
     }) => inventoryApi.setLevels(stockId, minStock, maxStock),
     onSuccess: () => {
       invalidate()
-      toast.success('Mínimos actualizados')
+      toast.success(i18n.t('inventario.minimosActualizados'))
     },
-    onError: (error) => toast.error('No se pudo guardar', apiErrorMessage(error)),
+    onError: (error) => toast.error(i18n.t('inventario.noSePudoGuardar'), apiErrorMessage(error)),
   })
 }
 
@@ -182,9 +188,10 @@ export function useCreateSupplier() {
       inventoryApi.createSupplier(payload),
     onSuccess: () => {
       invalidate()
-      toast.success('Proveedor creado')
+      toast.success(i18n.t('inventario.proveedorCreado'))
     },
-    onError: (error) => toast.error('No se pudo crear el proveedor', apiErrorMessage(error)),
+    onError: (error) =>
+      toast.error(i18n.t('inventario.noSePudoCrearProveedor'), apiErrorMessage(error)),
   })
 }
 
@@ -194,9 +201,10 @@ export function useCreatePurchase() {
     mutationFn: (payload: PurchasePayload) => inventoryApi.createPurchase(payload),
     onSuccess: (purchase) => {
       invalidate()
-      toast.success('Compra creada', purchase.folio)
+      toast.success(i18n.t('inventario.compraCreada'), purchase.folio)
     },
-    onError: (error) => toast.error('No se pudo crear la compra', apiErrorMessage(error)),
+    onError: (error) =>
+      toast.error(i18n.t('inventario.noSePudoCrearCompra'), apiErrorMessage(error)),
   })
 }
 
@@ -206,9 +214,10 @@ export function useSubmitPurchase() {
     mutationFn: inventoryApi.submitPurchase,
     onSuccess: () => {
       invalidate()
-      toast.success('Orden enviada al proveedor')
+      toast.success(i18n.t('inventario.ordenEnviada'))
     },
-    onError: (error) => toast.error('No se pudo enviar la orden', apiErrorMessage(error)),
+    onError: (error) =>
+      toast.error(i18n.t('inventario.noSePudoEnviarOrden'), apiErrorMessage(error)),
   })
 }
 
@@ -219,9 +228,12 @@ export function useReceivePurchase() {
       inventoryApi.receivePurchase(id, payload),
     onSuccess: (purchase) => {
       invalidate()
-      toast.success('Mercancía recibida', `${purchase.folio} actualizó el inventario.`)
+      toast.success(
+        i18n.t('inventario.mercanciaRecibida'),
+        `${purchase.folio} actualizó el inventario.`,
+      )
     },
-    onError: (error) => toast.error('No se pudo recibir la mercancía', apiErrorMessage(error)),
+    onError: (error) => toast.error(i18n.t('inventario.noSePudoRecibir'), apiErrorMessage(error)),
   })
 }
 
@@ -231,9 +243,9 @@ export function useCancelPurchase() {
     mutationFn: inventoryApi.cancelPurchase,
     onSuccess: () => {
       invalidate()
-      toast.warning('Compra cancelada')
+      toast.warning(i18n.t('inventario.compraCancelada'))
     },
-    onError: (error) => toast.error('No se pudo cancelar', apiErrorMessage(error)),
+    onError: (error) => toast.error(i18n.t('inventario.noSePudoCancelar'), apiErrorMessage(error)),
   })
 }
 
@@ -248,7 +260,7 @@ function useCatalogCreate(
       invalidate()
       toast.success(successMessage)
     },
-    onError: (error) => toast.error('No se pudo guardar', apiErrorMessage(error)),
+    onError: (error) => toast.error(i18n.t('inventario.noSePudoGuardar'), apiErrorMessage(error)),
   })
 }
 
@@ -265,16 +277,16 @@ export function useCreateProduct() {
       inventoryApi.createProduct(payload, image),
     onSuccess: () => {
       invalidate()
-      toast.success('Producto creado')
+      toast.success(i18n.t('inventario.productoCreado'))
     },
-    onError: (error) => toast.error('No se pudo guardar', apiErrorMessage(error)),
+    onError: (error) => toast.error(i18n.t('inventario.noSePudoGuardar'), apiErrorMessage(error)),
   })
 }
 
 export function useCreateCategory() {
-  return useCatalogCreate(inventoryApi.createCategory, 'Categoría creada')
+  return useCatalogCreate(inventoryApi.createCategory, i18n.t('inventario.categoriaCreada'))
 }
 
 export function useCreateWarehouse() {
-  return useCatalogCreate(inventoryApi.createWarehouse, 'Almacén creado')
+  return useCatalogCreate(inventoryApi.createWarehouse, i18n.t('inventario.almacenCreado'))
 }

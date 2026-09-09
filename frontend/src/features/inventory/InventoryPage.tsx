@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   PiArrowsLeftRight,
   PiClipboardText,
@@ -59,6 +60,7 @@ type View = 'all' | 'low' | 'expiring'
 type Section = 'stock' | 'purchases' | 'suppliers' | 'catalogs'
 
 export default function InventoryPage() {
+  const { t } = useTranslation()
   const user = useAuthStore((state) => state.user)
   const esMovil = useEsMovil()
   const canManagePurchases = canManageCatalog(user)
@@ -106,7 +108,7 @@ export default function InventoryPage() {
   const actionsFor = (row: WarehouseStock): RowAction[] => [
     {
       key: 'detail',
-      label: 'Ver ficha y Kardex',
+      label: t('inventario.verFichaYKardex'),
       icon: <PiEye />,
       onSelect: () => setDetail(row),
     },
@@ -119,13 +121,13 @@ export default function InventoryPage() {
     },
     {
       key: 'transfer',
-      label: 'Traspasar a otro almacén',
+      label: t('inventario.traspasarAOtroAlmacen'),
       icon: <PiArrowsLeftRight />,
       onSelect: () => setMovement('transfer'),
     },
     {
       key: 'adjust',
-      label: 'Ajustar por conteo',
+      label: t('inventario.ajustarPorConteo'),
       icon: <PiClipboardText />,
       onSelect: () => setMovement('adjust'),
     },
@@ -141,8 +143,8 @@ export default function InventoryPage() {
 
   return (
     <PageShell
-      title="Inventarios"
-      description="Existencias por almacén, con lo crítico al frente."
+      title={t('inventario.titulo')}
+      description={t('inventario.subtitulo')}
       actions={
         section === 'stock' ? (
           <>
@@ -151,28 +153,28 @@ export default function InventoryPage() {
               <DropdownMenuTrigger asChild>
                 <Button size="sm">
                   <PiPlus />
-                  Registrar movimiento
+                  {t('inventario.registrarMovimiento')}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem onSelect={() => setMovement('entry')}>
                   <PiPackage />
-                  Entrada de mercancía
+                  {t('inventario.entradaDeMercancia')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => setMovement('transfer')}>
                   <PiArrowsLeftRight />
-                  Traspaso entre almacenes
+                  {t('inventario.traspasoEntreAlmacenes')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => setMovement('adjust')}>
                   <PiClipboardText />
-                  Ajuste por conteo físico
+                  {t('inventario.ajustePorConteo')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onSelect={() => setMovement('waste')}
                   className="text-destructive focus:bg-destructive/10 focus:text-destructive"
                 >
                   <PiTrash />
-                  Merma o caducidad
+                  {t('inventario.mermaOCaducidad')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -189,28 +191,31 @@ export default function InventoryPage() {
               {
                 label: 'Existencias listadas',
                 value: stocks.data?.count ?? 0,
-                help: warehouse === 'all' ? 'todos los almacenes' : 'almacén filtrado',
+                help:
+                  warehouse === 'all'
+                    ? t('inventario.todosLosAlmacenesMin')
+                    : t('inventario.almacenFiltrado'),
                 onClick: () => setView('all'),
                 active: view === 'all',
               },
               {
-                label: 'Bajo mínimo',
+                label: t('inventario.bajoMinimo'),
                 value: lowCount,
                 tone: lowCount > 0 ? 'danger' : 'positive',
-                help: lowCount > 0 ? 'requieren resurtido' : 'todo por encima del mínimo',
+                help: lowCount > 0 ? 'requieren resurtido' : t('inventario.todoPorEncimaDelMinimo'),
                 onClick: () => setView('low'),
                 active: view === 'low',
               },
               {
-                label: 'Por caducar',
+                label: t('inventario.porCaducar'),
                 value: expiringCount,
                 tone: expiringCount > 0 ? 'warning' : 'neutral',
-                help: 'próximos 15 días',
+                help: t('inventario.proximos15Dias'),
                 onClick: () => setView('expiring'),
                 active: view === 'expiring',
               },
               {
-                label: 'Almacenes',
+                label: t('inventario.almacenes'),
                 value: warehouses.data?.count ?? 0,
                 help: 'activos',
               },
@@ -225,10 +230,16 @@ export default function InventoryPage() {
         className="min-h-0 flex-1"
       >
         <TabsList>
-          <TabsTrigger value="stock">Existencias</TabsTrigger>
-          {canManagePurchases ? <TabsTrigger value="purchases">Compras</TabsTrigger> : null}
-          {canManagePurchases ? <TabsTrigger value="suppliers">Proveedores</TabsTrigger> : null}
-          {canManagePurchases ? <TabsTrigger value="catalogs">Catálogos</TabsTrigger> : null}
+          <TabsTrigger value="stock">{t('inventario.existencias')}</TabsTrigger>
+          {canManagePurchases ? (
+            <TabsTrigger value="purchases">{t('inventario.compras')}</TabsTrigger>
+          ) : null}
+          {canManagePurchases ? (
+            <TabsTrigger value="suppliers">{t('inventario.proveedores')}</TabsTrigger>
+          ) : null}
+          {canManagePurchases ? (
+            <TabsTrigger value="catalogs">{t('inventario.catalogos')}</TabsTrigger>
+          ) : null}
         </TabsList>
         <TabsContent value="stock" className="min-h-0">
           <Card className="min-h-0 flex-1">
@@ -237,7 +248,7 @@ export default function InventoryPage() {
                 <Input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Buscar por nombre o SKU..."
+                  placeholder={t('inventario.buscarPorNombreOSku')}
                   className="h-9 max-w-xs"
                 />
                 <Select value={warehouse} onValueChange={setWarehouse}>
@@ -245,7 +256,7 @@ export default function InventoryPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todos los almacenes</SelectItem>
+                    <SelectItem value="all">{t('inventario.todosLosAlmacenes')}</SelectItem>
                     {(warehouses.data?.results ?? []).map((item) => (
                       <SelectItem key={item.id} value={String(item.id)}>
                         {item.name}
@@ -257,12 +268,12 @@ export default function InventoryPage() {
                 {view !== 'all' ? (
                   <Button variant="ghost" size="sm" onClick={() => setView('all')}>
                     <PiFadersHorizontal />
-                    Quitar filtro
+                    {t('inventario.quitarFiltro')}
                   </Button>
                 ) : null}
 
                 <span className="ml-auto hidden text-xs text-muted-foreground lg:inline">
-                  Clic derecho o el botón ⋮ de cada renglón para sus acciones
+                  {t('inventario.clicDerecho')}
                 </span>
               </div>
 
@@ -277,23 +288,25 @@ export default function InventoryPage() {
                     sinConexion={estadoStocks === 'sin-conexion'}
                     onRetry={() => void stocks.refetch()}
                     emptyTitle={
-                      view === 'low' ? 'Nada bajo mínimo' : 'Sin existencias que coincidan'
+                      view === 'low'
+                        ? t('inventario.nadaBajoMinimo')
+                        : t('inventario.sinExistenciasCoincidan')
                     }
                     emptyDescription={
                       view === 'low'
-                        ? 'Todos los productos están por encima de su mínimo. No hay nada que resurtir.'
-                        : 'Prueba con otro nombre, otro almacén, o registra la entrada de mercancía que falta.'
+                        ? t('inventario.todosPorEncima')
+                        : t('inventario.pruebaConOtroNombre')
                     }
                     onDetail={setDetail}
                     actionsFor={actionsFor}
                   />
                 </div>
               ) : estadoStocks === 'sin-conexion' ? (
-                <OfflineState descripcion="Sin red no podemos leer las existencias." />
+                <OfflineState descripcion={t('inventario.sinRed')} />
               ) : stocks.isError ? (
                 <ErrorState
-                  title="No pudimos cargar las existencias"
-                  description="El inventario no llegó. Nada se perdió: es la conexión con el servidor."
+                  title={t('inventario.noPudimosExistencias')}
+                  description={t('inventario.inventarioNoLlego')}
                   onRetry={() => void stocks.refetch()}
                   retrying={stocks.isFetching}
                 />
@@ -305,10 +318,10 @@ export default function InventoryPage() {
                     <Table>
                       <TableHeader className="sticky top-0 z-10 bg-card">
                         <TableRow>
-                          <TableHead>Producto</TableHead>
-                          <TableHead>Almacén</TableHead>
-                          <TableHead className="text-right">Existencia</TableHead>
-                          <TableHead className="text-right">Mínimo</TableHead>
+                          <TableHead>{t('inventario.producto')}</TableHead>
+                          <TableHead>{t('inventario.almacen')}</TableHead>
+                          <TableHead className="text-right">{t('inventario.existencia')}</TableHead>
+                          <TableHead className="text-right">{t('inventario.minimo')}</TableHead>
                           <TableHead className="w-[52px]" />
                         </TableRow>
                       </TableHeader>
@@ -318,8 +331,8 @@ export default function InventoryPage() {
                             colSpan={5}
                             message={
                               view === 'low'
-                                ? 'Ningún producto está bajo su mínimo: no hay nada que resurtir.'
-                                : 'Nada coincide. Prueba con otro nombre, otro almacén, o registra la entrada que falta.'
+                                ? t('inventario.ningunProductoBajoMinimo')
+                                : t('inventario.nadaCoincide')
                             }
                           />
                         ) : (
@@ -367,7 +380,7 @@ export default function InventoryPage() {
                                       ? `faltan ${formatQuantity(
                                           toNumber(row.min_stock) - toNumber(row.quantity),
                                         )}`
-                                      : 'en el mínimo'}
+                                      : t('inventario.enElMinimo')}
                                   </span>
                                 ) : null}
                               </TableCell>
@@ -439,6 +452,7 @@ function ExpiringTable({
   }[]
   isLoading: boolean
 }) {
+  const { t } = useTranslation()
   if (isLoading) return <Skeleton className="min-h-0 flex-1 rounded-lg" />
 
   return (
@@ -446,19 +460,16 @@ function ExpiringTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Producto</TableHead>
-            <TableHead>Lote</TableHead>
-            <TableHead>Almacén</TableHead>
-            <TableHead>Caduca</TableHead>
-            <TableHead className="text-right">Existencia</TableHead>
+            <TableHead>{t('inventario.producto')}</TableHead>
+            <TableHead>{t('inventario.lote')}</TableHead>
+            <TableHead>{t('inventario.almacen')}</TableHead>
+            <TableHead>{t('inventario.caduca')}</TableHead>
+            <TableHead className="text-right">{t('inventario.existencia')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {rows.length === 0 ? (
-            <TableEmpty
-              colSpan={5}
-              message="Nada caduca en los próximos 15 días. Solo aparecen aquí los productos con control de caducidad."
-            />
+            <TableEmpty colSpan={5} message={t('inventario.nadaCaduca')} />
           ) : (
             rows.map((lot) => (
               <TableRow key={lot.id}>

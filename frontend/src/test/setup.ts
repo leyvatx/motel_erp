@@ -30,3 +30,8 @@ if (!window.matchMedia) {
 // suite: la misma prueba pasa en una laptop en español y falla en una en
 // inglés, que es la peor clase de prueba -- la que depende de dónde se corre.
 localStorage.setItem('erp-idioma', 'es')
+
+// Y se arranca la instancia aquí. En producción la arranca `main.tsx`, que las
+// pruebas no ejecutan: sin esto `t('comun.algo')` devuelve la clave cruda y las
+// afirmaciones buscan un texto que nunca se pintó.
+await import('@/lib/i18n')

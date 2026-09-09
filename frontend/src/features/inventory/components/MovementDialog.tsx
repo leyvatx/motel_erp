@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -29,16 +30,19 @@ import {
 
 export type MovementMode = 'entry' | 'waste' | 'transfer' | 'adjust'
 
+/* Claves, no texto: esta tabla vive fuera de todo componente y ahí no hay
+   hook que valga. La cadena se trae al pintar, que además es lo que hace que
+   el diálogo cambie de idioma sin recargar. */
 const TITLES: Record<MovementMode, { title: string; description: string }> = {
-  entry: { title: 'Entrada de mercancia', description: 'Compra, devolución o inventario inicial.' },
-  waste: { title: 'Merma o caducidad', description: 'Requiere motivo; queda en el Kardex.' },
+  entry: { title: 'inventario.entradaDeMercancia', description: 'inventario.entradaDescripcion' },
+  waste: { title: 'inventario.mermaOCaducidad', description: 'inventario.mermaDescripcion' },
   transfer: {
-    title: 'Traspaso entre almacenes',
-    description: 'Salida y entrada en una sola operación.',
+    title: 'inventario.traspasoEntreAlmacenes',
+    description: 'inventario.traspasoDescripcion',
   },
   adjust: {
-    title: 'Ajuste por conteo físico',
-    description: 'Se asienta la diferencia contra el sistema.',
+    title: 'inventario.ajustePorConteo',
+    description: 'inventario.ajusteDescripcion',
   },
 }
 
@@ -48,6 +52,7 @@ interface Props {
 }
 
 export function MovementDialog({ mode, onOpenChange }: Props) {
+  const { t } = useTranslation()
   const { data: warehouses } = useWarehouses()
   const { data: products } = useProducts({ page_size: 200 })
 
@@ -136,16 +141,16 @@ export function MovementDialog({ mode, onOpenChange }: Props) {
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{TITLES[mode].title}</DialogTitle>
-          <DialogDescription>{TITLES[mode].description}</DialogDescription>
+          <DialogTitle>{t(TITLES[mode].title)}</DialogTitle>
+          <DialogDescription>{t(TITLES[mode].description)}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
           <div className="space-y-2">
-            <Label htmlFor="product">Producto</Label>
+            <Label htmlFor="product">{t('inventario.producto')}</Label>
             <Select value={productId} onValueChange={setProductId}>
               <SelectTrigger id="product">
-                <SelectValue placeholder="Elige el producto" />
+                <SelectValue placeholder={t('inventario.eligeElProducto')} />
               </SelectTrigger>
               <SelectContent>
                 {(products?.results ?? []).map((product) => (
@@ -160,11 +165,11 @@ export function MovementDialog({ mode, onOpenChange }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="warehouse">
-                {mode === 'transfer' ? 'Almacén origen' : 'Almacén'}
+                {mode === 'transfer' ? t('inventario.almacenOrigen') : t('inventario.almacen')}
               </Label>
               <Select value={warehouseId} onValueChange={setWarehouseId}>
                 <SelectTrigger id="warehouse">
-                  <SelectValue placeholder="Elige" />
+                  <SelectValue placeholder={t('inventario.elige')} />
                 </SelectTrigger>
                 <SelectContent>
                   {(warehouses?.results ?? []).map((warehouse) => (
@@ -178,10 +183,10 @@ export function MovementDialog({ mode, onOpenChange }: Props) {
 
             {mode === 'transfer' ? (
               <div className="space-y-2">
-                <Label htmlFor="target">Almacén destino</Label>
+                <Label htmlFor="target">{t('inventario.almacenDestino')}</Label>
                 <Select value={targetWarehouseId} onValueChange={setTargetWarehouseId}>
                   <SelectTrigger id="target">
-                    <SelectValue placeholder="Elige" />
+                    <SelectValue placeholder={t('inventario.elige')} />
                   </SelectTrigger>
                   <SelectContent>
                     {(warehouses?.results ?? [])
@@ -197,7 +202,7 @@ export function MovementDialog({ mode, onOpenChange }: Props) {
             ) : (
               <div className="space-y-2">
                 <Label htmlFor="quantity">
-                  {mode === 'adjust' ? 'Cantidad contada' : 'Cantidad'}
+                  {mode === 'adjust' ? 'Cantidad contada' : t('inventario.cantidad')}
                 </Label>
                 <Input
                   id="quantity"
@@ -211,7 +216,7 @@ export function MovementDialog({ mode, onOpenChange }: Props) {
 
           {mode === 'transfer' ? (
             <div className="space-y-2">
-              <Label htmlFor="transfer-qty">Cantidad</Label>
+              <Label htmlFor="transfer-qty">{t('inventario.cantidad')}</Label>
               <Input
                 id="transfer-qty"
                 inputMode="decimal"
@@ -224,7 +229,7 @@ export function MovementDialog({ mode, onOpenChange }: Props) {
           {mode === 'entry' ? (
             <>
               <div className="space-y-2">
-                <Label htmlFor="cost">Costo unitario</Label>
+                <Label htmlFor="cost">{t('inventario.costoUnitario')}</Label>
                 <Input
                   id="cost"
                   inputMode="decimal"
@@ -236,7 +241,7 @@ export function MovementDialog({ mode, onOpenChange }: Props) {
               {selectedProduct?.track_expiration ? (
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <Label htmlFor="lot">Lote</Label>
+                    <Label htmlFor="lot">{t('inventario.lote')}</Label>
                     <Input
                       id="lot"
                       value={lotCode}
@@ -244,7 +249,7 @@ export function MovementDialog({ mode, onOpenChange }: Props) {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="expiration">Caducidad</Label>
+                    <Label htmlFor="expiration">{t('inventario.caducidad')}</Label>
                     <Input
                       id="expiration"
                       type="date"
@@ -265,7 +270,7 @@ export function MovementDialog({ mode, onOpenChange }: Props) {
                 onChange={(event) => setExpired(event.target.checked)}
                 className="h-4 w-4 rounded border-input"
               />
-              La baja es por caducidad
+              {t('inventario.bajaPorCaducidad')}
             </label>
           ) : null}
 
@@ -282,10 +287,10 @@ export function MovementDialog({ mode, onOpenChange }: Props) {
 
         <DialogFooter>
           <Button variant="outline" onClick={close}>
-            Cancelar
+            {t('inventario.cancelar')}
           </Button>
           <Button disabled={!isValid} loading={pending} onClick={submit}>
-            Confirmar
+            {t('inventario.confirmar')}
           </Button>
         </DialogFooter>
       </DialogContent>

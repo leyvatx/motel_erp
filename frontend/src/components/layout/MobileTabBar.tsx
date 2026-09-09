@@ -77,7 +77,7 @@ export function MobileTabBar({ onOpenMenu }: Props) {
 
   return (
     <nav
-      aria-label="Accesos de operación"
+      aria-label={t('comun.accesosDeOperacion')}
       // El relleno inferior es la franja del gesto del teléfono: sin él, el
       // último destino queda debajo de la barra del sistema.
       className="z-30 flex shrink-0 items-stretch border-t bg-background pb-[env(safe-area-inset-bottom)] lg:hidden"
@@ -126,7 +126,7 @@ export function MobileTabBar({ onOpenMenu }: Props) {
         type="button"
         onClick={onOpenMenu}
         className={cn(CLASE_CELDA, 'text-muted-foreground active:bg-accent/60')}
-        aria-label="Ver todas las secciones"
+        aria-label={t('comun.verTodasLasSecciones')}
       >
         <PiDotsThreeOutline className="h-5 w-5 shrink-0" aria-hidden />
         <span className="text-2xs leading-none">{t('nav.mas')}</span>

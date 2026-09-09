@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   PiArrowLineDown,
   PiArrowLineUp,
@@ -43,6 +44,7 @@ interface Props {
 }
 
 export function ShiftBar({ shift, onRegisterExpense }: Props) {
+  const { t } = useTranslation()
   const [closing, setClosing] = useState(false)
   const [movement, setMovement] = useState<'IN' | 'OUT' | null>(null)
   const printReport = usePrintShiftReport()
@@ -93,26 +95,26 @@ export function ShiftBar({ shift, onRegisterExpense }: Props) {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
-                  Movimientos de caja
+                  {t('caja.movimientosDeCaja')}
                   <PiCaretDown />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-60">
                 <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                  Todo queda ligado a este turno
+                  {t('caja.todoQuedaLigado')}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={onRegisterExpense}>
                   <PiReceipt />
-                  Registrar un gasto
+                  {t('caja.registrarUnGasto')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => setMovement('OUT')}>
                   <PiArrowLineUp />
-                  Retirar efectivo a bóveda
+                  {t('caja.retirarABoveda')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => setMovement('IN')}>
                   <PiArrowLineDown />
-                  Meter cambio a la caja
+                  {t('caja.meterCambio')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -124,14 +126,14 @@ export function ShiftBar({ shift, onRegisterExpense }: Props) {
               onClick={() => printReport.mutate(shift.id)}
             >
               <PiPrinter />
-              Imprimir corte
+              {t('caja.imprimirCorte')}
             </Button>
           )}
 
           {open ? (
             <Button size="sm" onClick={() => setClosing(true)}>
               <PiLock />
-              Cerrar turno
+              {t('caja.cerrarTurno')}
             </Button>
           ) : null}
         </div>
@@ -146,6 +148,7 @@ export function ShiftBar({ shift, onRegisterExpense }: Props) {
 }
 
 function CloseShiftDialog({ shift, onClose }: { shift: Shift; onClose: () => void }) {
+  const { t } = useTranslation()
   const closeShift = useCloseShift(shift.id)
   const [breakdown, setBreakdown] = useState<CashBreakdown>({})
   const total = breakdownTotal(breakdown)
@@ -165,7 +168,7 @@ function CloseShiftDialog({ shift, onClose }: { shift: Shift; onClose: () => voi
           value={breakdown}
           onChange={setBreakdown}
           total={total}
-          label="Efectivo declarado"
+          label={t('caja.efectivoDeclarado')}
         />
 
         <p className="rounded-md bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
@@ -175,7 +178,7 @@ function CloseShiftDialog({ shift, onClose }: { shift: Shift; onClose: () => voi
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Seguir trabajando
+            {t('caja.seguirTrabajando')}
           </Button>
           <Button
             disabled={total <= 0}
@@ -204,6 +207,7 @@ function CashMovementDialog({
   direction: 'IN' | 'OUT'
   onClose: () => void
 }) {
+  const { t } = useTranslation()
   const movement = useCashMovement(shift.id)
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState('')
@@ -214,19 +218,15 @@ function CashMovementDialog({
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>
-            {isOut ? 'Retirar efectivo a bóveda' : 'Meter cambio a la caja'}
-          </DialogTitle>
+          <DialogTitle>{isOut ? t('caja.retirarABoveda') : t('caja.meterCambio')}</DialogTitle>
           <DialogDescription>
-            {isOut
-              ? 'Sacar dinero del cajón sin que sea un gasto. Se descuenta del efectivo esperado.'
-              : 'Agregar cambio o fondo adicional durante el turno.'}
+            {isOut ? t('caja.sacarDineroDelCajon') : t('caja.agregarCambioOFondo')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
           <div className="space-y-2">
-            <Label htmlFor="movement-amount">Importe</Label>
+            <Label htmlFor="movement-amount">{t('caja.importe')}</Label>
             <Input
               id="movement-amount"
               inputMode="decimal"
@@ -236,19 +236,19 @@ function CashMovementDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="movement-note">Descripción</Label>
+            <Label htmlFor="movement-note">{t('caja.descripcion')}</Label>
             <Input
               id="movement-note"
               value={description}
               onChange={(event) => setDescription(event.target.value)}
-              placeholder={isOut ? 'Entrega a gerencia' : 'Cambio de la caja fuerte'}
+              placeholder={isOut ? t('caja.entregaAGerencia') : t('caja.cambioDeLaCajaFuerte')}
             />
           </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Cancelar
+            {t('caja.cancelar')}
           </Button>
           <Button
             disabled={toNumber(amount) <= 0}
@@ -265,7 +265,7 @@ function CashMovementDialog({
               )
             }
           >
-            Registrar
+            {t('caja.registrar')}
           </Button>
         </DialogFooter>
       </DialogContent>

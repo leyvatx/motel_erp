@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import i18n from '@/lib/i18n'
 
 import { frontdeskApi, type GridParams } from '@/features/frontdesk/api'
 import type { ReservationParams } from '@/features/frontdesk/api'
@@ -112,20 +113,20 @@ function useReservationMutation<TArgs, TResult>(
       void queryClient.invalidateQueries({ queryKey: queryKeys.frontdesk.summary })
       toast.success(successMessage)
     },
-    onError: (error) => toast.error('No se pudo completar', apiErrorMessage(error)),
+    onError: (error) => toast.error(i18n.t('recepcion.noSePudoCompletar'), apiErrorMessage(error)),
   })
 }
 
 export const useCreateReservation = () =>
   useReservationMutation<ReservationPayload, unknown>(
     frontdeskApi.createReservation,
-    'Reservación creada',
+    i18n.t('recepcion.reservacionCreada'),
   )
 
 export const useCancelReservation = () =>
   useReservationMutation<{ id: number; reason: string }, unknown>(
     ({ id, reason }) => frontdeskApi.cancelReservation(id, reason),
-    'Reservación cancelada',
+    i18n.t('recepcion.reservacionCancelada'),
   )
 
 export const useCheckInReservation = () =>
@@ -137,7 +138,7 @@ export const useCheckInReservation = () =>
 export const useMarkReservationNoShow = () =>
   useReservationMutation<number, unknown>(
     frontdeskApi.markReservationNoShow,
-    'Reservación marcada como no-show',
+    i18n.t('recepcion.reservacionNoShow'),
   )
 
 function useFrontdeskInvalidation() {
@@ -160,7 +161,7 @@ export function useRentRoom() {
       playSuccessTone()
       toast.success(`Habitación ${stay.room_number} rentada`, `Folio ${stay.code}`)
     },
-    onError: (error) => toast.error('No se pudo rentar', apiErrorMessage(error)),
+    onError: (error) => toast.error(i18n.t('recepcion.noSePudoRentar'), apiErrorMessage(error)),
   })
 }
 
@@ -173,9 +174,9 @@ export function useExtendStay(stayId: number) {
     onSuccess: (stay) => {
       invalidate()
       void queryClient.invalidateQueries({ queryKey: queryKeys.frontdesk.stay(stayId) })
-      toast.success('Tiempo extendido', `Habitación ${stay.room_number}`)
+      toast.success(i18n.t('recepcion.tiempoExtendido'), `Habitación ${stay.room_number}`)
     },
-    onError: (error) => toast.error('No se pudo extender', apiErrorMessage(error)),
+    onError: (error) => toast.error(i18n.t('recepcion.noSePudoExtender'), apiErrorMessage(error)),
   })
 }
 
@@ -190,9 +191,12 @@ export function useCheckoutStay(stayId: number) {
       void queryClient.invalidateQueries({ queryKey: queryKeys.frontdesk.stay(stayId) })
       void queryClient.invalidateQueries({ queryKey: queryKeys.finances.currentShift })
       playSuccessTone()
-      toast.success(`Cuenta cerrada - habitación ${stay.room_number}`, 'El cuarto paso a limpieza.')
+      toast.success(
+        `Cuenta cerrada - habitación ${stay.room_number}`,
+        i18n.t('recepcion.elCuartoPasoALimpieza'),
+      )
     },
-    onError: (error) => toastApiError('No se pudo cerrar la cuenta', error),
+    onError: (error) => toastApiError(i18n.t('recepcion.noSePudoCerrarLaCuenta'), error),
   })
 }
 
@@ -203,9 +207,9 @@ export function useCancelStay(stayId: number) {
     mutationFn: (reason: string) => frontdeskApi.cancelStay(stayId, reason),
     onSuccess: () => {
       invalidate()
-      toast.warning('Renta cancelada', 'El movimiento quedó en la bitácora.')
+      toast.warning(i18n.t('recepcion.rentaCancelada'), i18n.t('recepcion.movimientoEnBitacora'))
     },
-    onError: (error) => toast.error('No se pudo cancelar', apiErrorMessage(error)),
+    onError: (error) => toast.error(i18n.t('recepcion.noSePudoCancelar'), apiErrorMessage(error)),
   })
 }
 
@@ -220,7 +224,7 @@ export function useFinishCleaning() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.housekeeping.board() })
       toast.success(`Habitación ${room.number} disponible`)
     },
-    onError: (error) => toast.error('No se pudo liberar el cuarto', apiErrorMessage(error)),
+    onError: (error) => toast.error(i18n.t('recepcion.noSePudoLiberar'), apiErrorMessage(error)),
   })
 }
 
@@ -233,9 +237,10 @@ export function useRequestCleaning() {
     onSuccess: () => {
       invalidate()
       void queryClient.invalidateQueries({ queryKey: queryKeys.housekeeping.board() })
-      toast.success('Limpieza solicitada', 'La tarea ya está en el tablero de ama de llaves.')
+      toast.success(i18n.t('recepcion.limpiezaSolicitada'), i18n.t('recepcion.tareaEnTablero'))
     },
-    onError: (error) => toast.error('No se pudo pedir la limpieza', apiErrorMessage(error)),
+    onError: (error) =>
+      toast.error(i18n.t('recepcion.noSePudoPedirLimpieza'), apiErrorMessage(error)),
   })
 }
 
@@ -256,6 +261,7 @@ export function useSetOutOfService() {
       invalidate()
       toast.warning(`Habitación ${room.number} fuera de servicio`)
     },
-    onError: (error) => toast.error('No se pudo cambiar el estado', apiErrorMessage(error)),
+    onError: (error) =>
+      toast.error(i18n.t('recepcion.noSePudoCambiarEstado'), apiErrorMessage(error)),
   })
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   PiCheck,
   PiCheckCircle,
@@ -58,6 +59,7 @@ export function CleaningQueue({
   sinAsignar = 0,
   onVerTodas,
 }: Props) {
+  const { t } = useTranslation()
   const start = useStartCleaning()
   const finish = useFinishCleaningTask()
 
@@ -71,15 +73,15 @@ export function CleaningQueue({
   if (isError) {
     return (
       <ErrorState
-        title="No pudimos cargar tus tareas"
-        description="La lista no llegó. Vuelve a intentarlo; si sigue igual, avisa a recepción."
+        title={t('limpieza.noPudimosTusTareas')}
+        description={t('limpieza.listaNoLlego')}
         onRetry={onRetry}
       />
     )
   }
 
   if (sinConexion) {
-    return <OfflineState descripcion="No hay red. Tus tareas no se han perdido." />
+    return <OfflineState descripcion={t('limpieza.sinRed')} />
   }
 
   if (isLoading) {
@@ -98,15 +100,15 @@ export function CleaningQueue({
     if (sinAsignar > 0) {
       return (
         <EmptyState
-          title="No tienes tareas asignadas"
+          title={t('limpieza.sinTareasAsignadas')}
           description={`Hay ${sinAsignar} ${
-            sinAsignar === 1 ? 'habitación pendiente' : 'habitaciones pendientes'
+            sinAsignar === 1 ? t('limpieza.habitacionPendiente') : 'habitaciones pendientes'
           } que nadie ha tomado.`}
           icon={<PiClipboardText className="h-8 w-8" aria-hidden />}
           action={
             onVerTodas ? (
               <Button className="h-11" onClick={onVerTodas}>
-                Ver todas las pendientes
+                {t('limpieza.verTodasPendientes')}
               </Button>
             ) : null
           }
@@ -116,8 +118,8 @@ export function CleaningQueue({
 
     return (
       <EmptyState
-        title="No hay nada pendiente"
-        description="Todas las habitaciones están limpias. Cuando salga un huésped, su cuarto aparecerá aquí solo."
+        title={t('limpieza.nadaPendiente')}
+        description={t('limpieza.todasLimpias')}
         icon={<PiSparkle className="h-8 w-8" aria-hidden />}
       />
     )
@@ -154,11 +156,11 @@ export function CleaningQueue({
                         className="h-1.5 w-1.5 animate-pulse-alert rounded-full bg-status-cleaning"
                         aria-hidden
                       />
-                      Limpiando
+                      {t('limpieza.limpiando')}
                     </span>
                   ) : siguiente ? (
                     <span className="rounded-full border px-2.5 py-1 text-2xs font-medium">
-                      Sigue esta
+                      {t('limpieza.sigueEsta')}
                     </span>
                   ) : null}
                   <p className="mt-1.5 text-2xs text-muted-foreground">{tiempo(task)}</p>
@@ -185,7 +187,7 @@ export function CleaningQueue({
                     }}
                   >
                     <PiCheckCircle className="h-5 w-5" />
-                    Lista
+                    {t('limpieza.lista')}
                   </Button>
                 ) : (
                   <Button
@@ -195,7 +197,7 @@ export function CleaningQueue({
                     onClick={() => start.mutate(task.id)}
                   >
                     <PiPlay className="h-5 w-5" />
-                    Empezar
+                    {t('limpieza.empezar')}
                   </Button>
                 )}
 
@@ -205,7 +207,7 @@ export function CleaningQueue({
                   onClick={() => setReportando(task)}
                 >
                   <PiWarning className="h-5 w-5" />
-                  Problema
+                  {t('limpieza.problema')}
                 </Button>
               </div>
             </li>
@@ -224,9 +226,9 @@ export function CleaningQueue({
               <Input
                 value={notas}
                 onChange={(event) => setNotas(event.target.value)}
-                placeholder="¿Algo que anotar? (opcional)"
+                placeholder={t('limpieza.algoQueAnotar')}
                 className="mt-2 h-11"
-                aria-label="Observaciones de la limpieza"
+                aria-label={t('limpieza.observacionesLimpieza')}
               />
             </div>
             <div className="flex gap-2">
@@ -235,7 +237,7 @@ export function CleaningQueue({
                 className="h-12 flex-1 sm:flex-none"
                 onClick={() => setCerrando(null)}
               >
-                Cancelar
+                {t('limpieza.cancelar')}
               </Button>
               <Button
                 variant="success"
@@ -249,7 +251,7 @@ export function CleaningQueue({
                 }
               >
                 <PiCheck className="h-5 w-5" />
-                Confirmar
+                {t('limpieza.confirmar')}
               </Button>
             </div>
           </div>

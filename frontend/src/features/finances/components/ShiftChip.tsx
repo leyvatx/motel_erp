@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 import { openShiftDialog } from '@/features/finances/components/OpenShiftDialog'
 import { useCurrentShift } from '@/features/finances/hooks'
@@ -6,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { canAccessSection, useAuthStore } from '@/store/auth'
 
 export function ShiftChip() {
+  const { t } = useTranslation()
   const user = useAuthStore((state) => state.user)
   const canCash = canAccessSection(user, 'finances')
   const { data: shift, isLoading } = useCurrentShift(canCash)
@@ -19,11 +21,7 @@ export function ShiftChip() {
     <button
       type="button"
       onClick={() => (open ? navigate('/finances') : openShiftDialog())}
-      title={
-        open
-          ? `Turno ${shift?.code} abierto. Ir a caja.`
-          : 'No puedes cobrar sin turno abierto. Ábrelo aquí.'
-      }
+      title={open ? `Turno ${shift?.code} abierto. Ir a caja.` : t('comun.sinTurnoAviso')}
       className={cn(
         'hidden max-w-[13rem] shrink-0 items-center gap-1.5 rounded-full border px-2 py-1 text-2xs font-medium transition-colors sm:flex',
         open
@@ -42,7 +40,7 @@ export function ShiftChip() {
           turno abierto; el codigo entero aplastaba el topbar y se salia. El
           title de arriba lo sigue diciendo completo. */}
       <span className="truncate">
-        {open ? 'Turno' : 'Sin turno'}
+        {open ? t('caja.turno') : t('comun.sinTurno')}
         {open ? <span className="hidden lg:inline"> {shift?.code}</span> : null}
       </span>
     </button>

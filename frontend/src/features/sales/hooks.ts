@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
 import { toast } from '@/components/ui/toast'
 import { useWarehouses } from '@/features/inventory/hooks'
@@ -35,6 +36,7 @@ interface RoomOrderArgs {
 }
 
 export function useChargeToRoom({ folioId, roomNumber, stayId }: RoomOrderArgs) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const warehouse = useSalesWarehouse()
 
@@ -65,6 +67,6 @@ export function useChargeToRoom({ folioId, roomNumber, stayId }: RoomOrderArgs) 
         `Consumo ${order.code} por ${formatMoney(order.total)}. Se cobra al salir.`,
       )
     },
-    onError: (error) => toast.error('No se pudo cargar el consumo', apiErrorMessage(error)),
+    onError: (error) => toast.error(t('venta.noSePudoCargarConsumo'), apiErrorMessage(error)),
   })
 }

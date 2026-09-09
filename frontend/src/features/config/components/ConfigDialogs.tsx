@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -65,6 +66,7 @@ function Shell({
   valid: boolean
   children: ReactNode
 }) {
+  const { t } = useTranslation()
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -77,10 +79,10 @@ function Shell({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
+            {t('config.cancelar')}
           </Button>
           <Button disabled={!valid} loading={submitting} onClick={onSubmit}>
-            Guardar
+            {t('config.guardar')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -97,6 +99,7 @@ export function RoomFormDialog({
   room: Room | null
   onOpenChange: (open: boolean) => void
 }) {
+  const { t } = useTranslation()
   const { data: types } = useRoomTypes()
   const create = useCreateRoom()
   const update = useUpdateRoom()
@@ -135,14 +138,14 @@ export function RoomFormDialog({
     <Shell
       open={open}
       onOpenChange={onOpenChange}
-      title={room ? `Editar habitación ${room.number}` : 'Nueva habitación'}
-      description="El número debe ser único entre las habitaciones vigentes."
+      title={room ? `Editar habitación ${room.number}` : t('config.nuevaHabitacion')}
+      description={t('config.numeroUnico')}
       onSubmit={submit}
       submitting={create.isPending || update.isPending}
       valid={valid}
     >
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Número" htmlFor="room-number">
+        <Field label={t('config.numero')} htmlFor="room-number">
           <Input
             id="room-number"
             value={number}
@@ -150,7 +153,7 @@ export function RoomFormDialog({
             placeholder="101"
           />
         </Field>
-        <Field label="Piso" htmlFor="room-floor">
+        <Field label={t('config.piso')} htmlFor="room-floor">
           <Input
             id="room-floor"
             type="number"
@@ -161,10 +164,10 @@ export function RoomFormDialog({
         </Field>
       </div>
 
-      <Field label="Tipo" htmlFor="room-type">
+      <Field label={t('config.tipo')} htmlFor="room-type">
         <Select value={roomType} onValueChange={setRoomType}>
           <SelectTrigger id="room-type">
-            <SelectValue placeholder="Elige el tipo" />
+            <SelectValue placeholder={t('config.eligeElTipo')} />
           </SelectTrigger>
           <SelectContent>
             {(types?.results ?? []).map((type) => (
@@ -176,12 +179,12 @@ export function RoomFormDialog({
         </Select>
       </Field>
 
-      <Field label="Zona o edificio" htmlFor="room-zone">
+      <Field label={t('config.zonaOEdificio')} htmlFor="room-zone">
         <Input
           id="room-zone"
           value={zone}
           onChange={(event) => setZone(event.target.value)}
-          placeholder="Edificio A"
+          placeholder={t('config.ejemploEdificio')}
         />
       </Field>
 
@@ -192,7 +195,7 @@ export function RoomFormDialog({
           onChange={(event) => setGarage(event.target.checked)}
           className="h-4 w-4 rounded border-input"
         />
-        Tiene cochera privada
+        {t('config.tieneCochera')}
       </label>
     </Shell>
   )
@@ -207,6 +210,7 @@ export function RoomTypeFormDialog({
   item: RoomType | null
   onOpenChange: (open: boolean) => void
 }) {
+  const { t } = useTranslation()
   const create = useCreateRoomType()
   const update = useUpdateRoomType()
 
@@ -241,14 +245,14 @@ export function RoomTypeFormDialog({
     <Shell
       open={open}
       onOpenChange={onOpenChange}
-      title={item ? `Editar ${item.name}` : 'Nuevo tipo de habitación'}
-      description="Agrupa habitaciones que comparten capacidad y tarifas."
+      title={item ? `Editar ${item.name}` : t('config.nuevoTipoDeHabitacion')}
+      description={t('config.agrupaHabitaciones')}
       onSubmit={submit}
       submitting={create.isPending || update.isPending}
       valid={valid}
     >
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Nombre" htmlFor="type-name">
+        <Field label={t('config.nombre')} htmlFor="type-name">
           <Input
             id="type-name"
             value={name}
@@ -256,7 +260,7 @@ export function RoomTypeFormDialog({
             placeholder="Jacuzzi"
           />
         </Field>
-        <Field label="Clave" htmlFor="type-code">
+        <Field label={t('config.clave')} htmlFor="type-code">
           <Input
             id="type-code"
             value={code}
@@ -268,7 +272,7 @@ export function RoomTypeFormDialog({
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Ocupantes máximos" htmlFor="type-occupants">
+        <Field label={t('config.ocupantesMaximos')} htmlFor="type-occupants">
           <Input
             id="type-occupants"
             type="number"
@@ -277,7 +281,7 @@ export function RoomTypeFormDialog({
             onChange={(event) => setOccupants(event.target.value)}
           />
         </Field>
-        <Field label="Cargo por persona extra" htmlFor="type-extra">
+        <Field label={t('config.cargoPersonaExtra')} htmlFor="type-extra">
           <Input
             id="type-extra"
             inputMode="decimal"
@@ -299,6 +303,7 @@ export function TariffFormDialog({
   item: TariffBlock | null
   onOpenChange: (open: boolean) => void
 }) {
+  const { t } = useTranslation()
   const { data: types } = useRoomTypes()
   const create = useCreateTariff()
   const update = useUpdateTariff()
@@ -343,16 +348,16 @@ export function TariffFormDialog({
     <Shell
       open={open}
       onOpenChange={onOpenChange}
-      title={item ? `Editar ${item.name}` : 'Nueva tarifa'}
-      description="El precio base puede ajustarse por reglas de fin de semana o festivo."
+      title={item ? `Editar ${item.name}` : t('config.nuevaTarifa')}
+      description={t('config.precioBaseAjustable')}
       onSubmit={submit}
       submitting={create.isPending || update.isPending}
       valid={valid}
     >
-      <Field label="Tipo de habitación" htmlFor="tariff-type">
+      <Field label={t('config.tipoDeHabitacion')} htmlFor="tariff-type">
         <Select value={roomType} onValueChange={setRoomType}>
           <SelectTrigger id="tariff-type">
-            <SelectValue placeholder="Elige el tipo" />
+            <SelectValue placeholder={t('config.eligeElTipo')} />
           </SelectTrigger>
           <SelectContent>
             {(types?.results ?? []).map((type) => (
@@ -365,7 +370,7 @@ export function TariffFormDialog({
       </Field>
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Nombre del bloque" htmlFor="tariff-name">
+        <Field label={t('config.nombreDelBloque')} htmlFor="tariff-name">
           <Input
             id="tariff-name"
             value={name}
@@ -373,7 +378,7 @@ export function TariffFormDialog({
             placeholder="4 horas"
           />
         </Field>
-        <Field label="Duración (horas)" htmlFor="tariff-hours">
+        <Field label={t('config.duracionHoras')} htmlFor="tariff-hours">
           <Input
             id="tariff-hours"
             type="number"
@@ -386,7 +391,7 @@ export function TariffFormDialog({
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <Field label="Precio" htmlFor="tariff-price">
+        <Field label={t('config.precio')} htmlFor="tariff-price">
           <Input
             id="tariff-price"
             inputMode="decimal"
@@ -395,7 +400,7 @@ export function TariffFormDialog({
             placeholder="350.00"
           />
         </Field>
-        <Field label="Hora extra" htmlFor="tariff-overstay">
+        <Field label={t('config.horaExtra')} htmlFor="tariff-overstay">
           <Input
             id="tariff-overstay"
             inputMode="decimal"
@@ -403,7 +408,7 @@ export function TariffFormDialog({
             onChange={(event) => setOverstay(event.target.value)}
           />
         </Field>
-        <Field label="Tolerancia (min)" htmlFor="tariff-grace">
+        <Field label={t('config.tolerancia')} htmlFor="tariff-grace">
           <Input
             id="tariff-grace"
             type="number"
@@ -421,7 +426,7 @@ export function TariffFormDialog({
           onChange={(event) => setIsDefault(event.target.checked)}
           className="h-4 w-4 rounded border-input"
         />
-        Sugerir este bloque al rentar
+        {t('config.sugerirBloque')}
       </label>
     </Shell>
   )

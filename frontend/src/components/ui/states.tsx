@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { PiPlugsConnected, PiWarningCircle } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -52,13 +53,16 @@ interface ErrorProps {
 }
 
 export function ErrorState({
-  title = 'No se pudo cargar',
-  description = 'La información no llegó. Puede ser la conexión o que el servidor esté despertando.',
+  title,
+  description,
   onRetry,
   retrying,
   secondaryAction,
   className,
 }: ErrorProps) {
+  const { t } = useTranslation()
+  const titulo = title ?? t('comun.noSePudoCargar')
+  const detalle = description ?? t('comun.informacionNoLlego')
   return (
     <div
       role="alert"
@@ -68,8 +72,8 @@ export function ErrorState({
       )}
     >
       <PiWarningCircle className="mb-1 h-8 w-8 text-status-cleaning" aria-hidden />
-      <p className="text-sm font-medium">{title}</p>
-      <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">{description}</p>
+      <p className="text-sm font-medium">{titulo}</p>
+      <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">{detalle}</p>
       <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
         {onRetry ? (
           <Button variant="outline" onClick={onRetry} loading={retrying}>
@@ -96,14 +100,17 @@ export function LoadingState({ rows = 5, className }: { rows?: number; className
 
 /** Sin red: distinto de "vacío" y distinto de "falló". Se reintenta solo. */
 export function OfflineState({
-  titulo = 'Sin conexión',
-  descripcion = 'No hay red. La información se carga en cuanto vuelva.',
+  titulo,
+  descripcion,
   className,
 }: {
   titulo?: string
   descripcion?: string
   className?: string
 }) {
+  const { t } = useTranslation()
+  const encabezado = titulo ?? t('comun.sinConexion')
+  const detalle = descripcion ?? t('comun.sinRedGeneral')
   return (
     <div
       className={cn(
@@ -116,8 +123,8 @@ export function OfflineState({
         className="mb-1 h-8 w-8 animate-pulse-alert text-status-cleaning"
         aria-hidden
       />
-      <p className="text-sm font-medium">{titulo}</p>
-      <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">{descripcion}</p>
+      <p className="text-sm font-medium">{encabezado}</p>
+      <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">{detalle}</p>
 
       {/* Recargar, no "reintentar la consulta".
        *

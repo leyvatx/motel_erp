@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { PiBarcode, PiMinus, PiPackage, PiPlus, PiTrash } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -118,6 +119,7 @@ export function ProductPicker({
   listClassName,
   allowCreate = false,
 }: PickerProps) {
+  const { t } = useTranslation()
   const searchRef = useRef<HTMLInputElement>(null)
   const [search, setSearch] = useState('')
   const [categoria, setCategoria] = useState<string>(TODOS)
@@ -193,9 +195,9 @@ export function ProductPicker({
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             onKeyDown={handleSearchKey}
-            placeholder="Escanea o escribe nombre, SKU o código..."
+            placeholder={t('venta.buscarPlaceholder')}
             className="h-11 pl-9 text-base"
-            aria-label="Buscar producto"
+            aria-label={t('venta.buscarProducto')}
           />
         </div>
 
@@ -204,10 +206,10 @@ export function ProductPicker({
             variant="outline"
             className="h-11 shrink-0 px-3"
             onClick={() => setCreando(true)}
-            title="Dar de alta un producto sin salir de la venta"
+            title={t('venta.altaSinSalir')}
           >
             <PiPlus />
-            <span className="hidden sm:inline">Nuevo producto</span>
+            <span className="hidden sm:inline">{t('venta.nuevoProducto')}</span>
           </Button>
         ) : null}
       </div>
@@ -244,12 +246,8 @@ export function ProductPicker({
         </div>
       ) : filtered.length === 0 ? (
         <EmptyState
-          title={search ? `No hay ningún "${search.trim()}"` : 'Esta categoría está vacía'}
-          description={
-            search
-              ? 'Revisa cómo se escribe, o dalo de alta ahora mismo y agrégalo a la venta.'
-              : 'Los productos vendibles se dan de alta en Inventarios.'
-          }
+          title={search ? `No hay ningún "${search.trim()}"` : t('venta.estaCategoriaVacia')}
+          description={search ? t('venta.revisaComoSeEscribe') : t('venta.productosSeDanDeAlta')}
           icon={<PiPackage className="h-8 w-8" aria-hidden />}
           action={
             allowCreate && search ? (
@@ -325,7 +323,9 @@ export function ProductPicker({
                     {formatMoney(product.sale_price)}
                   </p>
                   {agotado ? (
-                    <p className="mt-1 text-2xs font-medium text-status-occupied">Sin existencia</p>
+                    <p className="mt-1 text-2xs font-medium text-status-occupied">
+                      {t('venta.sinExistencia')}
+                    </p>
                   ) : existencia !== null && existencia <= 5 ? (
                     <p className="mt-1 text-2xs tabular text-status-cleaning">
                       quedan {existencia}
@@ -360,11 +360,12 @@ export function ProductPicker({
 }
 
 export function CartLines({ cart, className }: { cart: Cart; className?: string }) {
+  const { t } = useTranslation()
   if (cart.lines.length === 0) {
     return (
       <p className="py-8 text-center text-sm leading-relaxed text-muted-foreground">
-        La cuenta está vacía.
-        <span className="mt-1 block text-xs">Escanea un producto o tócalo en el catálogo.</span>
+        {t('venta.cuentaVacia')}
+        <span className="mt-1 block text-xs">{t('venta.escaneaOToca')}</span>
       </p>
     )
   }

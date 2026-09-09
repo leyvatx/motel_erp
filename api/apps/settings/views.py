@@ -29,21 +29,26 @@ from apps.users.constants import PermissionCode
 from apps.users.models import User
 from apps.users.serializers import MotelTokenObtainPairSerializer, UserSerializer
 from apps.notifications.events import Event, broadcast
+from django.utils.translation import gettext_lazy as _
+
 from common.tenancy import without_motel
 
-COMMON_TIME_ZONES: tuple[tuple[str, str], ...] = (
-    ("America/Mexico_City", "Centro (Ciudad de México)"),
-    ("America/Cancun", "Sureste (Cancún)"),
-    ("America/Merida", "Centro (Mérida)"),
-    ("America/Monterrey", "Centro (Monterrey)"),
-    ("America/Matamoros", "Frontera (Matamoros)"),
-    ("America/Chihuahua", "Pacifico (Chihuahua)"),
-    ("America/Ciudad_Juarez", "Frontera (Ciudad Juárez)"),
-    ("America/Mazatlan", "Pacifico (Mazatlán)"),
-    ("America/Hermosillo", "Pacifico (Hermosillo)"),
-    ("America/Tijuana", "Noroeste (Tijuana)"),
-    ("America/Bahia_Banderas", "Centro (Bahía de Banderas)"),
-    ("UTC", "UTC"),
+# El nombre de la ciudad no se traduce; la región que lo acompaña sí, y por eso
+# la etiqueta entera pasa por gettext: "Centro (Mérida)" es "Central (Mérida)"
+# en inglés, no "Central (Merida City)".
+COMMON_TIME_ZONES: tuple[tuple[str, object], ...] = (
+    ("America/Mexico_City", _("Centro (Ciudad de México)")),
+    ("America/Cancun", _("Sureste (Cancún)")),
+    ("America/Merida", _("Centro (Mérida)")),
+    ("America/Monterrey", _("Centro (Monterrey)")),
+    ("America/Matamoros", _("Frontera (Matamoros)")),
+    ("America/Chihuahua", _("Pacifico (Chihuahua)")),
+    ("America/Ciudad_Juarez", _("Frontera (Ciudad Juárez)")),
+    ("America/Mazatlan", _("Pacifico (Mazatlán)")),
+    ("America/Hermosillo", _("Pacifico (Hermosillo)")),
+    ("America/Tijuana", _("Noroeste (Tijuana)")),
+    ("America/Bahia_Banderas", _("Centro (Bahía de Banderas)")),
+    ("UTC", _("UTC")),
 )
 
 

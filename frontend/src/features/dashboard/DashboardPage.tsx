@@ -13,6 +13,7 @@ import {
   PiWrench,
 } from 'react-icons/pi'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 import { PageShell } from '@/components/layout/PageShell'
 import { Badge } from '@/components/ui/badge'
@@ -182,6 +183,7 @@ function roleActions(role: Role) {
 }
 
 export default function DashboardPage() {
+  const { t } = useTranslation()
   const user = useAuthStore((state) => state.user)
   const role = user?.role ?? 'RECEPTION'
   const isHousekeeping = role === 'HOUSEKEEPING'
@@ -294,7 +296,7 @@ export default function DashboardPage() {
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4 lg:flex lg:gap-x-6">
                 <ShiftFigure
                   label="Turno"
-                  value={shift.isLoading ? '…' : (shift.data?.code ?? 'Sin turno')}
+                  value={shift.isLoading ? '…' : (shift.data?.code ?? t('comun.sinTurno'))}
                 />
                 <ShiftFigure
                   label="Ventas"

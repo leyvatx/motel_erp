@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { PiLockOpen, PiMoney } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -12,6 +13,7 @@ import { formatMoney } from '@/lib/format'
 import { useAuthStore } from '@/store/auth'
 
 export function OpenShiftForm({ onOpened }: { onOpened?: () => void }) {
+  const { t } = useTranslation()
   const cashier = useAuthStore((state) => state.user)
   const openShift = useOpenShift()
   const [breakdown, setBreakdown] = useState<CashBreakdown>({})
@@ -24,20 +26,20 @@ export function OpenShiftForm({ onOpened }: { onOpened?: () => void }) {
       <div className="space-y-3 rounded-lg border p-4">
         <div className="flex items-center gap-2">
           <PiMoney className="h-4 w-4 text-muted-foreground" aria-hidden />
-          <p className="text-sm font-medium">Fondo inicial</p>
+          <p className="text-sm font-medium">{t('caja.fondoInicial')}</p>
         </div>
 
         <CashBreakdownInput
           value={breakdown}
           onChange={setBreakdown}
           total={total}
-          label="Fondo a declarar"
+          label={t('caja.fondoADeclarar')}
         />
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-muted-foreground">
-          Se abrirá a nombre de <span className="font-medium">{cashier?.full_name}</span>.
+          {t('caja.seAbriraANombreDe')} <span className="font-medium">{cashier?.full_name}</span>.
         </p>
         <div className="flex gap-2">
           {total === 0 ? (
@@ -46,19 +48,17 @@ export function OpenShiftForm({ onOpened }: { onOpened?: () => void }) {
               loading={openShift.isPending}
               onClick={() => openShift.mutate({ opening_balance: '0.00' }, done)}
             >
-              Abrir sin fondo
+              {t('caja.abrirSinFondo')}
             </Button>
           ) : null}
           <Button
             size="lg"
             disabled={total === 0}
             loading={openShift.isPending}
-            onClick={() =>
-              openShift.mutate({ opening_balance: total.toFixed(2), breakdown }, done)
-            }
+            onClick={() => openShift.mutate({ opening_balance: total.toFixed(2), breakdown }, done)}
           >
             <PiLockOpen />
-            Abrir turno con {formatMoney(total)}
+            {t('caja.abrirTurnoConMonto', { monto: formatMoney(total) })}
           </Button>
         </div>
       </div>

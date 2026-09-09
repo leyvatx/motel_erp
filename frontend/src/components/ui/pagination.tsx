@@ -1,4 +1,5 @@
 import { PiCaretLeft, PiCaretRight } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -30,6 +31,7 @@ export function Pagination({
   onPageSizeChange,
   isFetching,
 }: Props) {
+  const { t } = useTranslation()
   if (count === 0) return null
 
   const first = (page - 1) * pageSize + 1
@@ -66,7 +68,7 @@ export function Pagination({
             size="icon-sm"
             disabled={page <= 1 || isFetching}
             onClick={() => onPageChange(page - 1)}
-            aria-label="Página anterior"
+            aria-label={t('comun.paginaAnterior')}
           >
             <PiCaretLeft />
           </Button>
@@ -78,7 +80,7 @@ export function Pagination({
             size="icon-sm"
             disabled={page >= totalPages || isFetching}
             onClick={() => onPageChange(page + 1)}
-            aria-label="Página siguiente"
+            aria-label={t('comun.paginaSiguiente')}
           >
             <PiCaretRight />
           </Button>

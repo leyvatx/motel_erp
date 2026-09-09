@@ -89,7 +89,7 @@ export function Topbar({ connection, onOpenMenu }: Props) {
         size="icon"
         className="h-11 w-11 shrink-0 lg:hidden"
         onClick={onOpenMenu}
-        aria-label="Abrir menú"
+        aria-label={t('comun.abrirMenu')}
       >
         <PiList className="h-5 w-5" />
       </Button>
@@ -134,10 +134,10 @@ export function Topbar({ connection, onOpenMenu }: Props) {
               )}
               title={
                 online
-                  ? 'Conectado en tiempo real'
+                  ? t('comun.conectadoTiempoReal')
                   : connection === 'degradado'
-                    ? 'Sin tiempo real. La operación sigue normal; los cambios de otras terminales tardan en aparecer. Toca para reintentar.'
-                    : 'Reconectando al servidor'
+                    ? t('comun.sinTiempoRealDetalle')
+                    : t('comun.reconectando')
               }
             >
               <span
@@ -150,9 +150,9 @@ export function Topbar({ connection, onOpenMenu }: Props) {
                 aria-hidden
               />
               {online
-                ? 'En línea'
+                ? t('comun.enLinea')
                 : connection === 'degradado'
-                  ? 'Sin tiempo real'
+                  ? t('comun.sinTiempoReal')
                   : 'Reconectando'}
             </button>
 

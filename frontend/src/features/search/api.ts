@@ -147,11 +147,7 @@ export async function searchEverything(
  *  Solo entran los nombres que de verdad contienen lo buscado: una renta pudo
  *  haber coincidido por placa o por folio, y colgarla de "Huéspedes" haría ver
  *  un nombre que no tiene nada que ver con lo que se escribió. */
-function huespedes(
-  term: string,
-  rentas: StayListItem[],
-  reservas: Reservation[],
-): SearchHit[] {
+function huespedes(term: string, rentas: StayListItem[], reservas: Reservation[]): SearchHit[] {
   const buscado = normalizar(term)
   const porNombre = new Map<string, { nombre: string; visitas: number; stayId?: number }>()
 
@@ -174,8 +170,7 @@ function huespedes(
     key: `guest-${normalizar(huesped.nombre)}`,
     kind: 'guest' as const,
     title: huesped.nombre,
-    subtitle:
-      huesped.visitas > 1 ? `${huesped.visitas} coincidencias` : 'Una coincidencia',
+    subtitle: huesped.visitas > 1 ? `${huesped.visitas} coincidencias` : 'Una coincidencia',
     stayId: huesped.stayId,
     query: huesped.nombre,
   }))

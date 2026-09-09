@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { PiFloppyDisk, PiImageSquare, PiTrash } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -90,6 +91,7 @@ function Field({
 }
 
 export function BusinessSettings() {
+  const { t } = useTranslation()
   const { data: profile, isLoading } = useBusinessProfile()
   const { data: timeZones } = useTimeZones()
   const update = useUpdateBusinessProfile()
@@ -125,11 +127,11 @@ export function BusinessSettings() {
     if (!file) return
 
     if (!file.type.startsWith('image/')) {
-      toast.error('Archivo no válido', 'Elige una imagen PNG, JPG o WEBP.')
+      toast.error(t('config.archivoNoValido'), t('config.eligeUnaImagen'))
       return
     }
     if (file.size > MAX_LOGO_KB * 1024) {
-      toast.error('Imagen muy pesada', `El límite es ${MAX_LOGO_KB} KB.`)
+      toast.error(t('config.imagenMuyPesada'), `El límite es ${MAX_LOGO_KB} KB.`)
       return
     }
 
@@ -161,42 +163,39 @@ export function BusinessSettings() {
         <p className="text-xs text-muted-foreground">
           {dirty.length > 0
             ? `${dirty.length} campo${dirty.length === 1 ? '' : 's'} sin guardar.`
-            : 'Todo guardado. Estos datos son iguales en todas las terminales.'}
+            : t('config.todoGuardado')}
         </p>
         <Button size="sm" onClick={save} disabled={dirty.length === 0} loading={update.isPending}>
           <PiFloppyDisk />
-          Guardar cambios
+          {t('config.guardarCambios')}
         </Button>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Identidad</CardTitle>
-            <CardDescription>
-              El nombre sale en el menú, en la pantalla de acceso, en el título de la pestaña y en
-              el ticket.
-            </CardDescription>
+            <CardTitle className="text-base">{t('config.identidad')}</CardTitle>
+            <CardDescription>{t('config.nombreSaleLargo')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Field label="Nombre comercial" htmlFor="business-name">
+            <Field label={t('config.nombreComercial')} htmlFor="business-name">
               <Input
                 id="business-name"
                 value={draft.name}
                 onChange={(event) => set('name', event.target.value)}
-                placeholder="Sucursal Centro"
+                placeholder={t('config.ejemploSucursal')}
               />
             </Field>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Razón social" htmlFor="business-legal">
+              <Field label={t('config.razonSocial')} htmlFor="business-legal">
                 <Input
                   id="business-legal"
                   value={draft.legal_name}
                   onChange={(event) => set('legal_name', event.target.value)}
                 />
               </Field>
-              <Field label="RFC" htmlFor="business-tax">
+              <Field label={t('config.rfc')} htmlFor="business-tax">
                 <Input
                   id="business-tax"
                   value={draft.tax_id}
@@ -206,24 +205,24 @@ export function BusinessSettings() {
               </Field>
             </div>
 
-            <Field label="Dirección" htmlFor="business-address">
+            <Field label={t('config.direccion')} htmlFor="business-address">
               <Input
                 id="business-address"
                 value={draft.address}
                 onChange={(event) => set('address', event.target.value)}
-                placeholder="Carretera federal km 12, Xalapa"
+                placeholder={t('config.ejemploDireccion')}
               />
             </Field>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Teléfono" htmlFor="business-phone">
+              <Field label={t('config.telefono')} htmlFor="business-phone">
                 <Input
                   id="business-phone"
                   value={draft.phone}
                   onChange={(event) => set('phone', event.target.value)}
                 />
               </Field>
-              <Field label="Correo" htmlFor="business-email">
+              <Field label={t('config.correo')} htmlFor="business-email">
                 <Input
                   id="business-email"
                   type="email"
@@ -234,13 +233,13 @@ export function BusinessSettings() {
             </div>
 
             <div className="space-y-2">
-              <Label>Logotipo</Label>
+              <Label>{t('config.logotipo')}</Label>
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/40">
                   {profile.logo_url ? (
                     <img
                       src={profile.logo_url}
-                      alt="Logotipo"
+                      alt={t('config.logotipo')}
                       className="h-full w-full object-contain"
                     />
                   ) : (
@@ -266,7 +265,7 @@ export function BusinessSettings() {
                       onClick={() => updateLogo.mutate(null)}
                     >
                       <PiTrash />
-                      Quitar
+                      {t('config.quitar')}
                     </Button>
                   ) : null}
                 </div>
@@ -280,9 +279,7 @@ export function BusinessSettings() {
                 />
               </div>
               <p className="text-2xs text-muted-foreground">
-                PNG, JPG o WEBP de hasta {MAX_LOGO_KB} KB. Se guarda en el servidor y tambien se usa
-                como icono de la pestaña. El logotipo se aplica al momento, sin necesidad de
-                guardar.
+                {t('config.logotipoDetalle', { kb: MAX_LOGO_KB })}
               </p>
             </div>
           </CardContent>
@@ -291,14 +288,16 @@ export function BusinessSettings() {
         <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Moneda y zona horaria</CardTitle>
-              <CardDescription>
-                Definen cómo se muestran los importes y a qué hora corta el día de operación.
-              </CardDescription>
+              <CardTitle className="text-base">{t('config.monedaYZona')}</CardTitle>
+              <CardDescription>{t('config.definenImportes')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Moneda" htmlFor="business-currency" hint="Código ISO: MXN, USD...">
+                <Field
+                  label={t('config.moneda')}
+                  htmlFor="business-currency"
+                  hint={t('config.codigoIso')}
+                >
                   <Input
                     id="business-currency"
                     value={draft.currency}
@@ -307,7 +306,11 @@ export function BusinessSettings() {
                     className="uppercase"
                   />
                 </Field>
-                <Field label="Formato regional" htmlFor="business-locale" hint="es-MX, en-US...">
+                <Field
+                  label={t('config.formatoRegional')}
+                  htmlFor="business-locale"
+                  hint={t('config.ejemploLocale')}
+                >
                   <Input
                     id="business-locale"
                     value={draft.locale}
@@ -317,13 +320,13 @@ export function BusinessSettings() {
               </div>
 
               <Field
-                label="Zona horaria"
+                label={t('config.zonaHoraria')}
                 htmlFor="business-tz"
-                hint="El servidor guarda todo en UTC; esto solo define la hora local del negocio."
+                hint={t('config.servidorUtc')}
               >
                 <Select value={draft.time_zone} onValueChange={(value) => set('time_zone', value)}>
                   <SelectTrigger id="business-tz">
-                    <SelectValue placeholder="Elige la zona" />
+                    <SelectValue placeholder={t('config.eligeLaZona')} />
                   </SelectTrigger>
                   <SelectContent>
                     {(timeZones ?? []).map((zone) => (
@@ -339,17 +342,15 @@ export function BusinessSettings() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Reglas de operación</CardTitle>
-              <CardDescription>
-                Cambian el comportamiento del sistema sin tocar el servidor.
-              </CardDescription>
+              <CardTitle className="text-base">{t('config.reglasDeOperacion')}</CardTitle>
+              <CardDescription>{t('config.cambianComportamiento')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field
-                  label="Aviso de vencimiento"
+                  label={t('config.avisoVencimiento')}
                   htmlFor="business-warning"
-                  hint="Minutos antes de que se acabe la renta."
+                  hint={t('config.minutosAntes')}
                 >
                   <Input
                     id="business-warning"
@@ -361,9 +362,9 @@ export function BusinessSettings() {
                   />
                 </Field>
                 <Field
-                  label="Gasto que requiere aprobación"
+                  label={t('config.gastoAprobacion')}
                   htmlFor="business-threshold"
-                  hint="Arriba de este monto, lo autoriza gerencia."
+                  hint={t('config.arribaDeMonto')}
                 >
                   <Input
                     id="business-threshold"
@@ -374,12 +375,12 @@ export function BusinessSettings() {
                 </Field>
               </div>
 
-              <Field label="Pie del ticket" htmlFor="business-footer">
+              <Field label={t('config.pieDelTicket')} htmlFor="business-footer">
                 <Input
                   id="business-footer"
                   value={draft.ticket_footer}
                   onChange={(event) => set('ticket_footer', event.target.value)}
-                  placeholder="Gracias por su visita"
+                  placeholder={t('config.graciasPorSuVisita')}
                 />
               </Field>
 
@@ -390,20 +391,18 @@ export function BusinessSettings() {
                   onChange={(event) => set('print_ticket_on_close', event.target.checked)}
                   className="h-4 w-4 rounded border-input"
                 />
-                Imprimir el ticket al cerrar la cuenta
+                {t('config.imprimirTicket')}
               </label>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Impresora</CardTitle>
-              <CardDescription>
-                «Sin impresora» guarda el comprobante igual: se puede reimprimir después.
-              </CardDescription>
+              <CardTitle className="text-base">{t('config.impresora')}</CardTitle>
+              <CardDescription>{t('config.sinImpresoraDetalle')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Field label="Tipo" htmlFor="printer-backend">
+              <Field label={t('config.tipo')} htmlFor="printer-backend">
                 <Select
                   value={draft.printer_backend}
                   onValueChange={(value) => set('printer_backend', value as PrinterBackend)}
@@ -423,7 +422,7 @@ export function BusinessSettings() {
 
               {draft.printer_backend === 'network' ? (
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Dirección IP" htmlFor="printer-host">
+                  <Field label={t('config.direccionIp')} htmlFor="printer-host">
                     <Input
                       id="printer-host"
                       value={draft.printer_host}
@@ -431,7 +430,7 @@ export function BusinessSettings() {
                       placeholder="192.168.1.100"
                     />
                   </Field>
-                  <Field label="Puerto" htmlFor="printer-port">
+                  <Field label={t('config.puerto')} htmlFor="printer-port">
                     <Input
                       id="printer-port"
                       type="number"

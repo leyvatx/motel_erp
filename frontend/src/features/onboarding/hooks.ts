@@ -94,8 +94,7 @@ export function useSetupStatus(): SetupStatus {
     },
   ]
 
-  const loading =
-    business.isPending || roomTypes.isPending || tariffs.isPending || rooms.isPending
+  const loading = business.isPending || roomTypes.isPending || tariffs.isPending || rooms.isPending
 
   const pending = steps.filter((step) => !step.done)
 

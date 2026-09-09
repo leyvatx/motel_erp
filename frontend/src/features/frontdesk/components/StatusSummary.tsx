@@ -1,5 +1,6 @@
 import type { IconType } from 'react-icons'
 import { LuBed, LuDoorOpen, LuLayoutGrid, LuSparkles, LuWrench } from 'react-icons/lu'
+import { useTranslation } from 'react-i18next'
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
@@ -32,12 +33,12 @@ const ICONO: Partial<Record<RoomStatus, IconType>> = {
  *  tablero. Un nombre técnico en la pantalla principal es justo lo que este
  *  producto no debe hacer. */
 const ETIQUETA: Record<RoomStatus, string> = {
-  AVAILABLE: 'Disponible',
-  RESERVED: 'Reservada',
-  OCCUPIED: 'Ocupada',
-  CLEANING: 'En limpieza',
-  MAINTENANCE: 'Mantenimiento',
-  BLOCKED: 'Bloqueada',
+  AVAILABLE: 'recepcion.estadoDisponible',
+  RESERVED: 'recepcion.estadoReservada',
+  OCCUPIED: 'recepcion.estadoOcupada',
+  CLEANING: 'recepcion.enLimpieza',
+  MAINTENANCE: 'recepcion.estadoMantenimiento',
+  BLOCKED: 'recepcion.estadoBloqueada',
 }
 
 /** Orden de lectura del turno: cuánto se está usando, cuánto queda libre y
@@ -117,6 +118,7 @@ function Chip({
 }
 
 export function StatusSummary({ data, isLoading, activeStatus, onFilter }: Props) {
+  const { t } = useTranslation()
   if (isLoading) {
     return (
       <div className="flex gap-1.5">
@@ -148,10 +150,10 @@ export function StatusSummary({ data, isLoading, activeStatus, onFilter }: Props
         'scrollbar-none sm:mx-0 sm:snap-none sm:overflow-x-visible sm:px-0 sm:pb-0',
       )}
       role="group"
-      aria-label="Ocupación por estado"
+      aria-label={t('recepcion.ocupacionPorEstado')}
     >
       <Chip
-        label="Total"
+        label={t('recepcion.total')}
         value={total}
         percent={null}
         icon={LuLayoutGrid}
@@ -165,7 +167,7 @@ export function StatusSummary({ data, isLoading, activeStatus, onFilter }: Props
         return (
           <Chip
             key={status}
-            label={item?.status_display ?? ETIQUETA[status]}
+            label={item?.status_display ?? t(ETIQUETA[status])}
             value={valor}
             percent={porcentaje(valor)}
             dot={DOT[status]}

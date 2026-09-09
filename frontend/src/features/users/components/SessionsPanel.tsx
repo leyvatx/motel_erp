@@ -1,11 +1,5 @@
 import { useMemo, useState } from 'react'
-import {
-  PiDesktop,
-  PiDeviceMobile,
-  PiPower,
-  PiShieldCheck,
-  PiWarningCircle,
-} from 'react-icons/pi'
+import { PiDesktop, PiDeviceMobile, PiPower, PiShieldCheck, PiWarningCircle } from 'react-icons/pi'
 
 import { StatStrip } from '@/components/layout/StatStrip'
 import { Badge } from '@/components/ui/badge'

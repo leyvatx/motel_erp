@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -19,11 +20,12 @@ interface Props {
  *  Un esqueleto sobrio dice lo mismo que la pantalla que viene -- encabezado y
  *  cuerpo -- y no mueve a nadie de sitio. */
 function Resolviendo() {
+  const { t } = useTranslation()
   return (
     <div className="space-y-4 p-4" aria-busy="true" aria-live="polite">
       <Skeleton className="h-8 w-48" />
       <Skeleton className="h-64 w-full" />
-      <span className="sr-only">Validando la sesión</span>
+      <span className="sr-only">{t('comun.validandoSesion')}</span>
     </div>
   )
 }
@@ -34,13 +36,14 @@ function Resolviendo() {
  *  ya no vale. Antes esto era una espera infinita; ahora es una pantalla con
  *  las dos únicas salidas que sirven. */
 function SesionAtorada({ onRetry, retrying }: { onRetry: () => void; retrying: boolean }) {
+  const { t } = useTranslation()
   const logout = useLogout()
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background p-6">
       <ErrorState
-        title="No pudimos confirmar tu sesión"
-        description="Tu acceso sigue guardado, pero el servidor no contestó quién eres. Reintenta; si sigue igual, vuelve a entrar."
+        title={t('comun.noConfirmamosSesion')}
+        description={t('comun.accesoGuardado')}
         onRetry={onRetry}
         retrying={retrying}
         secondaryAction={

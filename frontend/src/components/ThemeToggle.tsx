@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { PiMoon, PiSun } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -25,6 +26,7 @@ function modoEnPantalla(): 'light' | 'dark' {
  * las once de la noche puede bajarle a la pantalla sin tener cuenta.
  */
 export function ThemeToggle({ className }: { className?: string }) {
+  const { t } = useTranslation()
   const setTheme = useAppearanceStore((estado) => estado.setTheme)
   const preferencia = useAppearanceStore((estado) => estado.theme)
   const [modo, setModo] = useState(modoEnPantalla)
@@ -60,7 +62,9 @@ export function ThemeToggle({ className }: { className?: string }) {
       }}
       // 44x44 en el teléfono, que es el mínimo con el que un pulgar acierta.
       className={cn('h-11 w-11 lg:h-9 lg:w-9', className)}
-      aria-label={siguiente === 'dark' ? 'Cambiar a tema oscuro' : 'Cambiar a tema claro'}
+      aria-label={
+        siguiente === 'dark' ? t('comun.cambiarATemaOscuro') : t('comun.cambiarATemaClaro')
+      }
       title={siguiente === 'dark' ? 'Tema oscuro' : 'Tema claro'}
     >
       {modo === 'dark' ? <PiSun className="h-4 w-4" /> : <PiMoon className="h-4 w-4" />}

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import axios from 'axios'
 
 import { toast } from '@/components/ui/toast'
@@ -65,6 +66,7 @@ function useFinancesInvalidation() {
 }
 
 export function useOpenShift() {
+  const { t } = useTranslation()
   const invalidate = useFinancesInvalidation()
 
   return useMutation({
@@ -73,11 +75,12 @@ export function useOpenShift() {
       invalidate()
       toast.success(`Turno ${shift.code} abierto`, `Fondo inicial ${shift.opening_balance}`)
     },
-    onError: (error) => toast.error('No se pudo abrir el turno', apiErrorMessage(error)),
+    onError: (error) => toast.error(t('caja.noSePudoAbrirTurno'), apiErrorMessage(error)),
   })
 }
 
 export function useCloseShift(shiftId: number) {
+  const { t } = useTranslation()
   const invalidate = useFinancesInvalidation()
 
   return useMutation({
@@ -86,7 +89,7 @@ export function useCloseShift(shiftId: number) {
       invalidate()
       const diferencia = Number.parseFloat(shift.difference)
       if (diferencia === 0) {
-        toast.success(`Turno ${shift.code} cerrado`, 'El corte cuadro exacto.')
+        toast.success(`Turno ${shift.code} cerrado`, t('caja.corteCuadroExacto'))
       } else {
         toast.warning(
           `Turno ${shift.code} cerrado`,
@@ -94,11 +97,12 @@ export function useCloseShift(shiftId: number) {
         )
       }
     },
-    onError: (error) => toast.error('No se pudo cerrar el turno', apiErrorMessage(error)),
+    onError: (error) => toast.error(t('caja.noSePudoCerrarTurno'), apiErrorMessage(error)),
   })
 }
 
 export function useCashMovement(shiftId: number) {
+  const { t } = useTranslation()
   const invalidate = useFinancesInvalidation()
 
   return useMutation({
@@ -110,13 +114,14 @@ export function useCashMovement(shiftId: number) {
     }) => financesApi.cashMovement(shiftId, payload),
     onSuccess: () => {
       invalidate()
-      toast.success('Movimiento de efectivo registrado')
+      toast.success(t('caja.movimientoRegistrado'))
     },
-    onError: (error) => toast.error('No se pudo registrar', apiErrorMessage(error)),
+    onError: (error) => toast.error(t('caja.noSePudoRegistrar'), apiErrorMessage(error)),
   })
 }
 
 export function useCreateExpense() {
+  const { t } = useTranslation()
   const invalidate = useFinancesInvalidation()
 
   return useMutation({
@@ -124,19 +129,17 @@ export function useCreateExpense() {
     onSuccess: (expense) => {
       invalidate()
       if (expense.requires_approval) {
-        toast.info(
-          `Gasto ${expense.folio} en espera`,
-          'Supera el umbral: gerencia debe aprobarlo antes de salir de caja.',
-        )
+        toast.info(`Gasto ${expense.folio} en espera`, t('caja.superaElUmbral'))
       } else {
         toast.success(`Gasto ${expense.folio} registrado`)
       }
     },
-    onError: (error) => toastApiError('No se pudo registrar el gasto', error),
+    onError: (error) => toastApiError(t('caja.noSePudoRegistrarGasto'), error),
   })
 }
 
 export function useReviewExpense() {
+  const { t } = useTranslation()
   const invalidate = useFinancesInvalidation()
 
   return useMutation({
@@ -155,14 +158,15 @@ export function useReviewExpense() {
         `Gasto ${expense.folio} ${expense.status === 'APPROVED' ? 'aprobado' : 'rechazado'}`,
       )
     },
-    onError: (error) => toast.error('No se pudo revisar', apiErrorMessage(error)),
+    onError: (error) => toast.error(t('caja.noSePudoRevisar'), apiErrorMessage(error)),
   })
 }
 
 export function usePrintShiftReport() {
+  const { t } = useTranslation()
   return useMutation({
     mutationFn: (shiftId: number) => financesApi.printShiftReport(shiftId),
-    onSuccess: () => toast.success('Corte enviado a la impresora'),
-    onError: (error) => toast.error('No se pudo imprimir', apiErrorMessage(error)),
+    onSuccess: () => toast.success(t('caja.corteEnviado')),
+    onError: (error) => toast.error(t('caja.noSePudoImprimir'), apiErrorMessage(error)),
   })
 }

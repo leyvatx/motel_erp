@@ -1,3 +1,4 @@
+import i18n from '@/lib/i18n'
 import type { BusinessAppearance } from '@/store/appearance'
 
 export type PrinterBackend = 'dummy' | 'network' | 'usb' | 'file'
@@ -43,8 +44,8 @@ export interface TimeZoneOption {
 }
 
 export const PRINTER_BACKENDS: readonly { value: PrinterBackend; label: string }[] = [
-  { value: 'dummy', label: 'Sin impresora (solo registra)' },
-  { value: 'network', label: 'Impresora de red' },
+  { value: 'dummy', label: i18n.t('config.sinImpresora') },
+  { value: 'network', label: i18n.t('config.impresoraDeRed') },
   { value: 'usb', label: 'Impresora USB' },
-  { value: 'file', label: 'Archivo de texto' },
+  { value: 'file', label: i18n.t('config.archivoDeTexto') },
 ]

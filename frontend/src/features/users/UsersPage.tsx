@@ -319,7 +319,6 @@ export default function UsersPage() {
         <TabsContent value="permisos" className="flex min-h-0 flex-1 flex-col">
           <PermissionMatrix />
         </TabsContent>
-
       </Tabs>
 
       <UserFormDialog open={formOpen} user={editing} onOpenChange={setFormOpen} />

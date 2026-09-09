@@ -83,10 +83,7 @@ describe('barra lateral por rol', () => {
   it('abre Gestión sola cuando ya estás dentro de una de sus pantallas', () => {
     pintar('MANAGER', '/reports')
 
-    expect(screen.getByRole('button', { name: /Gestión/ })).toHaveAttribute(
-      'aria-expanded',
-      'true',
-    )
+    expect(screen.getByRole('button', { name: /Gestión/ })).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByRole('link', { name: /Reportes/ })).toBeInTheDocument()
   })
 
@@ -105,6 +102,8 @@ describe('barra lateral por rol', () => {
 
     const submenu = screen.getByRole('link', { name: 'Apariencia' })
     expect(submenu).toHaveClass('font-medium')
-    expect(within(screen.getByRole('navigation')).getByRole('link', { name: 'Negocio' })).toBeInTheDocument()
+    expect(
+      within(screen.getByRole('navigation')).getByRole('link', { name: 'Negocio' }),
+    ).toBeInTheDocument()
   })
 })

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { PiPlus } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -81,6 +82,7 @@ interface Props {
  * de alta un producto en la caja por gusto, sino porque lo va a cobrar ahora.
  */
 export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onCreated }: Props) {
+  const { t } = useTranslation()
   const categories = useCategories()
   const create = useCreateProduct()
   const crearCategoria = useCreateCategory()
@@ -142,7 +144,7 @@ export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onC
                 warehouse_id: almacen.id,
                 quantity: String(Number(existencias)),
                 movement_type: 'INITIAL',
-                reason: 'Alta desde el punto de venta',
+                reason: t('venta.altaDesdePuntoDeVenta'),
               })
               .catch(() => undefined)
           }
@@ -163,29 +165,29 @@ export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onC
     <ResponsiveDialog
       open={open}
       onOpenChange={onOpenChange}
-      title="Nuevo producto"
-      description="Lo mínimo para poder cobrarlo. El resto de la ficha se completa después en Inventarios."
+      title={t('venta.nuevoProducto')}
+      description={t('venta.nuevoProductoDetalle')}
       className="sm:max-w-md"
       footer={
         <>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
+            {t('venta.cancelar')}
           </Button>
           <Button disabled={!valido} loading={create.isPending} onClick={guardar}>
-            Guardar y agregar a la venta
+            {t('venta.guardarYAgregar')}
           </Button>
         </>
       }
     >
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="nuevo-nombre">¿Qué es?</Label>
+          <Label htmlFor="nuevo-nombre">{t('venta.queEs')}</Label>
           <Input
             id="nuevo-nombre"
             autoFocus
             value={nombre}
             onChange={(event) => setNombre(event.target.value)}
-            placeholder="Agua embotellada 600 ml"
+            placeholder={t('venta.ejemploProducto')}
             className="h-11"
           />
           {errores.name ? <p className="text-xs text-destructive">{errores.name}</p> : null}
@@ -193,7 +195,7 @@ export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onC
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
-            <Label htmlFor="nuevo-precio">¿En cuánto se vende?</Label>
+            <Label htmlFor="nuevo-precio">{t('venta.enCuantoSeVende')}</Label>
             <Input
               id="nuevo-precio"
               inputMode="decimal"
@@ -211,7 +213,7 @@ export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onC
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="nuevo-unidad">¿Cómo se vende?</Label>
+            <Label htmlFor="nuevo-unidad">{t('venta.comoSeVende')}</Label>
             <Select value={unidad} onValueChange={setUnidad}>
               <SelectTrigger id="nuevo-unidad" className="h-11">
                 <SelectValue />
@@ -228,10 +230,10 @@ export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onC
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="nuevo-categoria">¿Dónde va?</Label>
+          <Label htmlFor="nuevo-categoria">{t('venta.dondeVa')}</Label>
           <Select value={categoriaElegida} onValueChange={setCategoria}>
             <SelectTrigger id="nuevo-categoria" className="h-11">
-              <SelectValue placeholder="Elige una categoría" />
+              <SelectValue placeholder={t('venta.eligeCategoria')} />
             </SelectTrigger>
             <SelectContent>
               {listaCategorias.map((category) => (
@@ -249,7 +251,7 @@ export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onC
           {listaCategorias.length === 0 ? (
             <div className="space-y-2 rounded-lg border border-dashed p-3">
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Todavía no tienes categorías. Crea la primera y sigue con la venta.
+                {t('venta.sinCategorias')}
               </p>
               <div className="flex flex-wrap gap-2">
                 {SUGERIDAS.map((sugerida) => (
@@ -287,7 +289,7 @@ export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onC
             escribe nombre y precio y ya puede guardar. La foto se agrega ahora
             si hay tiempo, o después desde Inventarios. */}
         <div className="space-y-2">
-          <Label>Imagen (opcional)</Label>
+          <Label>{t('venta.imagenOpcional')}</Label>
           <ProductImagePicker
             categoria={
               listaCategorias.find((item) => String(item.id) === categoriaElegida)?.name ?? ''
@@ -304,9 +306,9 @@ export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onC
             className="mt-0.5 h-4 w-4 rounded border-input"
           />
           <span>
-            Descuenta existencias al venderse
+            {t('venta.descuentaExistencias')}
             <span className="block text-xs text-muted-foreground">
-              Desmárcalo si es un servicio (lavandería, cargo extra) que no consume inventario.
+              {t('venta.descuentaDetalle')}
             </span>
           </span>
         </label>
@@ -316,7 +318,7 @@ export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onC
             existencia -- justo la venta que se estaba cobrando. */}
         {inventariable ? (
           <div className="space-y-2">
-            <Label htmlFor="nuevo-existencias">¿Cuántas tienes ahora?</Label>
+            <Label htmlFor="nuevo-existencias">{t('venta.cuantasTienes')}</Label>
             <Input
               id="nuevo-existencias"
               inputMode="numeric"
@@ -330,8 +332,8 @@ export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onC
             />
             <p className="text-xs leading-relaxed text-muted-foreground">
               {Number(existencias) > 0
-                ? `Entran al ${almacen?.name ?? 'almacén de venta'}. Puedes ajustarlas luego en Inventarios.`
-                : 'Si lo dejas en cero, el producto queda dado de alta pero la venta no podrá cobrarse hasta que registres existencia.'}
+                ? `Entran al ${almacen?.name ?? t('venta.almacenDeVenta')}. Puedes ajustarlas luego en Inventarios.`
+                : t('venta.siLoDejasEnCero')}
             </p>
           </div>
         ) : null}
@@ -342,7 +344,7 @@ export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onC
             corrigiendo un nombre que estaba bien. */}
         {create.isError && Object.keys(errores).length === 0 ? (
           <p role="alert" className="text-sm text-destructive">
-            {apiErrorMessage(create.error, 'No se pudo guardar el producto.')}
+            {apiErrorMessage(create.error, t('venta.noSePudoGuardarProducto'))}
           </p>
         ) : null}
       </div>

@@ -1,9 +1,11 @@
 import { PiLock } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { Card, CardContent } from '@/components/ui/card'
 import { OpenShiftForm } from '@/features/finances/components/OpenShiftForm'
 
 export function OpenShiftScreen() {
+  const { t } = useTranslation()
   return (
     <div className="flex min-h-0 flex-1 items-start justify-center overflow-auto scrollbar-thin py-2">
       <Card className="w-full max-w-2xl">
@@ -13,25 +15,24 @@ export function OpenShiftScreen() {
               <PiLock className="h-5 w-5 text-brand-accent" aria-hidden />
             </div>
             <div>
-              <h2 className="text-lg font-semibold tracking-tight">Tu caja está cerrada</h2>
+              <h2 className="text-lg font-semibold tracking-tight">
+                {t('caja.tuCajaEstaCerrada')}
+              </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Para cobrar rentas, vender en mostrador o registrar gastos necesitas abrir tu turno.
-                Todo lo que cobres quedará ligado a este turno y a tu usuario.
+                {t('caja.paraCobrarRentasLargo')}
               </p>
             </div>
           </div>
 
           <ol className="space-y-3">
-            <Step number={1} title="Cuenta el fondo de caja" active>
-              Captura cuántos billetes y monedas de cada denominación hay en el cajón. El sistema
-              hace la suma.
+            <Step number={1} title={t('caja.cuentaElFondo')} active>
+              {t('caja.capturaBilletes')}
             </Step>
-            <Step number={2} title="Trabaja tu turno">
-              Cobras rentas y ventas de mostrador, y registras gastos. Nada se captura dos veces.
+            <Step number={2} title={t('caja.trabajaTuTurno')}>
+              {t('caja.trabajaTuTurnoDetalle')}
             </Step>
-            <Step number={3} title="Cierra con corte ciego">
-              Al terminar vuelves a contar. El sistema calcula lo esperado hasta ese momento, no
-              antes.
+            <Step number={3} title={t('caja.cierraConCorteCiego')}>
+              {t('caja.alTerminarVuelves')}
             </Step>
           </ol>
 

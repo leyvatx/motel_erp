@@ -1,4 +1,5 @@
 import { LuCar, LuClock, LuLogIn, LuLogOut, LuSparkles, LuUser } from 'react-icons/lu'
+import { useTranslation } from 'react-i18next'
 
 import { RowActions, type RowAction } from '@/components/ui/row-actions'
 import { useCountdown } from '@/hooks/useCountdown'
@@ -106,6 +107,7 @@ export function RoomCard({
   busy = false,
   warningMinutes = 15,
 }: Props) {
+  const { t } = useTranslation()
   const stay = room.current_stay
   const countdown = useCountdown(stay?.expires_at, { warningMinutes })
   const isOccupied = room.status === 'OCCUPIED' && stay !== null
@@ -204,7 +206,7 @@ export function RoomCard({
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-valuenow={Math.round(progreso * 100)}
-                aria-label="Tiempo transcurrido de la renta"
+                aria-label={t('recepcion.tiempoTranscurrido')}
               >
                 <div
                   className={cn(
@@ -245,8 +247,8 @@ export function RoomCard({
             ) : (
               <p className="text-2xs text-muted-foreground/60">
                 {room.status === 'AVAILABLE'
-                  ? 'Lista para rentar'
-                  : room.zone || 'Sin renta activa'}
+                  ? t('recepcion.listaParaRentar')
+                  : room.zone || t('recepcion.sinRentaActiva')}
               </p>
             )}
           </div>
@@ -289,13 +291,14 @@ function AccionesRapidas({
   onRequestCleaning: (room: RoomGridItem) => void
   onFinishCleaning: (room: RoomGridItem) => void
 }) {
+  const { t } = useTranslation()
   const acciones: { label: string; icon: React.ReactNode; onClick: () => void }[] = (() => {
     switch (room.status) {
       case 'AVAILABLE':
       case 'RESERVED':
         return [
           {
-            label: 'Rentar',
+            label: t('recepcion.rentar'),
             icon: <LuLogIn className="h-3 w-3" aria-hidden />,
             onClick: () => onRent(room),
           },
@@ -309,7 +312,7 @@ function AccionesRapidas({
         return room.current_stay
           ? [
               {
-                label: 'Cobrar y salir',
+                label: t('recepcion.cobrarYSalir'),
                 icon: <LuLogOut className="h-3 w-3" aria-hidden />,
                 onClick: () => onCheckout(room),
               },

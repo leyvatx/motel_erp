@@ -3,6 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Controller, useForm } from 'react-hook-form'
 import { PiCaretDown } from 'react-icons/pi'
 import { z } from 'zod'
+import i18n from '@/lib/i18n'
 
 import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { Button } from '@/components/ui/button'
@@ -21,7 +22,7 @@ import { formatMoney } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 const rentSchema = z.object({
-  tariff_block_id: z.coerce.number().int().positive('Elige el bloque de tiempo.'),
+  tariff_block_id: z.coerce.number().int().positive(i18n.t('recepcion.eligeElBloqueDeTiempo')),
   occupants: z.coerce.number().int().min(1).max(20),
   guest_name: z.string().max(120).optional(),
   vehicle_plate: z.string().max(15).optional(),
@@ -102,7 +103,7 @@ export function RentRoomDialog({ room, open, onOpenChange }: Props) {
     >
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         <div className="space-y-2">
-          <Label htmlFor="tariff">Bloque de tiempo</Label>
+          <Label htmlFor="tariff">{i18n.t('recepcion.bloqueDeTiempo')}</Label>
           <Controller
             control={control}
             name="tariff_block_id"
@@ -113,7 +114,9 @@ export function RentRoomDialog({ room, open, onOpenChange }: Props) {
                 disabled={isLoading}
               >
                 <SelectTrigger id="tariff">
-                  <SelectValue placeholder={isLoading ? 'Cargando...' : 'Elige el bloque'} />
+                  <SelectValue
+                    placeholder={isLoading ? 'Cargando...' : i18n.t('recepcion.eligeElBloque')}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {options.map((block) => (
@@ -145,15 +148,15 @@ export function RentRoomDialog({ room, open, onOpenChange }: Props) {
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
-            <Label htmlFor="occupants">Ocupantes</Label>
+            <Label htmlFor="occupants">{i18n.t('recepcion.ocupantes')}</Label>
             <Input id="occupants" type="number" min={1} max={20} {...register('occupants')} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="plate">Placas</Label>
+            <Label htmlFor="plate">{i18n.t('recepcion.placas')}</Label>
             <Input
               id="plate"
               className="uppercase"
-              placeholder="ABC-123"
+              placeholder={i18n.t('recepcion.ejemploPlacas')}
               {...register('vehicle_plate')}
             />
           </div>
@@ -169,24 +172,28 @@ export function RentRoomDialog({ room, open, onOpenChange }: Props) {
             className={cn('h-3.5 w-3.5 transition-transform', showOptional && 'rotate-180')}
             aria-hidden
           />
-          Datos del huésped (opcional)
+          {i18n.t('recepcion.datosDelHuesped')}
         </button>
 
         {showOptional ? (
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="guest">Nombre</Label>
+                <Label htmlFor="guest">{i18n.t('recepcion.nombre')}</Label>
                 <Input id="guest" {...register('guest_name')} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="vehicle">Vehículo</Label>
-                <Input id="vehicle" placeholder="Sedan gris" {...register('vehicle_description')} />
+                <Label htmlFor="vehicle">{i18n.t('recepcion.vehiculo')}</Label>
+                <Input
+                  id="vehicle"
+                  placeholder={i18n.t('recepcion.ejemploVehiculo')}
+                  {...register('vehicle_description')}
+                />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Notas</Label>
+              <Label htmlFor="notes">{i18n.t('recepcion.notas')}</Label>
               <Input id="notes" {...register('notes')} />
             </div>
           </div>
@@ -195,11 +202,11 @@ export function RentRoomDialog({ room, open, onOpenChange }: Props) {
         {selected ? (
           <div className="rounded-md bg-accent/60 px-3 py-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Tarifa vigente</span>
+              <span className="text-muted-foreground">{i18n.t('recepcion.tarifaVigente')}</span>
               <span className="font-semibold tabular">{formatMoney(selected.current_price)}</span>
             </div>
             <div className="mt-1 flex justify-between text-xs text-muted-foreground">
-              <span>Duración</span>
+              <span>{i18n.t('recepcion.duracion')}</span>
               <span className="tabular">{selected.duration_minutes / 60} h</span>
             </div>
           </div>
@@ -214,7 +221,7 @@ export function RentRoomDialog({ room, open, onOpenChange }: Props) {
             className="h-11 sm:h-9"
             onClick={() => onOpenChange(false)}
           >
-            Cancelar
+            {i18n.t('recepcion.cancelar')}
           </Button>
           <Button
             type="submit"
@@ -222,7 +229,7 @@ export function RentRoomDialog({ room, open, onOpenChange }: Props) {
             disabled={sinTarifas}
             loading={rent.isPending}
           >
-            Rentar
+            {i18n.t('recepcion.rentar')}
           </Button>
         </div>
       </form>

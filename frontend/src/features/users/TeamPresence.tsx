@@ -1,4 +1,5 @@
 import { PiUsers } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -48,6 +49,7 @@ function Avatar({ member, size = 'sm' }: { member: TeamMember; size?: 'sm' | 'md
 }
 
 export function TeamPresence() {
+  const { t } = useTranslation()
   const { data, isLoading } = useTeamPresence()
   const currentUserId = useAuthStore((state) => state.user?.id)
 
@@ -120,7 +122,7 @@ export function TeamPresence() {
                 )}
               >
                 {member.is_online
-                  ? 'En línea'
+                  ? t('comun.enLinea')
                   : member.last_seen_at
                     ? `Activo ${formatRelative(member.last_seen_at)}`
                     : 'Nunca ha entrado'}

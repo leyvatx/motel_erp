@@ -8,7 +8,15 @@ const { searchEverything } = await import('@/features/search/api')
 const TODO = { stays: true, rooms: true, reservations: true, folios: true }
 
 function pagina(results: unknown[]) {
-  return { count: results.length, page: 1, page_size: 5, total_pages: 1, next: null, previous: null, results }
+  return {
+    count: results.length,
+    page: 1,
+    page_size: 5,
+    total_pages: 1,
+    next: null,
+    previous: null,
+    results,
+  }
 }
 
 function responder(por: Record<string, unknown[] | Error>) {

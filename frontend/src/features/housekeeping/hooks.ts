@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
 import { toast } from '@/components/ui/toast'
 import { housekeepingApi } from '@/features/housekeeping/api'
@@ -64,6 +65,7 @@ function useHousekeepingInvalidation() {
 }
 
 export function useStartCleaning() {
+  const { t } = useTranslation()
   const invalidate = useHousekeepingInvalidation()
 
   return useMutation({
@@ -72,11 +74,12 @@ export function useStartCleaning() {
       invalidate()
       toast.info(`Limpieza iniciada - habitación ${task.room_number}`)
     },
-    onError: (error) => toast.error('No se pudo iniciar', apiErrorMessage(error)),
+    onError: (error) => toast.error(t('limpieza.noSePudoIniciar'), apiErrorMessage(error)),
   })
 }
 
 export function useFinishCleaningTask() {
+  const { t } = useTranslation()
   const invalidate = useHousekeepingInvalidation()
 
   return useMutation({
@@ -94,11 +97,12 @@ export function useFinishCleaningTask() {
       const minutos = Math.round((task.duration_seconds ?? 0) / 60)
       toast.success(`Habitación ${task.room_number} lista`, `Tiempo de limpieza: ${minutos} min.`)
     },
-    onError: (error) => toast.error('No se pudo cerrar la tarea', apiErrorMessage(error)),
+    onError: (error) => toast.error(t('limpieza.noSePudoCerrarTarea'), apiErrorMessage(error)),
   })
 }
 
 export function useAssignCleaning() {
+  const { t } = useTranslation()
   const invalidate = useHousekeepingInvalidation()
 
   return useMutation({
@@ -106,13 +110,14 @@ export function useAssignCleaning() {
       housekeepingApi.assign(taskId, employeeId),
     onSuccess: () => {
       invalidate()
-      toast.success('Tarea asignada')
+      toast.success(t('limpieza.tareaAsignada'))
     },
-    onError: (error) => toast.error('No se pudo asignar', apiErrorMessage(error)),
+    onError: (error) => toast.error(t('limpieza.noSePudoAsignar'), apiErrorMessage(error)),
   })
 }
 
 export function useReportMaintenance() {
+  const { t } = useTranslation()
   const invalidate = useHousekeepingInvalidation()
 
   return useMutation({
@@ -121,11 +126,12 @@ export function useReportMaintenance() {
       invalidate()
       toast.warning(`Reporte ${report.folio} levantado`, report.title)
     },
-    onError: (error) => toast.error('No se pudo reportar', apiErrorMessage(error)),
+    onError: (error) => toast.error(t('limpieza.noSePudoReportar'), apiErrorMessage(error)),
   })
 }
 
 export function useMaintenanceTransition(reportId: number) {
+  const { t } = useTranslation()
   const invalidate = useHousekeepingInvalidation()
 
   return useMutation({
@@ -135,6 +141,6 @@ export function useMaintenanceTransition(reportId: number) {
       invalidate()
       toast.success(`Reporte ${report.folio}: ${report.status_display}`)
     },
-    onError: (error) => toast.error('No se pudo actualizar', apiErrorMessage(error)),
+    onError: (error) => toast.error(t('limpieza.noSePudoActualizar'), apiErrorMessage(error)),
   })
 }

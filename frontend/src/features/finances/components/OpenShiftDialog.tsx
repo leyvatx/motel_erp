@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { create } from 'zustand'
 
 import {
@@ -26,13 +27,14 @@ export function openShiftDialog(): void {
 }
 
 export function OpenShiftDialog() {
+  const { t } = useTranslation()
   const { open, hide } = useShiftDialogStore()
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && hide()}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Abrir tu turno de caja</DialogTitle>
+          <DialogTitle>{t('caja.abrirTuTurno')}</DialogTitle>
           <DialogDescription>
             Cuenta el fondo del cajón y captúralo. Todo lo que cobres a partir de aquí queda ligado
             a este turno y a tu usuario.

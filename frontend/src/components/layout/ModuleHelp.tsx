@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { PiLightbulb } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
@@ -92,6 +93,7 @@ interface Props {
  * la pantalla ya está detrás y se puede cerrar en cualquier momento.
  */
 export function ModuleHelp({ modulo, variant = 'outline' }: Props) {
+  const { t } = useTranslation()
   const guia = GUIAS[modulo]
   const vistos = useUiStore((state) => state.ayudaVista)
   const marcarAyudaVista = useUiStore((state) => state.marcarAyudaVista)
@@ -120,7 +122,7 @@ export function ModuleHelp({ modulo, variant = 'outline' }: Props) {
           title={guia.titulo}
         >
           <PiLightbulb />
-          <span className="hidden lg:inline">Cómo usar</span>
+          <span className="hidden lg:inline">{t('comun.comoUsar')}</span>
         </Button>
       )}
 

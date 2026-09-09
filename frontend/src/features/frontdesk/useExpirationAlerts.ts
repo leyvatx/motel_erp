@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import i18n from '@/lib/i18n'
 
 import { toast } from '@/components/ui/toast'
 import { useRealtimeEvent } from '@/hooks/useRealtime'
@@ -30,7 +31,7 @@ export function useExpirationAlerts(): void {
     if (soundEnabled) playExpiredAlert()
     toast.error(
       `Habitación ${payload.room_number ?? ''} vencida`,
-      'Cobra o extiende el tiempo del huesped.',
+      i18n.t('recepcion.cobraOExtiende'),
     )
   })
 

@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { PiBed, PiReceipt } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -49,6 +50,7 @@ function nuevoIntento(): string {
 }
 
 export function PosTerminal() {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const cart = useCart()
   const [method, setMethod] = useState<PaymentMethod>('CASH')
@@ -92,13 +94,13 @@ export function PosTerminal() {
 
   const checkout = useMutation({
     mutationFn: () => {
-      if (!salesWarehouse) throw new Error('No hay almacén de venta configurado.')
+      if (!salesWarehouse) throw new Error(t('caja.sinAlmacenDeVenta'))
 
       return salesApi.counterSale({
         warehouse_id: salesWarehouse.id,
         items: cart.items,
         method,
-        notes: 'Venta de mostrador',
+        notes: t('caja.ventaDeMostradorCorto'),
         attempt_key: intentoRef.current,
         ...(method === 'CASH' && tendered ? { tendered_amount: tendered } : {}),
       })
@@ -110,7 +112,7 @@ export function PosTerminal() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.finances.currentShift })
       toast.success(`Venta ${folio.code} cobrada`, `Total ${formatMoney(folio.total)}.`)
     },
-    onError: (error) => toastApiError('No se pudo completar la venta', error),
+    onError: (error) => toastApiError(t('caja.noSePudoCompletarVenta'), error),
   })
 
   const canCharge =
@@ -124,14 +126,14 @@ export function PosTerminal() {
         <CardContent className="space-y-3 p-4">
           <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
             <Label htmlFor="pos-destination" className="text-xs">
-              ¿A dónde va este consumo?
+              {t('caja.aDondeVa')}
             </Label>
             <Select value={destination} onValueChange={setDestination}>
               <SelectTrigger id="pos-destination" className="h-10 bg-background">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="counter">Venta de mostrador (se cobra ahora)</SelectItem>
+                <SelectItem value="counter">{t('caja.ventaDeMostrador')}</SelectItem>
                 {occupied.map((room) => (
                   <SelectItem key={room.id} value={String(room.id)}>
                     Habitación {room.number}
@@ -151,8 +153,8 @@ export function PosTerminal() {
             ) : (
               <p className="text-2xs text-muted-foreground">
                 {occupied.length === 0
-                  ? 'No hay habitaciones ocupadas en este momento.'
-                  : 'El cliente paga en el mostrador y se cierra el ticket de inmediato.'}
+                  ? t('caja.sinHabitacionesOcupadas')
+                  : t('caja.clientePagaEnMostrador')}
               </p>
             )}
           </div>
@@ -169,10 +171,10 @@ export function PosTerminal() {
       <Card className="h-fit xl:sticky xl:top-4">
         <CardContent className="space-y-3 p-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">Cuenta</p>
+            <p className="text-sm font-medium">{t('caja.cuenta')}</p>
             {cart.lines.length > 0 ? (
               <Button variant="ghost" size="sm" onClick={() => cart.clear()}>
-                Vaciar
+                {t('caja.vaciar')}
               </Button>
             ) : null}
           </div>
@@ -182,7 +184,7 @@ export function PosTerminal() {
           <Separator />
 
           <div className="flex items-baseline justify-between">
-            <span className="text-sm text-muted-foreground">Total</span>
+            <span className="text-sm text-muted-foreground">{t('caja.total')}</span>
             <span className="text-3xl font-semibold tracking-tight tabular">
               {formatMoney(cart.total)}
             </span>
@@ -191,8 +193,8 @@ export function PosTerminal() {
           {isRoomOrder ? (
             <>
               <div className="rounded-md border border-brand-accent/40 bg-brand-accent/5 px-3 py-2 text-xs">
-                Se cargará a la habitación <strong>{target?.number}</strong> y quedará en su cuenta
-                hasta el check-out.
+                {t('caja.seCargaraALaHabitacion')} <strong>{target?.number}</strong> y quedará en su
+                cuenta hasta el check-out.
               </div>
               <Button
                 className="h-11 w-full text-base"
@@ -207,7 +209,7 @@ export function PosTerminal() {
           ) : (
             <div className="space-y-3">
               <div className="space-y-2">
-                <Label htmlFor="pos-method">Método de pago</Label>
+                <Label htmlFor="pos-method">{t('caja.metodoDePago')}</Label>
                 <Select value={method} onValueChange={(value) => setMethod(value as PaymentMethod)}>
                   <SelectTrigger id="pos-method">
                     <SelectValue />
@@ -224,7 +226,7 @@ export function PosTerminal() {
 
               {method === 'CASH' ? (
                 <div className="space-y-2">
-                  <Label htmlFor="pos-tendered">Efectivo recibido</Label>
+                  <Label htmlFor="pos-tendered">{t('caja.efectivoRecibido')}</Label>
                   <Input
                     id="pos-tendered"
                     inputMode="decimal"
@@ -240,7 +242,7 @@ export function PosTerminal() {
                       disabled={cart.total <= 0}
                       onClick={() => setTendered(cart.total.toFixed(2))}
                     >
-                      Exacto
+                      {t('caja.exacto')}
                     </Button>
                     {QUICK_CASH.filter((amount) => amount >= cart.total).map((amount) => (
                       <Button
@@ -256,7 +258,7 @@ export function PosTerminal() {
 
                   {change > 0 ? (
                     <div className="flex items-baseline justify-between rounded-md bg-status-available/10 px-3 py-2">
-                      <span className="text-sm text-muted-foreground">Cambio</span>
+                      <span className="text-sm text-muted-foreground">{t('caja.cambio')}</span>
                       <span className="text-xl font-semibold tabular text-status-available">
                         {formatMoney(change)}
                       </span>
@@ -282,7 +284,7 @@ export function PosTerminal() {
               {!canCharge && !checkout.isPending ? (
                 <p className="text-center text-xs text-muted-foreground">
                   {cart.lines.length === 0
-                    ? 'Agrega al menos un producto a la cuenta.'
+                    ? t('caja.agregaAlMenosUnProducto')
                     : `Anota cuánto pagó el cliente: faltan ${formatMoney(cart.total - toNumber(tendered))}.`}
                 </p>
               ) : null}

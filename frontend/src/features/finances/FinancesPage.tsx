@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { PiLock } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { ModuleHelp } from '@/components/layout/ModuleHelp'
 import { PageShell, TableScroll } from '@/components/layout/PageShell'
@@ -27,6 +28,7 @@ import { formatDateTime, formatMoney, toNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 export default function FinancesPage() {
+  const { t } = useTranslation()
   const { data: shift, isLoading } = useCurrentShift()
   const [tab, setTab] = useState('pos')
   const [expenseIntent, setExpenseIntent] = useState(0)
@@ -37,7 +39,7 @@ export default function FinancesPage() {
 
   if (isLoading) {
     return (
-      <PageShell title="Caja" description="Punto de venta, turno de caja y gastos.">
+      <PageShell title={t('caja.titulo')} description={t('caja.subtitulo')}>
         <Skeleton className="min-h-0 flex-1 rounded-xl" />
       </PageShell>
     )
@@ -45,12 +47,8 @@ export default function FinancesPage() {
 
   return (
     <PageShell
-      title="Caja"
-      description={
-        shift
-          ? 'Punto de venta, turno de caja y gastos operativos.'
-          : 'Tu turno está cerrado. Puedes consultar cortes anteriores mientras tanto.'
-      }
+      title={t('caja.titulo')}
+      description={shift ? t('caja.subtituloOperativos') : t('caja.turnoCerradoAviso')}
       actions={<ModuleHelp modulo="caja" />}
       toolbar={
         shift ? (
@@ -63,9 +61,9 @@ export default function FinancesPage() {
     >
       <Tabs value={tab} onValueChange={setTab} className="flex min-h-0 flex-1 flex-col">
         <TabsList className="w-fit">
-          <TabsTrigger value="pos">Vender</TabsTrigger>
-          <TabsTrigger value="expenses">Gastos del turno</TabsTrigger>
-          <TabsTrigger value="history">Cortes anteriores</TabsTrigger>
+          <TabsTrigger value="pos">{t('caja.vender')}</TabsTrigger>
+          <TabsTrigger value="expenses">{t('caja.gastosDelTurno')}</TabsTrigger>
+          <TabsTrigger value="history">{t('caja.cortesAnteriores')}</TabsTrigger>
         </TabsList>
 
         {/* Sin turno no se cobra ni se gasta, pero los cortes anteriores sí se
@@ -85,10 +83,10 @@ export default function FinancesPage() {
           ) : (
             <Card className="min-h-0 flex-1">
               <EmptyState
-                title="Los gastos se registran contra un turno"
-                description="Un gasto sin turno no tendría a qué corte pertenecer. Abre el tuyo y quedará ligado a tu usuario."
+                title={t('caja.gastosContraTurno')}
+                description={t('caja.gastoSinTurno')}
                 icon={<PiLock className="h-8 w-8" aria-hidden />}
-                action={<Button onClick={openShiftDialog}>Abrir turno de caja</Button>}
+                action={<Button onClick={openShiftDialog}>{t('caja.abrirTurnoDeCaja')}</Button>}
               />
             </Card>
           )}
@@ -103,14 +101,15 @@ export default function FinancesPage() {
 }
 
 function ShiftHistory() {
+  const { t } = useTranslation()
   const { data, isLoading, isError, isFetching, refetch } = useShifts()
 
   if (isError) {
     return (
       <Card className="min-h-0 flex-1">
         <ErrorState
-          title="No pudimos cargar los cortes"
-          description="El historial no llegó. Los turnos cerrados siguen guardados; esto es un problema de conexión."
+          title={t('caja.noPudimosCortes')}
+          description={t('caja.historialNoLlego')}
           onRetry={() => void refetch()}
           retrying={isFetching}
         />
@@ -125,22 +124,19 @@ function ShiftHistory() {
           <Table>
             <TableHeader className="sticky top-0 z-10 bg-card">
               <TableRow>
-                <TableHead>Turno</TableHead>
-                <TableHead>Cajero</TableHead>
-                <TableHead>Cierre</TableHead>
-                <TableHead className="text-right">Esperado</TableHead>
-                <TableHead className="text-right">Declarado</TableHead>
-                <TableHead className="text-right">Diferencia</TableHead>
+                <TableHead>{t('caja.turno')}</TableHead>
+                <TableHead>{t('caja.cajero')}</TableHead>
+                <TableHead>{t('caja.cierre')}</TableHead>
+                <TableHead className="text-right">{t('caja.esperado')}</TableHead>
+                <TableHead className="text-right">{t('caja.declarado')}</TableHead>
+                <TableHead className="text-right">{t('caja.diferencia')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableEmpty colSpan={6} message="Cargando..." />
+                <TableEmpty colSpan={6} message={t('caja.cargando')} />
               ) : (data?.results ?? []).length === 0 ? (
-                <TableEmpty
-                  colSpan={6}
-                  message="Todavía no se ha cerrado ningún turno. El primer corte aparecerá aquí en cuanto alguien cierre su caja."
-                />
+                <TableEmpty colSpan={6} message={t('caja.sinCortes')} />
               ) : (
                 (data?.results ?? []).map((row) => {
                   const difference = toNumber(row.difference)

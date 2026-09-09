@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   PiFloppyDisk,
   PiMonitor,
@@ -31,12 +32,12 @@ import { useUiStore } from '@/store/ui'
 import { cn } from '@/lib/utils'
 
 const COLOR_FIELDS = [
-  ['brand_primary_color', 'Color principal', 'Botones, enlaces y selección'],
-  ['brand_sidebar_color', 'Menú lateral', 'Fondo del menú principal'],
-  ['status_available_color', 'Disponible', 'Habitaciones libres y resultados positivos'],
-  ['status_occupied_color', 'Ocupado', 'Rentas activas, vencimientos y errores'],
-  ['status_cleaning_color', 'Limpieza', 'Cuartos pendientes y advertencias'],
-  ['status_maintenance_color', 'Mantenimiento', 'Bloqueos y trabajos técnicos'],
+  ['brand_primary_color', 'config.colorPrincipal', 'config.botonesEnlaces'],
+  ['brand_sidebar_color', 'config.menuLateral', 'config.fondoDelMenu'],
+  ['status_available_color', 'config.colorDisponible', 'config.habitacionesLibres'],
+  ['status_occupied_color', 'config.colorOcupado', 'config.rentasActivas'],
+  ['status_cleaning_color', 'config.colorLimpieza', 'config.cuartosPendientesYAdvertencias'],
+  ['status_maintenance_color', 'config.colorMantenimiento', 'config.bloqueosYTrabajos'],
 ] as const
 
 type BrandForm = Pick<
@@ -69,6 +70,7 @@ const EMPTY: BrandForm = {
 }
 
 export function AppearanceSettings() {
+  const { t } = useTranslation()
   const profile = useBusinessProfile()
   const update = useUpdateBusinessProfile()
   const [form, setForm] = useState<BrandForm>(EMPTY)
@@ -103,28 +105,26 @@ export function AppearanceSettings() {
     <div className="space-y-4 pb-4">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card p-4">
         <div>
-          <p className="font-medium">Identidad compartida del negocio</p>
-          <p className="text-xs text-muted-foreground">
-            Estos cambios se aplican a todos los usuarios y terminales de esta sucursal.
-          </p>
+          <p className="font-medium">{t('config.identidadCompartida')}</p>
+          <p className="text-xs text-muted-foreground">{t('config.cambiosGlobales')}</p>
         </div>
         <Button size="sm" loading={update.isPending} onClick={() => update.mutate(form)}>
-          <PiFloppyDisk /> Guardar identidad
+          <PiFloppyDisk /> {t('config.guardarIdentidad')}
         </Button>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Paleta del negocio</CardTitle>
-            <CardDescription>Colores libres en formato hexadecimal.</CardDescription>
+            <CardTitle className="text-base">{t('config.paletaDelNegocio')}</CardTitle>
+            <CardDescription>{t('config.coloresHex')}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
             {COLOR_FIELDS.map(([key, label, hint]) => (
               <ColorField
                 key={key}
-                label={label}
-                hint={hint}
+                label={t(label)}
+                hint={t(hint)}
                 value={String(form[key] ?? '')}
                 onChange={(value) => set(key, value)}
               />
@@ -134,23 +134,23 @@ export function AppearanceSettings() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Estilo de la interfaz</CardTitle>
-            <CardDescription>Valores iniciales para nuevos equipos y usuarios.</CardDescription>
+            <CardTitle className="text-base">{t('config.estiloDeLaInterfaz')}</CardTitle>
+            <CardDescription>{t('config.valoresIniciales')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <SelectField
-                label="Tema predeterminado"
+                label={t('config.temaPredeterminado')}
                 value={String(form.default_theme)}
                 onChange={(value) => set('default_theme', value as BrandForm['default_theme'])}
                 options={[
                   ['light', 'Claro'],
                   ['dark', 'Oscuro'],
-                  ['system', 'Seguir el sistema'],
+                  ['system', t('config.seguirElSistema')],
                 ]}
               />
               <SelectField
-                label="Densidad predeterminada"
+                label={t('config.densidadPredeterminada')}
                 value={String(form.default_density)}
                 onChange={(value) => set('default_density', value as BrandForm['default_density'])}
                 options={[
@@ -159,7 +159,7 @@ export function AppearanceSettings() {
                 ]}
               />
               <SelectField
-                label="Bordes y controles"
+                label={t('config.bordesYControles')}
                 value={String(form.border_radius)}
                 onChange={(value) => set('border_radius', value as BrandForm['border_radius'])}
                 options={[
@@ -169,28 +169,26 @@ export function AppearanceSettings() {
                 ]}
               />
               <SelectField
-                label="Tipografía"
+                label={t('config.tipografia')}
                 value={String(form.font_family)}
                 onChange={(value) => set('font_family', value as BrandForm['font_family'])}
                 options={[
                   ['modern', 'Moderna'],
-                  ['system', 'Del sistema'],
+                  ['system', t('config.delSistema')],
                   ['rounded', 'Redondeada'],
                 ]}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="login-message">Mensaje de la pantalla de acceso</Label>
+              <Label htmlFor="login-message">{t('config.mensajeAcceso')}</Label>
               <Input
                 id="login-message"
                 maxLength={140}
                 value={String(form.login_message ?? '')}
                 onChange={(event) => set('login_message', event.target.value)}
-                placeholder="Bienvenido. Ingresa tus datos para continuar."
+                placeholder={t('config.bienvenido')}
               />
-              <p className="text-2xs text-muted-foreground">
-                Se muestra antes de iniciar sesión, sin exponer información operativa.
-              </p>
+              <p className="text-2xs text-muted-foreground">{t('config.mensajeAccesoDetalle')}</p>
             </div>
             <div
               className="rounded-lg border p-4"
@@ -203,13 +201,13 @@ export function AppearanceSettings() {
                       : '0.625rem',
               }}
             >
-              <p className="mb-3 text-xs font-medium">Vista previa</p>
+              <p className="mb-3 text-xs font-medium">{t('config.vistaPrevia')}</p>
               <div className="flex flex-wrap gap-2">
                 <span
                   className="rounded-md px-3 py-1.5 text-xs font-medium text-white"
                   style={{ backgroundColor: form.brand_primary_color }}
                 >
-                  Acción principal
+                  {t('config.accionPrincipal')}
                 </span>
                 {COLOR_FIELDS.slice(2).map(([key, label]) => (
                   <span
@@ -228,34 +226,32 @@ export function AppearanceSettings() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Mis preferencias en esta computadora</CardTitle>
-          <CardDescription>
-            Puedes respetar el estilo del negocio o sobrescribir solo tu pantalla.
-          </CardDescription>
+          <CardTitle className="text-base">{t('config.misPreferencias')}</CardTitle>
+          <CardDescription>{t('config.puedesRespetar')}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-5 lg:grid-cols-3">
           <PreferenceGroup
-            label="Tema"
+            label={t('config.tema')}
             value={theme}
             onChange={(value) => setTheme(value as ThemePreference)}
             options={[
-              ['business', 'Del negocio', PiMonitor],
+              ['business', t('config.delNegocio'), PiMonitor],
               ['light', 'Claro', PiSun],
               ['dark', 'Oscuro', PiMoon],
             ]}
           />
           <PreferenceGroup
-            label="Densidad"
+            label={t('config.densidad')}
             value={density}
             onChange={(value) => setDensity(value as DensityPreference)}
             options={[
-              ['business', 'Del negocio', PiMonitor],
+              ['business', t('config.delNegocio'), PiMonitor],
               ['comfortable', 'Cómoda', PiRows],
               ['compact', 'Compacta', PiRows],
             ]}
           />
           <div className="space-y-2">
-            <Label>Alertas sonoras</Label>
+            <Label>{t('config.alertasSonoras')}</Label>
             <Button
               variant="outline"
               className="w-full justify-start"

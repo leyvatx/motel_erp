@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { PiCamera, PiTrash, PiUploadSimple } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { ProductThumb } from '@/features/inventory/productIcon'
@@ -42,6 +43,7 @@ interface Props {
  * cuarta fuente que entrega un `File`.
  */
 export function ProductImagePicker({ actual, categoria = '', onChange, className }: Props) {
+  const { t } = useTranslation()
   const subirRef = useRef<HTMLInputElement>(null)
   const camaraRef = useRef<HTMLInputElement>(null)
   const [archivo, setArchivo] = useState<File | null>(null)
@@ -67,11 +69,11 @@ export function ProductImagePicker({ actual, categoria = '', onChange, className
     // cuando ya se guardó todo lo demás. Un tipo vacío -- que también pasa en
     // Android -- no se rechaza: de eso decide el servidor.
     if (elegido.type && !TIPOS_ACEPTADOS.includes(elegido.type)) {
-      setError('Esa no es una imagen. Sube un PNG, JPG o WEBP.')
+      setError(t('inventario.noEsUnaImagen'))
       return
     }
     if (elegido.size > MAX_BYTES) {
-      setError('La imagen pesa más de 2 MB. Toma una nueva o elige otra más ligera.')
+      setError(t('inventario.imagenPesada'))
       return
     }
     setError(null)
@@ -124,7 +126,7 @@ export function ProductImagePicker({ actual, categoria = '', onChange, className
               onClick={() => camaraRef.current?.click()}
             >
               <PiCamera className="h-4 w-4" />
-              Tomar foto
+              {t('inventario.tomarFoto')}
             </Button>
             <Button
               type="button"
@@ -133,7 +135,7 @@ export function ProductImagePicker({ actual, categoria = '', onChange, className
               onClick={() => subirRef.current?.click()}
             >
               <PiUploadSimple className="h-4 w-4" />
-              Subir
+              {t('inventario.subir')}
             </Button>
             {muestra ? (
               <Button
@@ -141,7 +143,7 @@ export function ProductImagePicker({ actual, categoria = '', onChange, className
                 variant="ghost"
                 size="icon"
                 className="h-11 w-11 shrink-0 text-destructive sm:h-10 sm:w-10"
-                aria-label="Quitar la imagen"
+                aria-label={t('inventario.quitarLaImagen')}
                 onClick={quitar}
               >
                 <PiTrash className="h-4 w-4" />

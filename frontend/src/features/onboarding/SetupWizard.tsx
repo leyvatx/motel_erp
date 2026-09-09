@@ -19,13 +19,7 @@ import { cn } from '@/lib/utils'
 import { defaultRouteFor, useAuthStore } from '@/store/auth'
 import { useUiStore } from '@/store/ui'
 
-function Progreso({
-  total,
-  hechos,
-}: {
-  total: number
-  hechos: number
-}) {
+function Progreso({ total, hechos }: { total: number; hechos: number }) {
   return (
     <div className="flex items-center gap-1.5" aria-hidden>
       {Array.from({ length: total }, (_, index) => (
@@ -124,7 +118,9 @@ export function SetupWizard() {
 
             <Progreso total={steps.length} hechos={steps.length - restantes.length} />
 
-            {actual.id === 'business' ? <BusinessStep onDone={() => completar('business')} /> : null}
+            {actual.id === 'business' ? (
+              <BusinessStep onDone={() => completar('business')} />
+            ) : null}
             {actual.id === 'roomType' ? (
               <RoomTypeStep onDone={() => completar('roomType')} />
             ) : null}

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
@@ -38,6 +39,7 @@ function Detail({
   stock: WarehouseStock
   onOpenChange: (open: boolean) => void
 }) {
+  const { t } = useTranslation()
   const stocks = useStocks({ product: stock.product, page_size: 20 })
   const kardex = useKardex({ product: stock.product, page_size: 25 })
 
@@ -49,14 +51,18 @@ function Detail({
         <DialogHeader>
           <DialogTitle className="flex flex-wrap items-center gap-2">
             {stock.product_name}
-            {stock.is_below_minimum ? <Badge variant="occupied">Bajo mínimo</Badge> : null}
+            {stock.is_below_minimum ? (
+              <Badge variant="occupied">{t('inventario.bajoMinimo')}</Badge>
+            ) : null}
           </DialogTitle>
           <DialogDescription className="font-mono">{stock.product_sku}</DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-3 gap-3">
           <div className="rounded-lg border px-3 py-2.5">
-            <p className="text-2xs uppercase tracking-wide text-muted-foreground">Total</p>
+            <p className="text-2xs uppercase tracking-wide text-muted-foreground">
+              {t('inventario.total')}
+            </p>
             <p className="mt-1 text-xl font-semibold tabular">{formatQuantity(total)}</p>
           </div>
           <div className="rounded-lg border px-3 py-2.5">
@@ -73,13 +79,17 @@ function Detail({
             </p>
           </div>
           <div className="rounded-lg border px-3 py-2.5">
-            <p className="text-2xs uppercase tracking-wide text-muted-foreground">Mínimo</p>
+            <p className="text-2xs uppercase tracking-wide text-muted-foreground">
+              {t('inventario.minimo')}
+            </p>
             <p className="mt-1 text-xl font-semibold tabular">{formatQuantity(stock.min_stock)}</p>
           </div>
         </div>
 
         <div>
-          <p className="mb-2 text-xs font-medium text-muted-foreground">Existencias por almacén</p>
+          <p className="mb-2 text-xs font-medium text-muted-foreground">
+            {t('inventario.existenciasPorAlmacen')}
+          </p>
           <div className="rounded-lg border">
             <Table>
               <TableBody>
@@ -104,20 +114,22 @@ function Detail({
         <Separator />
 
         <div>
-          <p className="mb-2 text-xs font-medium text-muted-foreground">Últimos movimientos</p>
+          <p className="mb-2 text-xs font-medium text-muted-foreground">
+            {t('inventario.ultimosMovimientos')}
+          </p>
           <div className="max-h-64 overflow-y-auto scrollbar-thin rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Movimiento</TableHead>
-                  <TableHead className="text-right">Cantidad</TableHead>
-                  <TableHead className="text-right">Saldo</TableHead>
+                  <TableHead>{t('inventario.fecha')}</TableHead>
+                  <TableHead>{t('inventario.movimiento')}</TableHead>
+                  <TableHead className="text-right">{t('inventario.cantidad')}</TableHead>
+                  <TableHead className="text-right">{t('inventario.saldo')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {(kardex.data?.results ?? []).length === 0 ? (
-                  <TableEmpty colSpan={4} message="Sin movimientos registrados." />
+                  <TableEmpty colSpan={4} message={t('inventario.sinMovimientos')} />
                 ) : (
                   (kardex.data?.results ?? []).map((movement) => {
                     const value = toNumber(movement.signed_quantity)

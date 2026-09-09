@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PiMagnifyingGlass } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function GlobalSearch({ onSelectStay }: Props) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const inputRef = useRef<HTMLInputElement>(null)
   const [term, setTerm] = useState('')
@@ -96,7 +98,7 @@ export function GlobalSearch({ onSelectStay }: Props) {
         onFocus={() => setFocused(true)}
         onBlur={() => window.setTimeout(() => setFocused(false), 150)}
         onKeyDown={enTeclado}
-        placeholder="Buscar cuarto, huésped, placas o folio..."
+        placeholder={t('comun.buscarGlobal')}
         className="bg-muted/50 pl-8 pr-14 shadow-none"
         aria-label="Buscador global"
         role="combobox"
@@ -120,7 +122,7 @@ export function GlobalSearch({ onSelectStay }: Props) {
         >
           {planos.length === 0 ? (
             <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-              {isFetching ? 'Buscando...' : 'Sin coincidencias.'}
+              {isFetching ? 'Buscando...' : t('comun.sinCoincidencias')}
             </p>
           ) : (
             <div className="p-1">

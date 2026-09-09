@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { PiCheck, PiPlus, PiX } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -38,13 +39,15 @@ import { formatDateTime, formatMoney } from '@/lib/format'
 import { useAuthStore } from '@/store/auth'
 
 const CATEGORIES = [
-  { value: 'SUPPLIES', label: 'Insumos' },
-  { value: 'MAINTENANCE', label: 'Mantenimiento' },
-  { value: 'UTILITIES', label: 'Servicios' },
-  { value: 'PAYROLL', label: 'Nomina y viaticos' },
-  { value: 'CLEANING', label: 'Limpieza' },
-  { value: 'TRANSPORT', label: 'Transporte' },
-  { value: 'OTHER', label: 'Otro' },
+  // Claves, no texto: esta tabla vive fuera del componente y se evalua una sola
+  // vez al importar. Con la cadena adentro, cambiar de idioma no la movia.
+  { value: 'SUPPLIES', label: 'caja.catInsumos' },
+  { value: 'MAINTENANCE', label: 'caja.catMantenimiento' },
+  { value: 'UTILITIES', label: 'caja.catServicios' },
+  { value: 'PAYROLL', label: 'caja.nominaYViaticos' },
+  { value: 'CLEANING', label: 'caja.catLimpieza' },
+  { value: 'TRANSPORT', label: 'caja.catTransporte' },
+  { value: 'OTHER', label: 'caja.catOtro' },
 ] as const
 
 const STATUS_VARIANT: Record<string, 'available' | 'cleaning' | 'occupied' | 'secondary'> = {
@@ -61,6 +64,7 @@ function NewExpenseDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  const { t } = useTranslation()
   const create = useCreateExpense()
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState('')
@@ -71,7 +75,7 @@ function NewExpenseDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Registrar gasto</DialogTitle>
+          <DialogTitle>{t('caja.registrarGasto')}</DialogTitle>
           <DialogDescription>
             Arriba del umbral configurado, el gasto espera aprobación de gerencia antes de salir de
             caja.
@@ -81,7 +85,7 @@ function NewExpenseDialog({
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label htmlFor="amount">Importe</Label>
+              <Label htmlFor="amount">{t('caja.importe')}</Label>
               <Input
                 id="amount"
                 inputMode="decimal"
@@ -90,7 +94,7 @@ function NewExpenseDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="category">Categoría</Label>
+              <Label htmlFor="category">{t('caja.categoria')}</Label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger id="category">
                   <SelectValue />
@@ -98,7 +102,7 @@ function NewExpenseDialog({
                 <SelectContent>
                   {CATEGORIES.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
-                      {option.label}
+                      {t(option.label)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -107,17 +111,17 @@ function NewExpenseDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Descripción</Label>
+            <Label htmlFor="description">{t('caja.descripcion')}</Label>
             <Input
               id="description"
               value={description}
               onChange={(event) => setDescription(event.target.value)}
-              placeholder="Garrafones de agua"
+              placeholder={t('caja.ejemploGasto')}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="supplier">Proveedor (opcional)</Label>
+            <Label htmlFor="supplier">{t('caja.proveedorOpcional')}</Label>
             <Input
               id="supplier"
               value={supplier}
@@ -128,7 +132,7 @@ function NewExpenseDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
+            {t('caja.cancelar')}
           </Button>
           <Button
             disabled={!amount || description.trim().length < 3}
@@ -147,7 +151,7 @@ function NewExpenseDialog({
               )
             }
           >
-            Registrar
+            {t('caja.registrar')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -156,6 +160,7 @@ function NewExpenseDialog({
 }
 
 export function ExpensesPanel({ openIntent = 0 }: { openIntent?: number }) {
+  const { t } = useTranslation()
   const [creating, setCreating] = useState(false)
 
   useEffect(() => {
@@ -188,7 +193,7 @@ export function ExpensesPanel({ openIntent = 0 }: { openIntent?: number }) {
           review.mutate({
             expenseId: expense.id,
             approve: false,
-            notes: 'Rechazado desde el panel de gastos',
+            notes: t('caja.rechazadoDesdeGastos'),
           }),
       },
     ]
@@ -197,10 +202,10 @@ export function ExpensesPanel({ openIntent = 0 }: { openIntent?: number }) {
   return (
     <Card className="min-h-0 flex-1">
       <CardHeader className="flex-row items-center justify-between space-y-0">
-        <CardTitle className="text-base">Gastos del turno</CardTitle>
+        <CardTitle className="text-base">{t('caja.gastosDelTurno')}</CardTitle>
         <Button size="sm" onClick={() => setCreating(true)}>
           <PiPlus className="h-4 w-4" />
-          Registrar gasto
+          {t('caja.registrarGasto')}
         </Button>
       </CardHeader>
 
@@ -209,19 +214,19 @@ export function ExpensesPanel({ openIntent = 0 }: { openIntent?: number }) {
           <Table>
             <TableHeader className="sticky top-0 z-10 bg-card">
               <TableRow>
-                <TableHead>Folio</TableHead>
-                <TableHead>Concepto</TableHead>
+                <TableHead>{t('caja.folio')}</TableHead>
+                <TableHead>{t('caja.concepto')}</TableHead>
                 <TableHead>Solicito</TableHead>
-                <TableHead className="text-right">Importe</TableHead>
-                <TableHead>Estado</TableHead>
+                <TableHead className="text-right">{t('caja.importe')}</TableHead>
+                <TableHead>{t('caja.estado')}</TableHead>
                 <TableHead className="w-[52px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableEmpty colSpan={6} message="Cargando..." />
+                <TableEmpty colSpan={6} message={t('caja.cargando')} />
               ) : (data?.results ?? []).length === 0 ? (
-                <TableEmpty colSpan={6} message="Sin gastos registrados." />
+                <TableEmpty colSpan={6} message={t('caja.sinGastos')} />
               ) : (
                 (data?.results ?? []).map((expense) => (
                   <TableRow

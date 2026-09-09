@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { PiEye, PiPaperPlaneTilt, PiPlus, PiProhibit, PiSealCheck, PiTruck } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -59,6 +60,7 @@ const statusVariant: Record<
 }
 
 export function PurchasingPanel() {
+  const { t } = useTranslation()
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('all')
   const [page, setPage] = useState(1)
@@ -87,7 +89,7 @@ export function PurchasingPanel() {
     if (order.status === 'DRAFT') {
       result.push({
         key: 'submit',
-        label: 'Enviar al proveedor',
+        label: t('inventario.enviarAlProveedor'),
         icon: <PiPaperPlaneTilt />,
         onSelect: () => submit.mutate(order.id),
       })
@@ -95,7 +97,7 @@ export function PurchasingPanel() {
     if (order.status === 'ORDERED' || order.status === 'PARTIAL') {
       result.push({
         key: 'receive',
-        label: 'Recibir mercancía',
+        label: t('inventario.recibirMercancia'),
         icon: <PiSealCheck />,
         onSelect: () => setReceiving(order),
       })
@@ -122,7 +124,7 @@ export function PurchasingPanel() {
             setSearch(event.target.value)
             setPage(1)
           }}
-          placeholder="Buscar folio o proveedor..."
+          placeholder={t('inventario.buscarFolioOProveedor')}
           className="h-9 max-w-xs"
         />
         <Select
@@ -136,20 +138,20 @@ export function PurchasingPanel() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos los estados</SelectItem>
-            <SelectItem value="DRAFT">Borradores</SelectItem>
-            <SelectItem value="ORDERED">Enviadas</SelectItem>
-            <SelectItem value="PARTIAL">Recepción parcial</SelectItem>
-            <SelectItem value="RECEIVED">Recibidas</SelectItem>
-            <SelectItem value="CANCELLED">Canceladas</SelectItem>
+            <SelectItem value="all">{t('inventario.todosLosEstados')}</SelectItem>
+            <SelectItem value="DRAFT">{t('inventario.borradores')}</SelectItem>
+            <SelectItem value="ORDERED">{t('inventario.enviadas')}</SelectItem>
+            <SelectItem value="PARTIAL">{t('inventario.recepcionParcial')}</SelectItem>
+            <SelectItem value="RECEIVED">{t('inventario.recibidas')}</SelectItem>
+            <SelectItem value="CANCELLED">{t('inventario.canceladas')}</SelectItem>
           </SelectContent>
         </Select>
         <div className="ml-auto flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setSupplierOpen(true)}>
-            <PiTruck /> Nuevo proveedor
+            <PiTruck /> {t('inventario.nuevoProveedor')}
           </Button>
           <Button size="sm" onClick={() => setPurchaseOpen(true)}>
-            <PiPlus /> Nueva compra
+            <PiPlus /> {t('inventario.nuevaCompra')}
           </Button>
         </div>
       </div>
@@ -162,17 +164,17 @@ export function PurchasingPanel() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Folio</TableHead>
-                  <TableHead>Proveedor</TableHead>
-                  <TableHead>Entrega</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead>{t('inventario.folio')}</TableHead>
+                  <TableHead>{t('inventario.proveedor')}</TableHead>
+                  <TableHead>{t('inventario.entrega')}</TableHead>
+                  <TableHead>{t('inventario.estado')}</TableHead>
+                  <TableHead className="text-right">{t('inventario.total')}</TableHead>
                   <TableHead className="w-12" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {(purchases.data?.results ?? []).length === 0 ? (
-                  <TableEmpty colSpan={6} message="No hay compras que coincidan con los filtros." />
+                  <TableEmpty colSpan={6} message={t('inventario.sinCompras')} />
                 ) : (
                   purchases.data?.results.map((order) => (
                     <TableRow
@@ -193,7 +195,9 @@ export function PurchasingPanel() {
                         </p>
                       </TableCell>
                       <TableCell>
-                        {order.expected_date ? formatDate(order.expected_date) : 'Sin fecha'}
+                        {order.expected_date
+                          ? formatDate(order.expected_date)
+                          : t('inventario.sinFecha')}
                       </TableCell>
                       <TableCell>
                         <Badge variant={statusVariant[order.status]}>{order.status_display}</Badge>
@@ -236,6 +240,7 @@ function PurchaseDetailDialog({
   order: PurchaseOrder | null
   onOpenChange: (open: boolean) => void
 }) {
+  const { t } = useTranslation()
   if (!order) return null
   return (
     <Dialog open onOpenChange={onOpenChange}>
@@ -263,11 +268,11 @@ function PurchaseDetailDialog({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Producto</TableHead>
-                <TableHead className="text-right">Solicitado</TableHead>
-                <TableHead className="text-right">Recibido</TableHead>
-                <TableHead className="text-right">Pendiente</TableHead>
-                <TableHead className="text-right">Importe</TableHead>
+                <TableHead>{t('inventario.producto')}</TableHead>
+                <TableHead className="text-right">{t('inventario.solicitado')}</TableHead>
+                <TableHead className="text-right">{t('inventario.recibido')}</TableHead>
+                <TableHead className="text-right">{t('inventario.pendiente')}</TableHead>
+                <TableHead className="text-right">{t('inventario.importe')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -295,16 +300,16 @@ function PurchaseDetailDialog({
           </Table>
         </div>
         <div className="ml-auto grid w-full max-w-xs grid-cols-2 gap-1 text-sm">
-          <span className="text-muted-foreground">Subtotal</span>
+          <span className="text-muted-foreground">{t('inventario.subtotal')}</span>
           <span className="text-right">{formatMoney(order.subtotal)}</span>
-          <span className="text-muted-foreground">Impuestos</span>
+          <span className="text-muted-foreground">{t('inventario.impuestos')}</span>
           <span className="text-right">{formatMoney(order.tax_total)}</span>
-          <strong>Total</strong>
+          <strong>{t('inventario.total')}</strong>
           <strong className="text-right">{formatMoney(order.total)}</strong>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cerrar
+            {t('inventario.cerrar')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -319,6 +324,7 @@ function SupplierDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  const { t } = useTranslation()
   const create = useCreateSupplier()
   const [form, setForm] = useState({
     code: '',
@@ -351,8 +357,8 @@ function SupplierDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Nuevo proveedor</DialogTitle>
-          <DialogDescription>Este catálogo es independiente para cada sucursal.</DialogDescription>
+          <DialogTitle>{t('inventario.nuevoProveedor')}</DialogTitle>
+          <DialogDescription>{t('inventario.catalogoIndependiente')}</DialogDescription>
         </DialogHeader>
         <form
           onSubmit={(event) => {
@@ -363,7 +369,7 @@ function SupplierDialog({
         >
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label>Clave</Label>
+              <Label>{t('inventario.clave')}</Label>
               <Input
                 value={form.code}
                 onChange={(e) => field('code', e.target.value.toUpperCase())}
@@ -371,7 +377,7 @@ function SupplierDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label>Razón social</Label>
+              <Label>{t('inventario.razonSocial')}</Label>
               <Input
                 value={form.business_name}
                 onChange={(e) => field('business_name', e.target.value)}
@@ -379,25 +385,25 @@ function SupplierDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label>RFC</Label>
+              <Label>{t('inventario.rfc')}</Label>
               <Input
                 value={form.tax_id}
                 onChange={(e) => field('tax_id', e.target.value.toUpperCase())}
               />
             </div>
             <div className="space-y-2">
-              <Label>Contacto</Label>
+              <Label>{t('inventario.contacto')}</Label>
               <Input
                 value={form.contact_name}
                 onChange={(e) => field('contact_name', e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label>Teléfono</Label>
+              <Label>{t('inventario.telefono')}</Label>
               <Input value={form.phone} onChange={(e) => field('phone', e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>Correo</Label>
+              <Label>{t('inventario.correo')}</Label>
               <Input
                 type="email"
                 value={form.email}
@@ -405,11 +411,11 @@ function SupplierDialog({
               />
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <Label>Dirección</Label>
+              <Label>{t('inventario.direccion')}</Label>
               <Input value={form.address} onChange={(e) => field('address', e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>Días de crédito</Label>
+              <Label>{t('inventario.diasDeCredito')}</Label>
               <Input
                 type="number"
                 min="0"
@@ -420,10 +426,10 @@ function SupplierDialog({
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
+              {t('inventario.cancelar')}
             </Button>
             <Button type="submit" disabled={create.isPending}>
-              Guardar proveedor
+              {t('inventario.guardarProveedor')}
             </Button>
           </DialogFooter>
         </form>
@@ -447,6 +453,7 @@ function PurchaseDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  const { t } = useTranslation()
   const suppliers = useSuppliers({ page_size: 100 })
   const warehouses = useWarehouses()
   const products = useProducts({ page_size: 100 })
@@ -504,18 +511,16 @@ function PurchaseDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
-          <DialogTitle>Nueva orden de compra</DialogTitle>
-          <DialogDescription>
-            Guárdala como borrador y envíala cuando esté confirmada.
-          </DialogDescription>
+          <DialogTitle>{t('inventario.nuevaOrdenDeCompra')}</DialogTitle>
+          <DialogDescription>{t('inventario.guardalaComoBorrador')}</DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-4">
             <div className="space-y-2 sm:col-span-2">
-              <Label>Proveedor</Label>
+              <Label>{t('inventario.proveedor')}</Label>
               <Select value={supplier} onValueChange={setSupplier}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona" />
+                  <SelectValue placeholder={t('inventario.selecciona')} />
                 </SelectTrigger>
                 <SelectContent>
                   {suppliers.data?.results.map((item) => (
@@ -527,10 +532,10 @@ function PurchaseDialog({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Almacén destino</Label>
+              <Label>{t('inventario.almacenDestino')}</Label>
               <Select value={warehouse} onValueChange={setWarehouse}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona" />
+                  <SelectValue placeholder={t('inventario.selecciona')} />
                 </SelectTrigger>
                 <SelectContent>
                   {warehouses.data?.results.map((item) => (
@@ -542,24 +547,24 @@ function PurchaseDialog({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Entrega esperada</Label>
+              <Label>{t('inventario.entregaEsperada')}</Label>
               <Input type="date" value={expected} onChange={(e) => setExpected(e.target.value)} />
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <Label>Referencia del proveedor</Label>
+              <Label>{t('inventario.referenciaProveedor')}</Label>
               <Input value={reference} onChange={(e) => setReference(e.target.value)} />
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <Label>Notas</Label>
+              <Label>{t('inventario.notas')}</Label>
               <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
             </div>
           </div>
           <div className="space-y-2">
             <div className="grid grid-cols-[1fr_100px_120px_90px_36px] gap-2 text-xs font-medium text-muted-foreground">
-              <span>Producto</span>
-              <span>Cantidad</span>
-              <span>Costo unitario</span>
-              <span>Impuesto</span>
+              <span>{t('inventario.producto')}</span>
+              <span>{t('inventario.cantidad')}</span>
+              <span>{t('inventario.costoUnitario')}</span>
+              <span>{t('inventario.impuesto')}</span>
               <span />
             </div>
             {items.map((item) => (
@@ -569,7 +574,7 @@ function PurchaseDialog({
                   onValueChange={(value) => changeItem(item.key, 'product', value)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Producto" />
+                    <SelectValue placeholder={t('inventario.producto')} />
                   </SelectTrigger>
                   <SelectContent>
                     {products.data?.results.map((product) => (
@@ -627,19 +632,19 @@ function PurchaseDialog({
                 ])
               }
             >
-              <PiPlus /> Agregar producto
+              <PiPlus /> {t('inventario.agregarProducto')}
             </Button>
           </div>
           <div className="flex items-center justify-between rounded-lg bg-muted px-4 py-3">
-            <span className="text-sm text-muted-foreground">Total estimado</span>
+            <span className="text-sm text-muted-foreground">{t('inventario.totalEstimado')}</span>
             <strong>{formatMoney(total)}</strong>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
+              {t('inventario.cancelar')}
             </Button>
             <Button type="submit" disabled={create.isPending || !supplier || !warehouse}>
-              Guardar borrador
+              {t('inventario.guardarBorrador')}
             </Button>
           </DialogFooter>
         </form>
@@ -655,6 +660,7 @@ function ReceiveDialog({
   order: PurchaseOrder | null
   onOpenChange: (open: boolean) => void
 }) {
+  const { t } = useTranslation()
   const receive = useReceivePurchase()
   const products = useProducts({ page_size: 100 })
   const [amounts, setAmounts] = useState<Record<number, string>>({})
@@ -696,7 +702,7 @@ function ReceiveDialog({
                   </p>
                 </div>
                 <div>
-                  <Label className="text-xs">Recibir</Label>
+                  <Label className="text-xs">{t('inventario.recibir')}</Label>
                   <Input
                     type="number"
                     min="0"
@@ -709,7 +715,7 @@ function ReceiveDialog({
                   />
                 </div>
                 <div>
-                  <Label className="text-xs">Lote</Label>
+                  <Label className="text-xs">{t('inventario.lote')}</Label>
                   <Input
                     value={lots[item.id] ?? ''}
                     onChange={(e) =>
@@ -736,7 +742,7 @@ function ReceiveDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
+            {t('inventario.cancelar')}
           </Button>
           <Button
             disabled={receive.isPending || pending.every((item) => toNumber(amounts[item.id]) <= 0)}
@@ -759,7 +765,7 @@ function ReceiveDialog({
               )
             }
           >
-            <PiSealCheck /> Registrar recepción
+            <PiSealCheck /> {t('inventario.registrarRecepcion')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -768,6 +774,7 @@ function ReceiveDialog({
 }
 
 export function SuppliersPanel() {
+  const { t } = useTranslation()
   const [search, setSearch] = useState('')
   const [open, setOpen] = useState(false)
   const suppliers = useSuppliers({ search: search || undefined, page_size: 100 })
@@ -777,11 +784,11 @@ export function SuppliersPanel() {
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar proveedor..."
+          placeholder={t('inventario.buscarProveedor')}
           className="max-w-xs"
         />
         <Button className="ml-auto" size="sm" onClick={() => setOpen(true)}>
-          <PiPlus /> Nuevo proveedor
+          <PiPlus /> {t('inventario.nuevoProveedor')}
         </Button>
       </div>
       <Card>
@@ -789,10 +796,10 @@ export function SuppliersPanel() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Clave</TableHead>
-                <TableHead>Razón social</TableHead>
-                <TableHead>Contacto</TableHead>
-                <TableHead>Crédito</TableHead>
+                <TableHead>{t('inventario.clave')}</TableHead>
+                <TableHead>{t('inventario.razonSocial')}</TableHead>
+                <TableHead>{t('inventario.contacto')}</TableHead>
+                <TableHead>{t('inventario.credito')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -809,7 +816,7 @@ export function SuppliersPanel() {
                     <TableCell>
                       <p className="font-medium">{supplier.business_name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {supplier.tax_id || 'Sin RFC'}
+                        {supplier.tax_id || t('inventario.sinRfc')}
                       </p>
                     </TableCell>
                     <TableCell>
@@ -826,7 +833,7 @@ export function SuppliersPanel() {
                   </TableRow>
                 ))
               ) : (
-                <TableEmpty colSpan={4} message="Aún no hay proveedores." />
+                <TableEmpty colSpan={4} message={t('inventario.sinProveedores')} />
               )}
             </TableBody>
           </Table>

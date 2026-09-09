@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { PiCheckCircle, PiEye, PiPlay, PiUserCheck, PiWrench } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { ModuleHelp } from '@/components/layout/ModuleHelp'
 import { ErrorState, OfflineState, estadoDeConsulta } from '@/components/ui/states'
@@ -53,6 +54,7 @@ const PRIORITY_STYLES: Record<string, string> = {
 }
 
 export default function HousekeepingPage() {
+  const { t } = useTranslation()
   const role = useAuthStore((state) => state.user?.role)
   const esMovil = useEsMovil()
   const [mine, setMine] = useState(role === 'HOUSEKEEPING')
@@ -104,7 +106,7 @@ export default function HousekeepingPage() {
     },
     {
       key: 'finish',
-      label: 'Terminar y liberar cuarto',
+      label: t('limpieza.terminarYLiberarCuartoDos'),
       icon: <PiCheckCircle />,
       disabled: task.status !== 'IN_PROGRESS',
       onSelect: () => {
@@ -116,8 +118,8 @@ export default function HousekeepingPage() {
 
   return (
     <PageShell
-      title="Ama de llaves"
-      description="Tareas de limpieza y reportes de mantenimiento."
+      title={t('limpieza.titulo')}
+      description={t('limpieza.subtitulo')}
       actions={
         <>
           <ModuleHelp modulo="limpieza" />
@@ -128,11 +130,11 @@ export default function HousekeepingPage() {
             onClick={() => setMine(!mine)}
           >
             <PiUserCheck />
-            {mine ? 'Ver todas' : 'Solo las mías'}
+            {mine ? 'Ver todas' : t('limpieza.soloLasMias')}
           </Button>
           <Button className="h-11 sm:h-9" size="sm" onClick={() => setReporting(true)}>
             <PiWrench />
-            Reportar problema
+            {t('limpieza.reportarProblema')}
           </Button>
         </>
       }
@@ -140,24 +142,28 @@ export default function HousekeepingPage() {
         <StatStrip
           isLoading={board.isLoading || estadoBoard === 'sin-conexion'}
           stats={[
-            { label: 'Cuartos por limpiar', value: tasks.length, help: 'pendientes y asignados' },
             {
-              label: 'En proceso',
+              label: t('limpieza.cuartosPorLimpiar'),
+              value: tasks.length,
+              help: t('limpieza.cuartosPendientes'),
+            },
+            {
+              label: t('limpieza.enProceso'),
               value: inProgress,
               tone: inProgress > 0 ? 'warning' : 'neutral',
-              help: 'con cronómetro corriendo',
+              help: t('limpieza.conCronometro'),
             },
             {
               label: 'Mantenimiento abierto',
               value: openReports,
               tone: openReports > 0 ? 'warning' : 'positive',
-              help: 'reportes sin resolver',
+              help: t('limpieza.reportesSinResolver'),
             },
             {
               label: 'Urgentes',
               value: urgent,
               tone: urgent > 0 ? 'danger' : 'positive',
-              help: 'requieren atención inmediata',
+              help: t('limpieza.requierenAtencion'),
             },
           ]}
         />
@@ -165,9 +171,9 @@ export default function HousekeepingPage() {
     >
       <Tabs defaultValue="board" className="flex min-h-0 flex-1 flex-col">
         <TabsList className="w-fit">
-          <TabsTrigger value="board">Limpieza</TabsTrigger>
-          <TabsTrigger value="maintenance">Mantenimiento</TabsTrigger>
-          <TabsTrigger value="performance">Rendimiento</TabsTrigger>
+          <TabsTrigger value="board">{t('limpieza.limpieza')}</TabsTrigger>
+          <TabsTrigger value="maintenance">{t('limpieza.mantenimiento')}</TabsTrigger>
+          <TabsTrigger value="performance">{t('limpieza.rendimiento')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="board" className="flex min-h-0 flex-1 flex-col">
@@ -187,11 +193,11 @@ export default function HousekeepingPage() {
             <Card className="min-h-0 flex-1">
               <CardContent className="flex min-h-0 flex-1 flex-col p-0">
                 {estadoBoard === 'sin-conexion' ? (
-                  <OfflineState descripcion="Sin red no podemos leer el tablero." />
+                  <OfflineState descripcion={t('limpieza.sinRedTablero')} />
                 ) : estadoBoard === 'error' ? (
                   <ErrorState
-                    title="No pudimos cargar el tablero"
-                    description="Las tareas no llegaron. Nada se perdió: es la conexión con el servidor."
+                    title={t('limpieza.noPudimosTablero')}
+                    description={t('limpieza.tareasNoLlegaron')}
                     onRetry={() => void board.refetch()}
                     retrying={board.isFetching}
                   />
@@ -200,20 +206,17 @@ export default function HousekeepingPage() {
                     <Table>
                       <TableHeader className="sticky top-0 z-10 bg-card">
                         <TableRow>
-                          <TableHead>Habitación</TableHead>
-                          <TableHead>Tipo</TableHead>
-                          <TableHead>Asignada a</TableHead>
-                          <TableHead>Estado</TableHead>
-                          <TableHead>Tiempo</TableHead>
+                          <TableHead>{t('limpieza.habitacion')}</TableHead>
+                          <TableHead>{t('limpieza.tipo')}</TableHead>
+                          <TableHead>{t('limpieza.asignadaA')}</TableHead>
+                          <TableHead>{t('limpieza.estado')}</TableHead>
+                          <TableHead>{t('limpieza.tiempo')}</TableHead>
                           <TableHead className="w-[52px]" />
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {tasks.length === 0 ? (
-                          <TableEmpty
-                            colSpan={6}
-                            message="Nada pendiente. Cuando salga un huésped, su cuarto aparece aquí solo."
-                          />
+                          <TableEmpty colSpan={6} message={t('limpieza.nadaPendienteDetalle')} />
                         ) : (
                           tasks.map((task) => (
                             <TableRow
@@ -234,7 +237,7 @@ export default function HousekeepingPage() {
                                 {task.task_type_display}
                               </TableCell>
                               <TableCell className="text-muted-foreground">
-                                {task.assigned_to_name ?? 'Sin asignar'}
+                                {task.assigned_to_name ?? t('limpieza.sinAsignar')}
                               </TableCell>
                               <TableCell>
                                 <Badge variant={TASK_VARIANT[task.status] ?? 'secondary'}>
@@ -271,20 +274,17 @@ export default function HousekeepingPage() {
                 <Table>
                   <TableHeader className="sticky top-0 z-10 bg-card">
                     <TableRow>
-                      <TableHead>Folio</TableHead>
-                      <TableHead>Falla</TableHead>
-                      <TableHead>Prioridad</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead className="text-right">Costo</TableHead>
+                      <TableHead>{t('limpieza.folio')}</TableHead>
+                      <TableHead>{t('limpieza.falla')}</TableHead>
+                      <TableHead>{t('limpieza.prioridad')}</TableHead>
+                      <TableHead>{t('limpieza.estado')}</TableHead>
+                      <TableHead className="text-right">{t('limpieza.costo')}</TableHead>
                       <TableHead className="w-[52px]" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {reports.length === 0 ? (
-                      <TableEmpty
-                        colSpan={6}
-                        message="Ningún problema reportado. Los que se levanten desde el teléfono llegan aquí con folio y foto."
-                      />
+                      <TableEmpty colSpan={6} message={t('limpieza.ningunProblema')} />
                     ) : (
                       reports.map((report) => (
                         <MaintenanceRow
@@ -308,24 +308,21 @@ export default function HousekeepingPage() {
                 <Table>
                   <TableHeader className="sticky top-0 z-10 bg-card">
                     <TableRow>
-                      <TableHead>Empleado</TableHead>
-                      <TableHead className="text-right">Tareas</TableHead>
-                      <TableHead className="text-right">Promedio</TableHead>
-                      <TableHead className="text-right">Total</TableHead>
-                      <TableHead className="text-right">Con incidencias</TableHead>
+                      <TableHead>{t('limpieza.empleado')}</TableHead>
+                      <TableHead className="text-right">{t('limpieza.tareas')}</TableHead>
+                      <TableHead className="text-right">{t('limpieza.promedio')}</TableHead>
+                      <TableHead className="text-right">{t('limpieza.total')}</TableHead>
+                      <TableHead className="text-right">{t('limpieza.conIncidencias')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {(performance.data ?? []).length === 0 ? (
-                      <TableEmpty
-                        colSpan={5}
-                        message="Aún no se cierra ninguna limpieza. El rendimiento se calcula con las tareas terminadas."
-                      />
+                      <TableEmpty colSpan={5} message={t('limpieza.sinCierres')} />
                     ) : (
                       (performance.data ?? []).map((row) => (
                         <TableRow key={row.employee_id ?? 'sin-asignar'}>
                           <TableCell className="font-medium">
-                            {row.employee ?? 'Sin asignar'}
+                            {row.employee ?? t('limpieza.sinAsignar')}
                           </TableCell>
                           <TableCell className="text-right tabular">{row.tasks}</TableCell>
                           <TableCell className="text-right tabular">
@@ -357,11 +354,11 @@ export default function HousekeepingPage() {
             <Input
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
-              placeholder="Observaciones (opcional)"
+              placeholder={t('limpieza.observacionesOpcional')}
               className="max-w-sm flex-1"
             />
             <Button variant="outline" size="sm" onClick={() => setClosing(null)}>
-              Cancelar
+              {t('limpieza.cancelar')}
             </Button>
             <Button
               variant="success"
@@ -375,7 +372,7 @@ export default function HousekeepingPage() {
               }
             >
               <PiCheckCircle />
-              Terminar y liberar
+              {t('limpieza.terminarYLiberar')}
             </Button>
           </div>
         </div>
@@ -388,6 +385,7 @@ export default function HousekeepingPage() {
 }
 
 function MaintenanceRow({ report, onDetail }: { report: MaintenanceReport; onDetail: () => void }) {
+  const { t } = useTranslation()
   const transition = useMaintenanceTransition(report.id)
   const openContextMenu = useRowContextMenu()
 
@@ -395,19 +393,20 @@ function MaintenanceRow({ report, onDetail }: { report: MaintenanceReport; onDet
     { key: 'detail', label: 'Ver detalles', icon: <PiEye />, onSelect: onDetail },
     {
       key: 'attend',
-      label: 'Marcar en atención',
+      label: t('limpieza.marcarEnAtencionDos'),
       icon: <PiWrench />,
       separated: true,
       disabled: !['REPORTED', 'ACKNOWLEDGED'].includes(report.status),
       onSelect: () =>
-        transition.mutate({ new_status: 'IN_PROGRESS', note: 'Se comenzó la reparación' }),
+        transition.mutate({ new_status: 'IN_PROGRESS', note: t('limpieza.seComenzoLaReparacion') }),
     },
     {
       key: 'resolve',
       label: 'Marcar resuelto',
       icon: <PiCheckCircle />,
       disabled: report.status !== 'IN_PROGRESS',
-      onSelect: () => transition.mutate({ new_status: 'RESOLVED', note: 'Reparación terminada' }),
+      onSelect: () =>
+        transition.mutate({ new_status: 'RESOLVED', note: t('limpieza.reparacionTerminada') }),
     },
   ]
 
@@ -421,8 +420,10 @@ function MaintenanceRow({ report, onDetail }: { report: MaintenanceReport; onDet
       <TableCell>
         <p className="font-medium">{report.title}</p>
         <p className="text-2xs text-muted-foreground">
-          {report.room_number ? `Habitación ${report.room_number}` : report.area || 'Área común'} ·{' '}
-          {formatDateTime(report.created_at)}
+          {report.room_number
+            ? `Habitación ${report.room_number}`
+            : report.area || t('limpieza.areaComun')}{' '}
+          · {formatDateTime(report.created_at)}
         </p>
       </TableCell>
       <TableCell>

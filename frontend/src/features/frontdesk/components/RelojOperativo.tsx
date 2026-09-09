@@ -1,4 +1,5 @@
 import { LuClock } from 'react-icons/lu'
+import { useTranslation } from 'react-i18next'
 
 import { useServerClock } from '@/hooks/useCountdown'
 
@@ -14,6 +15,7 @@ import { useServerClock } from '@/hooks/useCountdown'
  *  el mismo segundo sin costar un `setInterval` extra.
  */
 export function RelojOperativo() {
+  const { t } = useTranslation()
   const fecha = new Date(useServerClock())
   const hora = fecha.toLocaleTimeString('es-MX', {
     hour: '2-digit',
@@ -25,7 +27,7 @@ export function RelojOperativo() {
   return (
     <span
       className="hidden h-9 items-center gap-1.5 rounded-lg border border-border/60 px-2.5 md:inline-flex"
-      title="Hora de operación"
+      title={t('recepcion.horaDeOperacion')}
     >
       <LuClock className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
       <time

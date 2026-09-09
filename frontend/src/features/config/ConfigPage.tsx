@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { PiPencilSimple, PiPlus, PiProhibit } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { PageShell, TableScroll } from '@/components/layout/PageShell'
 import {
@@ -43,6 +44,7 @@ import type { Room, RoomType, TariffBlock } from '@/features/frontdesk/types'
 import { formatMoney } from '@/lib/format'
 
 export default function ConfigPage() {
+  const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
   const pedida = searchParams.get('seccion')
   const seccion = isConfigSection(pedida) ? pedida : DEFAULT_CONFIG_SECTION
@@ -81,7 +83,7 @@ export default function ConfigPage() {
     },
     {
       key: 'deactivate',
-      label: 'Dar de baja',
+      label: t('config.darDeBaja'),
       icon: <PiProhibit />,
       danger: true,
       separated: true,
@@ -99,13 +101,13 @@ export default function ConfigPage() {
     },
     {
       key: 'tariff',
-      label: 'Nueva tarifa para este tipo',
+      label: t('config.nuevaTarifaParaEsteTipo'),
       icon: <PiPlus />,
       onSelect: () => setTariffForm({ open: true, item: null }),
     },
     {
       key: 'deactivate',
-      label: 'Dar de baja',
+      label: t('config.darDeBaja'),
       icon: <PiProhibit />,
       danger: true,
       separated: true,
@@ -123,7 +125,7 @@ export default function ConfigPage() {
     },
     {
       key: 'deactivate',
-      label: 'Dar de baja',
+      label: t('config.darDeBaja'),
       icon: <PiProhibit />,
       danger: true,
       separated: true,
@@ -133,10 +135,7 @@ export default function ConfigPage() {
   ]
 
   return (
-    <PageShell
-      title="Configuración"
-      description="Datos del negocio, habitaciones, tarifas y apariencia."
-    >
+    <PageShell title={t('config.titulo')} description={t('config.subtitulo')}>
       <Tabs
         value={seccion}
         onValueChange={(value) => setSearchParams({ seccion: value }, { replace: true })}
@@ -158,14 +157,12 @@ export default function ConfigPage() {
           <Card className="min-h-0 flex-1">
             <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
               <div>
-                <CardTitle className="text-base">Habitaciones</CardTitle>
-                <CardDescription>
-                  Clic derecho sobre una fila para ver sus acciones.
-                </CardDescription>
+                <CardTitle className="text-base">{t('config.habitaciones')}</CardTitle>
+                <CardDescription>{t('config.clicDerecho')}</CardDescription>
               </div>
               <Button size="sm" onClick={() => setRoomForm({ open: true, room: null })}>
                 <PiPlus />
-                Nueva habitación
+                {t('config.nuevaHabitacion')}
               </Button>
             </CardHeader>
             <CardContent className="flex min-h-0 flex-1 flex-col p-0">
@@ -173,17 +170,17 @@ export default function ConfigPage() {
                 <Table>
                   <TableHeader className="sticky top-0 z-10 bg-card">
                     <TableRow>
-                      <TableHead>Número</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Piso / zona</TableHead>
-                      <TableHead>Cochera</TableHead>
-                      <TableHead>Estado</TableHead>
+                      <TableHead>{t('config.numero')}</TableHead>
+                      <TableHead>{t('config.tipo')}</TableHead>
+                      <TableHead>{t('config.pisoZona')}</TableHead>
+                      <TableHead>{t('config.cochera')}</TableHead>
+                      <TableHead>{t('config.estado')}</TableHead>
                       <TableHead className="w-[52px]" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {(rooms.data?.results ?? []).length === 0 ? (
-                      <TableEmpty colSpan={6} message="Aún no hay habitaciones dadas de alta." />
+                      <TableEmpty colSpan={6} message={t('config.sinHabitaciones')} />
                     ) : (
                       (rooms.data?.results ?? []).map((room) => (
                         <TableRow
@@ -205,7 +202,7 @@ export default function ConfigPage() {
                           </TableCell>
                           <TableCell>
                             <Badge variant={room.is_active ? 'available' : 'secondary'}>
-                              {room.is_active ? room.status_display : 'Dada de baja'}
+                              {room.is_active ? room.status_display : t('config.dadaDeBaja')}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
@@ -241,12 +238,12 @@ export default function ConfigPage() {
           <Card>
             <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
               <div>
-                <CardTitle className="text-base">Tipos de habitación</CardTitle>
-                <CardDescription>Definen capacidad y cargo por persona extra.</CardDescription>
+                <CardTitle className="text-base">{t('config.tiposDeHabitacion')}</CardTitle>
+                <CardDescription>{t('config.definenCapacidad')}</CardDescription>
               </div>
               <Button size="sm" onClick={() => setTypeForm({ open: true, item: null })}>
                 <PiPlus />
-                Nuevo tipo
+                {t('config.nuevoTipo')}
               </Button>
             </CardHeader>
             <CardContent className="flex min-h-0 flex-1 flex-col p-0">
@@ -254,16 +251,16 @@ export default function ConfigPage() {
                 <Table>
                   <TableHeader className="sticky top-0 z-10 bg-card">
                     <TableRow>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead>Clave</TableHead>
-                      <TableHead className="text-right">Ocupantes</TableHead>
-                      <TableHead className="text-right">Persona extra</TableHead>
+                      <TableHead>{t('config.nombre')}</TableHead>
+                      <TableHead>{t('config.clave')}</TableHead>
+                      <TableHead className="text-right">{t('config.ocupantes')}</TableHead>
+                      <TableHead className="text-right">{t('config.personaExtra')}</TableHead>
                       <TableHead className="w-[52px]" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {(roomTypes.data?.results ?? []).length === 0 ? (
-                      <TableEmpty colSpan={5} message="Sin tipos registrados." />
+                      <TableEmpty colSpan={5} message={t('config.sinTipos')} />
                     ) : (
                       (roomTypes.data?.results ?? []).map((item) => (
                         <TableRow
@@ -294,14 +291,12 @@ export default function ConfigPage() {
           <Card>
             <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
               <div>
-                <CardTitle className="text-base">Bloques tarifarios</CardTitle>
-                <CardDescription>
-                  Duración, precio y recargo por hora excedida de cada bloque.
-                </CardDescription>
+                <CardTitle className="text-base">{t('config.bloquesTarifarios')}</CardTitle>
+                <CardDescription>{t('config.duracionPrecioRecargo')}</CardDescription>
               </div>
               <Button size="sm" onClick={() => setTariffForm({ open: true, item: null })}>
                 <PiPlus />
-                Nueva tarifa
+                {t('config.nuevaTarifa')}
               </Button>
             </CardHeader>
             <CardContent className="flex min-h-0 flex-1 flex-col p-0">
@@ -309,17 +304,17 @@ export default function ConfigPage() {
                 <Table>
                   <TableHeader className="sticky top-0 z-10 bg-card">
                     <TableRow>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Bloque</TableHead>
-                      <TableHead className="text-right">Duración</TableHead>
-                      <TableHead className="text-right">Precio</TableHead>
-                      <TableHead className="text-right">Hora extra</TableHead>
+                      <TableHead>{t('config.tipo')}</TableHead>
+                      <TableHead>{t('config.bloque')}</TableHead>
+                      <TableHead className="text-right">{t('config.duracion')}</TableHead>
+                      <TableHead className="text-right">{t('config.precio')}</TableHead>
+                      <TableHead className="text-right">{t('config.horaExtra')}</TableHead>
                       <TableHead className="w-[52px]" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {(tariffs.data?.results ?? []).length === 0 ? (
-                      <TableEmpty colSpan={6} message="Sin tarifas registradas." />
+                      <TableEmpty colSpan={6} message={t('config.sinTarifas')} />
                     ) : (
                       (tariffs.data?.results ?? []).map((item) => (
                         <TableRow
@@ -334,7 +329,7 @@ export default function ConfigPage() {
                             {item.name}
                             {item.is_default ? (
                               <Badge variant="outline" className="ml-2">
-                                Sugerido
+                                {t('config.sugerido')}
                               </Badge>
                             ) : null}
                           </TableCell>

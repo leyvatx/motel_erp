@@ -23,6 +23,5 @@ export const usersApi = {
 
   sessions: (): Promise<PaginatedResponse<UserSession>> =>
     get<PaginatedResponse<UserSession>>('/auth/sessions/', { params: { page_size: 100 } }),
-  revokeSession: (sid: string): Promise<void> =>
-    post<void>(`/auth/sessions/${sid}/revoke/`),
+  revokeSession: (sid: string): Promise<void> => post<void>(`/auth/sessions/${sid}/revoke/`),
 }

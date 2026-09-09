@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { PiCalendarPlus, PiPlus, PiTrash } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -45,6 +46,7 @@ import { formatDate, formatMoney } from '@/lib/format'
 const weekdays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 
 export function DynamicPricingSettings() {
+  const { t } = useTranslation()
   const rules = useTariffRules()
   const holidays = useHolidays()
   const tariffs = useAllTariffBlocks()
@@ -124,22 +126,22 @@ export function DynamicPricingSettings() {
       <Card>
         <CardHeader className="flex-row items-start justify-between gap-3">
           <div>
-            <CardTitle className="text-base">Reglas de tarifa</CardTitle>
-            <CardDescription>La regla activa con mayor prioridad define el precio.</CardDescription>
+            <CardTitle className="text-base">{t('config.reglasDeTarifa')}</CardTitle>
+            <CardDescription>{t('config.reglaMayorPrioridad')}</CardDescription>
           </div>
           <Button size="sm" onClick={openRule}>
             <PiPlus />
-            Nueva regla
+            {t('config.nuevaRegla')}
           </Button>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Regla</TableHead>
-                <TableHead>Tarifa</TableHead>
-                <TableHead>Aplicación</TableHead>
-                <TableHead>Precio</TableHead>
+                <TableHead>{t('config.regla')}</TableHead>
+                <TableHead>{t('config.tarifa')}</TableHead>
+                <TableHead>{t('config.aplicacion')}</TableHead>
+                <TableHead>{t('config.precio')}</TableHead>
                 <TableHead className="w-12" />
               </TableRow>
             </TableHeader>
@@ -176,10 +178,7 @@ export function DynamicPricingSettings() {
                   </TableRow>
                 ))
               ) : (
-                <TableEmpty
-                  colSpan={5}
-                  message="No hay reglas especiales; se usa el precio base."
-                />
+                <TableEmpty colSpan={5} message={t('config.sinReglas')} />
               )}
             </TableBody>
           </Table>
@@ -188,8 +187,8 @@ export function DynamicPricingSettings() {
       <Card>
         <CardHeader className="flex-row items-start justify-between gap-3">
           <div>
-            <CardTitle className="text-base">Días festivos</CardTitle>
-            <CardDescription>Activan las reglas configuradas como festivo.</CardDescription>
+            <CardTitle className="text-base">{t('config.diasFestivos')}</CardTitle>
+            <CardDescription>{t('config.activanReglas')}</CardDescription>
           </div>
           <Button
             size="sm"
@@ -201,7 +200,7 @@ export function DynamicPricingSettings() {
             }}
           >
             <PiCalendarPlus />
-            Agregar
+            {t('config.agregar')}
           </Button>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -226,7 +225,7 @@ export function DynamicPricingSettings() {
             ))
           ) : (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              No hay festivos registrados.
+              {t('config.sinFestivos')}
             </p>
           )}
         </CardContent>
@@ -234,18 +233,16 @@ export function DynamicPricingSettings() {
       <Dialog open={ruleOpen} onOpenChange={setRuleOpen}>
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
-            <DialogTitle>Nueva regla tarifaria</DialogTitle>
-            <DialogDescription>
-              Se aplicará automáticamente cuando coincidan sus condiciones.
-            </DialogDescription>
+            <DialogTitle>{t('config.nuevaReglaTarifaria')}</DialogTitle>
+            <DialogDescription>{t('config.seAplicaAutomaticamente')}</DialogDescription>
           </DialogHeader>
           <form onSubmit={submitRule} className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>Tarifa</Label>
+                <Label>{t('config.tarifa')}</Label>
                 <Select value={tariff} onValueChange={setTariff}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona" />
+                    <SelectValue placeholder={t('config.selecciona')} />
                   </SelectTrigger>
                   <SelectContent>
                     {(tariffs.data?.results ?? []).map((item) => (
@@ -258,7 +255,7 @@ export function DynamicPricingSettings() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="rule-name">Nombre</Label>
+                <Label htmlFor="rule-name">{t('config.nombre')}</Label>
                 <Input
                   id="rule-name"
                   value={name}
@@ -269,7 +266,7 @@ export function DynamicPricingSettings() {
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="space-y-2">
-                <Label>Cuándo aplica</Label>
+                <Label>{t('config.cuandoAplica')}</Label>
                 <Select
                   value={ruleType}
                   onValueChange={(v) => setRuleType(v as TariffRulePayload['rule_type'])}
@@ -278,14 +275,14 @@ export function DynamicPricingSettings() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="WEEKDAY">Días de semana</SelectItem>
-                    <SelectItem value="DATE_RANGE">Rango de fechas</SelectItem>
-                    <SelectItem value="HOLIDAY">Día festivo</SelectItem>
+                    <SelectItem value="WEEKDAY">{t('config.diasDeSemana')}</SelectItem>
+                    <SelectItem value="DATE_RANGE">{t('config.rangoDeFechas')}</SelectItem>
+                    <SelectItem value="HOLIDAY">{t('config.diaFestivo')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Tipo de precio</Label>
+                <Label>{t('config.tipoDePrecio')}</Label>
                 <Select
                   value={mode}
                   onValueChange={(v) => setMode(v as TariffRulePayload['price_mode'])}
@@ -294,14 +291,14 @@ export function DynamicPricingSettings() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="FIXED">Precio fijo</SelectItem>
-                    <SelectItem value="MULTIPLIER">Multiplicador</SelectItem>
-                    <SelectItem value="DELTA">Monto adicional</SelectItem>
+                    <SelectItem value="FIXED">{t('config.precioFijo')}</SelectItem>
+                    <SelectItem value="MULTIPLIER">{t('config.multiplicador')}</SelectItem>
+                    <SelectItem value="DELTA">{t('config.montoAdicional')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="rule-value">Valor</Label>
+                <Label htmlFor="rule-value">{t('config.valor')}</Label>
                 <Input
                   id="rule-value"
                   type="number"
@@ -315,7 +312,7 @@ export function DynamicPricingSettings() {
             </div>
             {ruleType === 'WEEKDAY' ? (
               <div className="space-y-2">
-                <Label>Días</Label>
+                <Label>{t('config.dias')}</Label>
                 <div className="flex flex-wrap gap-2">
                   {weekdays.map((day, index) => (
                     <label
@@ -342,7 +339,7 @@ export function DynamicPricingSettings() {
             {ruleType === 'DATE_RANGE' ? (
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Desde</Label>
+                  <Label>{t('config.desde')}</Label>
                   <Input
                     type="date"
                     value={startDate}
@@ -350,14 +347,14 @@ export function DynamicPricingSettings() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Hasta</Label>
+                  <Label>{t('config.hasta')}</Label>
                   <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
                 </div>
               </div>
             ) : null}
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="space-y-2">
-                <Label>Hora inicial</Label>
+                <Label>{t('config.horaInicial')}</Label>
                 <Input
                   type="time"
                   value={startTime}
@@ -365,11 +362,11 @@ export function DynamicPricingSettings() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Hora final</Label>
+                <Label>{t('config.horaFinal')}</Label>
                 <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>Prioridad</Label>
+                <Label>{t('config.prioridad')}</Label>
                 <Input
                   type="number"
                   min={0}
@@ -380,14 +377,14 @@ export function DynamicPricingSettings() {
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setRuleOpen(false)}>
-                Cancelar
+                {t('config.cancelar')}
               </Button>
               <Button
                 type="submit"
                 loading={createRule.isPending}
                 disabled={!tariff || !name || !value}
               >
-                Crear regla
+                {t('config.crearRegla')}
               </Button>
             </DialogFooter>
           </form>
@@ -396,14 +393,12 @@ export function DynamicPricingSettings() {
       <Dialog open={holidayOpen} onOpenChange={setHolidayOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Agregar día festivo</DialogTitle>
-            <DialogDescription>
-              Las reglas de tipo festivo aplicarán durante esta fecha.
-            </DialogDescription>
+            <DialogTitle>{t('config.agregarDiaFestivo')}</DialogTitle>
+            <DialogDescription>{t('config.reglasFestivoAplican')}</DialogDescription>
           </DialogHeader>
           <form onSubmit={submitHoliday} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="holiday-date">Fecha</Label>
+              <Label htmlFor="holiday-date">{t('config.fecha')}</Label>
               <Input
                 id="holiday-date"
                 type="date"
@@ -413,7 +408,7 @@ export function DynamicPricingSettings() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="holiday-name">Nombre</Label>
+              <Label htmlFor="holiday-name">{t('config.nombre')}</Label>
               <Input
                 id="holiday-name"
                 value={holidayName}
@@ -423,10 +418,10 @@ export function DynamicPricingSettings() {
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setHolidayOpen(false)}>
-                Cancelar
+                {t('config.cancelar')}
               </Button>
               <Button type="submit" loading={createHoliday.isPending}>
-                Guardar
+                {t('config.guardar')}
               </Button>
             </DialogFooter>
           </form>

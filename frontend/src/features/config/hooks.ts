@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import i18n from '@/lib/i18n'
 
 import { toast } from '@/components/ui/toast'
 import { businessApi, configApi } from '@/features/config/api'
@@ -66,14 +67,14 @@ function useBusinessMutation<TArgs>(
       void queryClient.invalidateQueries({ queryKey: ['settings'] })
       toast.success(successMessage)
     },
-    onError: (error) => toast.error('No se pudo guardar', apiErrorMessage(error)),
+    onError: (error) => toast.error(i18n.t('config.noSePudoGuardar'), apiErrorMessage(error)),
   })
 }
 
 export const useUpdateBusinessProfile = () =>
   useBusinessMutation(
     (payload: BusinessProfilePayload) => businessApi.update(payload),
-    'Configuración guardada',
+    i18n.t('config.configuracionGuardada'),
   )
 
 export const useUpdateBusinessLogo = () =>
@@ -113,24 +114,25 @@ function useConfigMutation<TArgs, TResult>(
       invalidate()
       toast.success(successMessage)
     },
-    onError: (error) => toast.error('No se pudo guardar', apiErrorMessage(error)),
+    onError: (error) => toast.error(i18n.t('config.noSePudoGuardar'), apiErrorMessage(error)),
   })
 }
 
-export const useCreateRoom = () => useConfigMutation(configApi.createRoom, 'Habitación creada')
+export const useCreateRoom = () =>
+  useConfigMutation(configApi.createRoom, i18n.t('config.habitacionCreada'))
 
 export const useUpdateRoom = () =>
   useConfigMutation(
     ({ id, payload }: { id: number; payload: Parameters<typeof configApi.updateRoom>[1] }) =>
       configApi.updateRoom(id, payload),
-    'Habitación actualizada',
+    i18n.t('config.habitacionActualizada'),
   )
 
 export const useDeactivateRoom = () =>
-  useConfigMutation(configApi.deactivateRoom, 'Habitación dada de baja')
+  useConfigMutation(configApi.deactivateRoom, i18n.t('config.habitacionDadaDeBaja'))
 
 export const useCreateRoomType = () =>
-  useConfigMutation(configApi.createRoomType, 'Tipo de habitación creado')
+  useConfigMutation(configApi.createRoomType, i18n.t('config.tipoDeHabitacionCreado'))
 
 export const useUpdateRoomType = () =>
   useConfigMutation(
@@ -140,7 +142,7 @@ export const useUpdateRoomType = () =>
   )
 
 export const useDeactivateRoomType = () =>
-  useConfigMutation(configApi.deactivateRoomType, 'Tipo dado de baja')
+  useConfigMutation(configApi.deactivateRoomType, i18n.t('config.tipoDadoDeBaja'))
 
 export const useCreateTariff = () => useConfigMutation(configApi.createTariff, 'Tarifa creada')
 
@@ -152,7 +154,7 @@ export const useUpdateTariff = () =>
   )
 
 export const useDeactivateTariff = () =>
-  useConfigMutation(configApi.deactivateTariff, 'Tarifa dada de baja')
+  useConfigMutation(configApi.deactivateTariff, i18n.t('config.tarifaDadaDeBaja'))
 
 export const useTariffRules = () =>
   useQuery({ queryKey: ['frontdesk', 'tariff-rules'], queryFn: configApi.tariffRules })
@@ -163,6 +165,6 @@ export const useDeactivateTariffRule = () =>
 export const useHolidays = () =>
   useQuery({ queryKey: ['frontdesk', 'holidays'], queryFn: configApi.holidays })
 export const useCreateHoliday = () =>
-  useConfigMutation(configApi.createHoliday, 'Día festivo agregado')
+  useConfigMutation(configApi.createHoliday, i18n.t('config.diaFestivoAgregado'))
 export const useDeactivateHoliday = () =>
-  useConfigMutation(configApi.deactivateHoliday, 'Día festivo eliminado')
+  useConfigMutation(configApi.deactivateHoliday, i18n.t('config.diaFestivoEliminado'))

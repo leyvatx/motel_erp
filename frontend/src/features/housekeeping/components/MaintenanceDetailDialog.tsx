@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
@@ -24,6 +25,7 @@ interface Props {
 }
 
 export function MaintenanceDetailDialog({ report, onOpenChange }: Props) {
+  const { t } = useTranslation()
   // El renglón de la lista abre el diálogo de inmediato -- título, folio,
   // prioridad -- y la ficha completa lo rellena al llegar. Antes se recorría
   // `report.updates` directamente y la lista nunca lo trae: abrir un reporte
@@ -47,7 +49,9 @@ export function MaintenanceDetailDialog({ report, onOpenChange }: Props) {
           </DialogTitle>
           <DialogDescription>
             {ficha.folio} ·{' '}
-            {ficha.room_number ? `Habitación ${ficha.room_number}` : ficha.area || 'Área común'}
+            {ficha.room_number
+              ? `Habitación ${ficha.room_number}`
+              : ficha.area || t('limpieza.areaComun')}
           </DialogDescription>
         </DialogHeader>
 
@@ -74,16 +78,22 @@ export function MaintenanceDetailDialog({ report, onOpenChange }: Props) {
         ) : null}
 
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-          <Field label="Estado" value={ficha.status_display} />
-          <Field label="Categoría" value={ficha.category_display} />
-          <Field label="Reportó" value={ficha.reported_by_name} />
-          <Field label="Asignado a" value={ficha.assigned_to_name ?? 'Sin asignar'} />
-          <Field label="Levantado" value={formatDateTime(ficha.created_at)} />
-          <Field label="Cuarto fuera de servicio" value={ficha.blocks_room ? 'Sí' : 'No'} />
+          <Field label={t('limpieza.estado')} value={ficha.status_display} />
+          <Field label={t('limpieza.categoria')} value={ficha.category_display} />
+          <Field label={t('limpieza.reporto')} value={ficha.reported_by_name} />
+          <Field
+            label={t('limpieza.asignadoA')}
+            value={ficha.assigned_to_name ?? t('limpieza.sinAsignar')}
+          />
+          <Field label={t('limpieza.levantado')} value={formatDateTime(ficha.created_at)} />
+          <Field
+            label={t('limpieza.cuartoFueraDeServicio')}
+            value={ficha.blocks_room ? 'Sí' : 'No'}
+          />
           {ficha.resolved_at ? (
             <>
-              <Field label="Resuelto" value={formatDateTime(ficha.resolved_at)} />
-              <Field label="Costo" value={formatMoney(ficha.cost)} />
+              <Field label={t('limpieza.resuelto')} value={formatDateTime(ficha.resolved_at)} />
+              <Field label={t('limpieza.costo')} value={formatMoney(ficha.cost)} />
             </>
           ) : null}
         </dl>
@@ -97,9 +107,11 @@ export function MaintenanceDetailDialog({ report, onOpenChange }: Props) {
         <Separator />
 
         <div>
-          <p className="mb-2 text-xs font-medium text-muted-foreground">Seguimiento</p>
+          <p className="mb-2 text-xs font-medium text-muted-foreground">
+            {t('limpieza.seguimiento')}
+          </p>
           {detalle.isLoading && seguimiento.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Cargando el historial…</p>
+            <p className="text-sm text-muted-foreground">{t('limpieza.cargandoHistorial')}</p>
           ) : null}
           <ol className="space-y-3">
             {seguimiento.map((update) => (

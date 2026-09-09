@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { PiCaretRightBold, PiBed } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { SidebarNav } from '@/components/layout/SidebarNav'
 import { useBrand } from '@/features/config/hooks'
@@ -9,6 +10,7 @@ import { useAuthStore } from '@/store/auth'
 import { useUiStore } from '@/store/ui'
 
 export function Sidebar() {
+  const { t } = useTranslation()
   const pinnedCollapsed = useUiStore((state) => state.sidebarCollapsed)
   const toggle = useUiStore((state) => state.toggleSidebar)
   const user = useAuthStore((state) => state.user)
@@ -44,7 +46,7 @@ export function Sidebar() {
           expanded ? 'w-64' : 'w-[3.75rem]',
           floating && 'shadow-xl',
         )}
-        aria-label="Navegación principal"
+        aria-label={t('comun.navegacionPrincipal')}
       >
         <div
           className={cn(
@@ -106,9 +108,9 @@ export function Sidebar() {
           'absolute top-1/2 z-50 grid h-24 w-4 -translate-y-1/2 place-items-center rounded-full border border-sidebar-border bg-sidebar text-sidebar-foreground/70 shadow-md transition-[left,color] duration-200 hover:text-sidebar-accent-foreground',
           expanded ? 'left-[15.5rem]' : 'left-[3.25rem]',
         )}
-        aria-label={pinnedCollapsed ? 'Anclar menú abierto' : 'Colapsar menú'}
+        aria-label={pinnedCollapsed ? t('comun.anclarMenu') : t('comun.colapsarMenu')}
         aria-expanded={expanded}
-        title={pinnedCollapsed ? 'Anclar menú abierto' : 'Colapsar menú'}
+        title={pinnedCollapsed ? t('comun.anclarMenu') : t('comun.colapsarMenu')}
       >
         <PiCaretRightBold
           className={cn('h-3 w-3 transition-transform duration-200', expanded && 'rotate-180')}
