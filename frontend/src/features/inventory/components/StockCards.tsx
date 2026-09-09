@@ -124,7 +124,7 @@ export function StockCards({
                 </p>
               ) : (
                 <p className="mt-1 text-2xs text-muted-foreground">
-                  mín. {formatQuantity(row.min_stock)}
+                  {t('inventario.minAbreviado', { cantidad: formatQuantity(row.min_stock) })}
                 </p>
               )}
             </div>

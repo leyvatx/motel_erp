@@ -15,7 +15,7 @@ export default function PlaceholderPage({ title, description }: Props) {
         <CardDescription>{description ?? t('comun.moduloEnConstruccion')}</CardDescription>
       </CardHeader>
       <CardContent className="text-sm text-muted-foreground">
-        Esta seccion se implementa en una fase posterior del desarrollo.
+        {t('comun.seccionPosterior')}
       </CardContent>
     </Card>
   )

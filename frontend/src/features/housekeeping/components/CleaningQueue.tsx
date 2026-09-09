@@ -1,29 +1,14 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  PiCheck,
-  PiCheckCircle,
-  PiClipboardText,
-  PiPlay,
-  PiSparkle,
-  PiWarning,
-} from 'react-icons/pi'
+import { PiCheckCircle, PiClipboardText, PiSparkle, PiWarning } from 'react-icons/pi'
 
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { EmptyState, ErrorState, OfflineState } from '@/components/ui/states'
 import { ReportMaintenanceDialog } from '@/features/housekeeping/components/ReportMaintenanceDialog'
 import { useFinishCleaningTask, useStartCleaning } from '@/features/housekeeping/hooks'
 import type { CleaningTask } from '@/features/housekeeping/types'
 import { formatRelative } from '@/lib/format'
 import { cn } from '@/lib/utils'
-
-/** El tiempo que lleva la tarea, en palabras. */
-function tiempo(task: CleaningTask): string {
-  return task.started_at
-    ? `Empezó ${formatRelative(task.started_at)}`
-    : `Esperando desde ${formatRelative(task.created_at)}`
-}
 
 interface Props {
   tasks: CleaningTask[]
@@ -39,13 +24,19 @@ interface Props {
 
 /**
  * La cola de limpieza como la usa quien limpia: una tarjeta por habitación, la
- * siguiente arriba, y una sola acción grande.
+ * siguiente arriba, y dos salidas.
  *
  * Está diseñada para el teléfono primero, no adaptada desde la tabla. Quien
- * trabaja aquí lo hace de pie, con una mano, a veces con guantes: no puede
- * apuntar a un renglón de tabla ni encontrar un menú de tres puntos. Por eso
- * cada tarjeta tiene exactamente dos salidas -- terminé, o hay un problema --
- * con área de toque de 56 px, muy por encima del mínimo de 44.
+ * trabaja aquí lo hace de pie, con una mano ocupada, a veces con guantes: no
+ * puede apuntar a un renglón de tabla ni encontrar un menú de tres puntos. Por
+ * eso el número de cuarto se lee a un brazo de distancia y cada tarjeta tiene
+ * exactamente dos botones, uno debajo del otro, del ancho completo y de 56 px
+ * de alto -- no hay a dónde fallar el toque.
+ *
+ * "Todo bien" cierra la habitación de un toque. Antes eran dos -- empezar y
+ * luego terminar -- y el primero no le servía a quien limpia: le servía al
+ * cronómetro. Si la tarea no está iniciada, se inicia y se cierra en la misma
+ * acción; el reloj deja de ser algo que el usuario tiene que recordar.
  *
  * Al terminar una, la tarjeta desaparece de la lista y la siguiente sube sola:
  * nadie tiene que volver a buscar dónde iba.
@@ -63,9 +54,32 @@ export function CleaningQueue({
   const start = useStartCleaning()
   const finish = useFinishCleaningTask()
 
-  const [cerrando, setCerrando] = useState<CleaningTask | null>(null)
-  const [notas, setNotas] = useState('')
+  const [liberando, setLiberando] = useState<number | null>(null)
   const [reportando, setReportando] = useState<CleaningTask | null>(null)
+
+  /** El tiempo que lleva la tarea, en palabras. */
+  const tiempo = (task: CleaningTask): string =>
+    task.started_at
+      ? t('limpieza.empezoHace', { tiempo: formatRelative(task.started_at) })
+      : t('limpieza.esperandoDesde', { tiempo: formatRelative(task.created_at) })
+
+  /* Un toque, un cuarto liberado.
+   *
+   *  El backend no deja saltar de "pendiente" a "hecha" -- la limpieza tiene
+   *  que haber empezado para poder terminar -- así que cuando no está iniciada
+   *  se encadenan las dos llamadas. Es un detalle del modelo de datos, y quien
+   *  está parado en el pasillo con el carrito no tiene por qué conocerlo. */
+  const liberar = async (task: CleaningTask): Promise<void> => {
+    setLiberando(task.id)
+    try {
+      if (task.status !== 'IN_PROGRESS') await start.mutateAsync(task.id)
+      await finish.mutateAsync({ taskId: task.id, notes: '', foundIssues: false })
+    } catch {
+      // El error ya salió en su aviso; la tarjeta se queda para reintentar.
+    } finally {
+      setLiberando(null)
+    }
+  }
 
   // "No pudimos cargar" y "no hay nada que limpiar" se ven igual si los dos
   // son una lista vacía, y para quien empieza su turno son opuestos: uno
@@ -86,9 +100,9 @@ export function CleaningQueue({
 
   if (isLoading) {
     return (
-      <div className="space-y-2">
+      <div className="space-y-3">
         {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="h-32 animate-pulse rounded-xl bg-muted" />
+          <div key={index} className="h-52 animate-pulse rounded-xl bg-muted" />
         ))}
       </div>
     )
@@ -101,13 +115,17 @@ export function CleaningQueue({
       return (
         <EmptyState
           title={t('limpieza.sinTareasAsignadas')}
-          description={`Hay ${sinAsignar} ${
-            sinAsignar === 1 ? t('limpieza.habitacionPendiente') : 'habitaciones pendientes'
-          } que nadie ha tomado.`}
+          description={t('limpieza.nadieLasHaTomado', {
+            cuantas: sinAsignar,
+            queCosa:
+              sinAsignar === 1
+                ? t('limpieza.habitacionPendiente')
+                : t('limpieza.habitacionesPendientes'),
+          })}
           icon={<PiClipboardText className="h-8 w-8" aria-hidden />}
           action={
             onVerTodas ? (
-              <Button className="h-11" onClick={onVerTodas}>
+              <Button className="h-12" onClick={onVerTodas}>
                 {t('limpieza.verTodasPendientes')}
               </Button>
             ) : null
@@ -127,10 +145,11 @@ export function CleaningQueue({
 
   return (
     <>
-      <ul className="space-y-2.5 pb-2">
+      <ul className="space-y-3 pb-2">
         {tasks.map((task, indice) => {
           const enProceso = task.status === 'IN_PROGRESS'
           const siguiente = indice === 0 && !enProceso
+          const ocupada = liberando === task.id
 
           return (
             <li
@@ -143,10 +162,17 @@ export function CleaningQueue({
             >
               <div className="flex items-start justify-between gap-3 p-4">
                 <div className="min-w-0">
-                  <p className="font-mono text-3xl font-medium leading-none tracking-tightest">
+                  {/* El número, enorme y monoespaciado: identifica el cuarto
+                      desde el pasillo, sin acercarse el teléfono a la cara. */}
+                  <p className="font-mono text-5xl font-semibold leading-none tracking-tightest">
                     {task.room_number}
                   </p>
-                  <p className="mt-1.5 text-sm text-muted-foreground">{task.task_type_display}</p>
+                  <p className="mt-2 text-sm text-muted-foreground">{task.task_type_display}</p>
+                  {task.assigned_to_name ? (
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {t('limpieza.asignadaAPersona', { persona: task.assigned_to_name })}
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="shrink-0 text-right">
@@ -167,96 +193,42 @@ export function CleaningQueue({
                 </div>
               </div>
 
-              {task.assigned_to_name ? (
-                <p className="px-4 pb-2 text-xs text-muted-foreground">
-                  Asignada a {task.assigned_to_name}
-                </p>
-              ) : null}
-
-              {/* Botones de 56 px de alto y ancho completo: el pulgar cae aquí
-                  sin apuntar, que es lo único que se puede pedir con guantes. */}
-              <div className="grid grid-cols-2 gap-px border-t bg-border">
-                {enProceso ? (
-                  <Button
-                    variant="ghost"
-                    className="h-14 rounded-none bg-card text-base font-medium text-status-available hover:bg-status-available/10"
-                    loading={finish.isPending && cerrando?.id === task.id}
-                    onClick={() => {
-                      setNotas('')
-                      setCerrando(task)
-                    }}
-                  >
-                    <PiCheckCircle className="h-5 w-5" />
-                    {t('limpieza.lista')}
-                  </Button>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    className="h-14 rounded-none bg-card text-base font-medium hover:bg-accent"
-                    loading={start.isPending}
-                    onClick={() => start.mutate(task.id)}
-                  >
-                    <PiPlay className="h-5 w-5" />
-                    {t('limpieza.empezar')}
-                  </Button>
-                )}
+              {/* Dos botones, uno debajo del otro, del ancho entero y de 56 px:
+                  el pulgar cae aquí sin apuntar, que es lo único que se puede
+                  pedir con guantes puestos. Lado a lado medían la mitad y el
+                  error de toque caía en el botón de junto, que es el peor de
+                  los dos errores posibles: liberar cuando querías reportar. */}
+              <div className="flex flex-col gap-px border-t bg-border">
+                <Button
+                  variant="ghost"
+                  className="h-14 w-full rounded-none bg-card text-base font-medium text-status-available hover:bg-status-available/10"
+                  loading={ocupada}
+                  onClick={() => void liberar(task)}
+                >
+                  <PiCheckCircle className="h-5 w-5" />
+                  <span className="flex flex-col items-start leading-tight">
+                    {ocupada ? t('limpieza.liberando') : t('limpieza.todoBien')}
+                    {ocupada ? null : (
+                      <span className="text-2xs font-normal text-muted-foreground">
+                        {t('limpieza.liberaLaHabitacion')}
+                      </span>
+                    )}
+                  </span>
+                </Button>
 
                 <Button
                   variant="ghost"
-                  className="h-14 rounded-none bg-card text-base font-medium text-status-cleaning hover:bg-status-cleaning/10"
+                  className="h-14 w-full rounded-none bg-card text-base font-medium text-status-cleaning hover:bg-status-cleaning/10"
                   onClick={() => setReportando(task)}
                 >
                   <PiWarning className="h-5 w-5" />
-                  {t('limpieza.problema')}
+                  {t('limpieza.reportarProblema')}
                 </Button>
               </div>
             </li>
           )
         })}
       </ul>
-
-      {/* Cierre de la tarea: una nota opcional y confirmar. La barra se queda
-          pegada al borde inferior, sobre el área segura del teléfono, porque
-          ahí es donde la mano ya está. */}
-      {cerrando ? (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-lg">
-          <div className="mx-auto flex max-w-3xl flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium">Habitación {cerrando.room_number} lista</p>
-              <Input
-                value={notas}
-                onChange={(event) => setNotas(event.target.value)}
-                placeholder={t('limpieza.algoQueAnotar')}
-                className="mt-2 h-11"
-                aria-label={t('limpieza.observacionesLimpieza')}
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="h-12 flex-1 sm:flex-none"
-                onClick={() => setCerrando(null)}
-              >
-                {t('limpieza.cancelar')}
-              </Button>
-              <Button
-                variant="success"
-                className="h-12 flex-1 text-base sm:flex-none"
-                loading={finish.isPending}
-                onClick={() =>
-                  finish.mutate(
-                    { taskId: cerrando.id, notes: notas, foundIssues: false },
-                    { onSuccess: () => setCerrando(null) },
-                  )
-                }
-              >
-                <PiCheck className="h-5 w-5" />
-                {t('limpieza.confirmar')}
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
 
       <ReportMaintenanceDialog
         open={reportando !== null}

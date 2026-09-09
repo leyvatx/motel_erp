@@ -155,12 +155,16 @@ export default function CorporatePage() {
         <TabsContent value="overview" className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <MetricCard
-              label="Sucursales visibles"
+              label={t('corporativo.sucursalesVisibles')}
               value={totals?.motels ?? '—'}
               icon={PiBuildings}
             />
             <MetricCard label="Habitaciones" value={totals?.rooms ?? '—'} icon={PiDoorOpen} />
-            <MetricCard label="Ocupadas ahora" value={totals?.occupied ?? '—'} icon={PiBuildings} />
+            <MetricCard
+              label={t('corporativo.ocupadasAhora')}
+              value={totals?.occupied ?? '—'}
+              icon={PiBuildings}
+            />
             <MetricCard
               label={t('comun.ingresos24h')}
               value={formatMoney(totals?.revenue_24h)}
@@ -170,9 +174,7 @@ export default function CorporatePage() {
           <Card>
             <CardHeader>
               <CardTitle>{t('comun.operacionPorSucursal')}</CardTitle>
-              <CardDescription>
-                Selecciona una propiedad para entrar a su operación sin cerrar sesión.
-              </CardDescription>
+              <CardDescription>{t('corporativo.seleccionaUnaPropiedad')}</CardDescription>
             </CardHeader>
             <Table>
               <TableHeader>
@@ -180,8 +182,8 @@ export default function CorporatePage() {
                   <TableHead>Propiedad</TableHead>
                   <TableHead>Región</TableHead>
                   <TableHead>Habitaciones</TableHead>
-                  <TableHead>Ocupación</TableHead>
-                  <TableHead>Ingresos 24 h</TableHead>
+                  <TableHead>{t('corporativo.ocupacion')}</TableHead>
+                  <TableHead>{t('corporativo.ingresos24h')}</TableHead>
                   <TableHead />
                 </TableRow>
               </TableHeader>
@@ -286,9 +288,7 @@ export default function CorporatePage() {
           <Card>
             <CardHeader>
               <CardTitle>Regiones</CardTitle>
-              <CardDescription>
-                Agrupa propiedades para supervisión y cambios masivos.
-              </CardDescription>
+              <CardDescription>{t('corporativo.agrupaPropiedades')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <form
@@ -311,7 +311,7 @@ export default function CorporatePage() {
                   onChange={(e) => setRegionForm({ ...regionForm, group: e.target.value })}
                   required
                 >
-                  <option value="">Selecciona grupo</option>
+                  <option value="">{t('corporativo.seleccionaGrupo')}</option>
                   {groups.data?.results.map((group) => (
                     <option key={group.id} value={group.id}>
                       {group.name}
@@ -331,7 +331,7 @@ export default function CorporatePage() {
                   required
                 />
                 <Button type="submit" disabled={createRegion.isPending}>
-                  Agregar región
+                  {t('corporativo.agregarRegion')}
                 </Button>
               </form>
               <div className="divide-y rounded-md border">
@@ -352,9 +352,7 @@ export default function CorporatePage() {
           <Card className="xl:col-span-2">
             <CardHeader>
               <CardTitle>{t('corporativo.asignarPropiedades')}</CardTitle>
-              <CardDescription>
-                Cada sucursal pertenece a una sola región; al moverla se actualiza automáticamente.
-              </CardDescription>
+              <CardDescription>{t('corporativo.cadaSucursalUnaRegion')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <select
@@ -411,7 +409,7 @@ export default function CorporatePage() {
                   assignMotels.mutate({ region: Number(assignmentRegion), motel_ids: assignedIds })
                 }
               >
-                Guardar asignación
+                {t('corporativo.guardarAsignacion')}
               </Button>
             </CardContent>
           </Card>
@@ -420,10 +418,8 @@ export default function CorporatePage() {
         <TabsContent value="team" className="grid gap-4 xl:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Nuevo usuario corporativo</CardTitle>
-              <CardDescription>
-                Una sola cuenta puede trabajar con varias propiedades.
-              </CardDescription>
+              <CardTitle>{t('corporativo.nuevoUsuarioCorporativo')}</CardTitle>
+              <CardDescription>{t('corporativo.unaCuentaVariasPropiedades')}</CardDescription>
             </CardHeader>
             <CardContent>
               <form
@@ -453,7 +449,7 @@ export default function CorporatePage() {
                     required
                   />
                   <Input
-                    placeholder="Nombre completo"
+                    placeholder={t('corporativo.nombreCompleto')}
                     value={userForm.full_name}
                     onChange={(e) => setUserForm({ ...userForm, full_name: e.target.value })}
                     required
@@ -473,7 +469,7 @@ export default function CorporatePage() {
                     value={userForm.role}
                     onChange={(e) => setUserForm({ ...userForm, role: e.target.value as Role })}
                   >
-                    <option value="MANAGER">Gerencia corporativa</option>
+                    <option value="MANAGER">{t('corporativo.gerenciaCorporativa')}</option>
                     <option value="RECEPTION">Operación</option>
                     <option value="HOUSEKEEPING">{t('comun.amaDeLlaves')}</option>
                   </select>
@@ -492,17 +488,15 @@ export default function CorporatePage() {
                   ))}
                 </select>
                 <Button type="submit" disabled={createUser.isPending}>
-                  Crear usuario
+                  {t('corporativo.crearUsuario')}
                 </Button>
               </form>
             </CardContent>
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Asignar acceso regional</CardTitle>
-              <CardDescription>
-                El usuario verá automáticamente todas las sucursales vigentes de la región.
-              </CardDescription>
+              <CardTitle>{t('corporativo.asignarAccesoRegional')}</CardTitle>
+              <CardDescription>{t('corporativo.veraTodasLasVigentes')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <form
@@ -525,7 +519,7 @@ export default function CorporatePage() {
                   onChange={(e) => setAccessForm({ ...accessForm, user: e.target.value })}
                   required
                 >
-                  <option value="">Selecciona usuario</option>
+                  <option value="">{t('corporativo.seleccionaUsuario')}</option>
                   {users.data?.results.map((user) => (
                     <option key={user.id} value={user.id}>
                       {user.full_name} ({user.username})
@@ -555,7 +549,7 @@ export default function CorporatePage() {
                   <option value="HOUSEKEEPING">{t('comun.amaDeLlaves')}</option>
                 </select>
                 <Button type="submit" disabled={createAccess.isPending}>
-                  Asignar región
+                  {t('corporativo.asignarRegion')}
                 </Button>
               </form>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -570,10 +564,7 @@ export default function CorporatePage() {
           <Card className="max-w-3xl">
             <CardHeader>
               <CardTitle>{t('corporativo.configuracionMasiva')}</CardTitle>
-              <CardDescription>
-                Previsualiza el alcance antes de aplicar los mismos parámetros a una región
-                completa.
-              </CardDescription>
+              <CardDescription>{t('corporativo.previsualizaElAlcance')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="space-y-2">
@@ -596,7 +587,7 @@ export default function CorporatePage() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Color principal</Label>
+                  <Label>{t('config.colorPrincipal')}</Label>
                   <Input
                     type="color"
                     value={bulkForm.brand_primary_color}
@@ -628,7 +619,7 @@ export default function CorporatePage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Zona horaria</Label>
+                  <Label>{t('config.zonaHoraria')}</Label>
                   <Input
                     value={bulkForm.time_zone}
                     onChange={(e) => setBulkForm({ ...bulkForm, time_zone: e.target.value })}
@@ -652,13 +643,15 @@ export default function CorporatePage() {
                   disabled={!bulkForm.region || bulk.isPending}
                   onClick={() => bulk.mutate(bulkPayload(true))}
                 >
-                  Vista previa
+                  {t('config.vistaPrevia')}
                 </Button>
                 <Button
                   disabled={!preview || preview.target_count === 0 || bulk.isPending}
                   onClick={() => bulk.mutate(bulkPayload(false))}
                 >
-                  Aplicar a {preview?.target_count ?? 0} sucursales
+                  {t('corporativo.aplicarASucursales', {
+                    cuantas: preview?.target_count ?? 0,
+                  })}
                 </Button>
               </div>
             </CardContent>

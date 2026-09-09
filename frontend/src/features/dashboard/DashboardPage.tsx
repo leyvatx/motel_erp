@@ -37,11 +37,17 @@ import { useAuthStore } from '@/store/auth'
 import type { Role, RoomStatus } from '@/types/api'
 
 const money = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
-const today = new Intl.DateTimeFormat('es-MX', {
-  weekday: 'long',
-  day: 'numeric',
-  month: 'long',
-})
+
+/** La fecha del saludo, en el idioma que esté puesto. Se arma en cada render y
+ *  no una vez al importar: el formateador de módulo se quedaba en español para
+ *  siempre, y al cambiar a inglés el saludo quedaba a medias. */
+function fechaDeHoy(): string {
+  return new Intl.DateTimeFormat(i18n.language?.startsWith('en') ? 'en-US' : 'es-MX', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  }).format(new Date())
+}
 
 function MetricCard({
   title,
@@ -137,14 +143,14 @@ function roleActions(role: Role) {
   if (role === 'HOUSEKEEPING') {
     return [
       {
-        label: 'Ver mis limpiezas',
-        detail: 'Continuar tareas asignadas',
+        label: i18n.t('tablero.verMisLimpiezas'),
+        detail: i18n.t('tablero.continuarTareas'),
         to: '/housekeeping',
         icon: PiPaintBrush,
       },
       {
-        label: 'Revisar inventario',
-        detail: 'Existencias e insumos',
+        label: i18n.t('tablero.revisarInventario'),
+        detail: i18n.t('tablero.existenciasEInsumos'),
         to: '/inventory',
         icon: PiPackage,
       },
@@ -280,7 +286,7 @@ export default function DashboardPage() {
   return (
     <PageShell
       title={`${greeting()}, ${displayName}`}
-      description={`${businessName || user?.motel_name || t('tablero.tuSucursal')} · ${today.format(new Date())}`}
+      description={`${businessName || user?.motel_name || t('tablero.tuSucursal')} · ${fechaDeHoy()}`}
       className="min-h-0 overflow-y-auto pb-1 lg:overflow-hidden lg:pb-0"
     >
       {/*
@@ -301,21 +307,27 @@ export default function DashboardPage() {
             {!isHousekeeping ? (
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4 lg:flex lg:gap-x-6">
                 <ShiftFigure
-                  label="Turno"
+                  label={t('tablero.turno')}
                   value={shift.isLoading ? '…' : (shift.data?.code ?? t('comun.sinTurno'))}
                 />
                 <ShiftFigure
-                  label="Ventas"
+                  label={t('tablero.ventas')}
                   value={shift.data ? money.format(Number(shift.data.total_sales)) : '—'}
                 />
                 <ShiftFigure
-                  label="Efectivo esperado"
+                  label={t('tablero.efectivoEsperado')}
                   value={shift.data ? money.format(Number(shift.data.expected_cash)) : '—'}
                 />
-                <ShiftFigure label="Folios" value={String(shift.data?.folios_closed ?? '—')} />
+                <ShiftFigure
+                  label={t('tablero.folios')}
+                  value={String(shift.data?.folios_closed ?? '—')}
+                />
               </div>
             ) : (
-              <ShiftFigure label="Tareas activas" value={String(activeCleaning.length)} />
+              <ShiftFigure
+                label={t('tablero.tareasActivas')}
+                value={String(activeCleaning.length)}
+              />
             )}
 
             {!isHousekeeping ? (
@@ -333,7 +345,7 @@ export default function DashboardPage() {
           {isHousekeeping ? (
             <>
               <MetricCard
-                title="Mis tareas activas"
+                title={t('tablero.misTareasActivas')}
                 value={activeCleaning.length}
                 detail={t('tablero.pendientesYEnProceso')}
                 icon={<PiPaintBrush className="size-4" />}
@@ -355,7 +367,7 @@ export default function DashboardPage() {
                 tone={urgentMaintenance.length ? 'warning' : 'default'}
               />
               <MetricCard
-                title="Stock bajo"
+                title={t('tablero.stockBajo')}
                 value={lowStock.data?.count ?? 0}
                 detail={t('tablero.insumosPorReponer')}
                 icon={<PiPackage className="size-4" />}
@@ -369,9 +381,12 @@ export default function DashboardPage() {
                   el conteo de renglones Stay del turno. Las otras tres son fotos
                   del momento y nada guarda cómo estaban hace una hora. */}
               <MetricCard
-                title="Ocupación"
+                title={t('tablero.ocupacion')}
                 value={`${occupancy}%`}
-                detail={`${occupied} de ${totalRooms} · rentas/hora`}
+                detail={t('tablero.deRentasPorHora', {
+                  ocupadas: occupied,
+                  total: totalRooms,
+                })}
                 icon={<PiBed className="size-4" />}
                 loading={rooms.isLoading}
                 trend={rentalsPerHour}
@@ -387,7 +402,7 @@ export default function DashboardPage() {
               <MetricCard
                 title={t('tablero.porVencer')}
                 value={expiring.data?.count ?? 0}
-                detail={`${expiredStays.length} ya vencidas`}
+                detail={t('tablero.yaVencidas', { cuantas: expiredStays.length })}
                 icon={<PiClock className="size-4" />}
                 loading={expiring.isLoading}
                 tone={expiredStays.length ? 'warning' : 'default'}
@@ -477,10 +492,10 @@ export default function DashboardPage() {
         <Card className="flex min-h-0 flex-col lg:col-span-3">
           <CardHeader className="shrink-0 pb-2">
             <CardTitle className="text-base">
-              {isHousekeeping ? t('tablero.trabajoDelTurno') : 'Distribución'}
+              {isHousekeeping ? t('tablero.trabajoDelTurno') : t('tablero.distribucion')}
             </CardTitle>
             <CardDescription className="text-xs">
-              {isHousekeeping ? t('tablero.tareasPorEstado') : 'Habitaciones ahora'}
+              {isHousekeeping ? t('tablero.tareasPorEstado') : t('tablero.habitacionesAhora')}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex h-56 min-h-0 items-center pt-0 lg:h-auto lg:flex-1">
@@ -513,7 +528,7 @@ export default function DashboardPage() {
             <CardTitle className="text-base">{t('tablero.tendenciaDelTurno')}</CardTitle>
             <CardDescription className="text-xs">
               {trend.data?.shift
-                ? `Ventas por hora · ${trend.data.shift}`
+                ? t('tablero.ventasPorHora', { turno: trend.data.shift })
                 : t('tablero.ventasPorHora')}
             </CardDescription>
           </CardHeader>

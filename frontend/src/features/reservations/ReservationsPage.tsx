@@ -108,7 +108,7 @@ export default function ReservationsPage() {
     return [
       {
         key: 'check-in',
-        label: 'Registrar llegada',
+        label: t('reservaciones.registrarLlegadaAccion'),
         icon: <PiSignIn />,
         disabled: !active,
         onSelect: () => setCheckingIn(item),
@@ -152,10 +152,14 @@ export default function ReservationsPage() {
           <StatStrip
             isLoading={reservations.isLoading}
             stats={[
-              { label: 'Vigentes', value: reservations.data?.count ?? 0 },
-              { label: 'Llegan hoy', value: todayCount, tone: todayCount ? 'warning' : 'neutral' },
+              { label: t('reservaciones.vigentes'), value: reservations.data?.count ?? 0 },
               {
-                label: 'Confirmadas',
+                label: t('reservaciones.lleganHoy'),
+                value: todayCount,
+                tone: todayCount ? 'warning' : 'neutral',
+              },
+              {
+                label: t('reservaciones.confirmadas'),
                 value: allRows.filter((item) => item.status === 'CONFIRMED').length,
               },
               {
@@ -227,8 +231,8 @@ export default function ReservationsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Llegada</TableHead>
-                <TableHead>Huésped</TableHead>
-                <TableHead>Habitación</TableHead>
+                <TableHead>{t('reservaciones.huesped')}</TableHead>
+                <TableHead>{t('reservaciones.habitacion')}</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead>Anticipo</TableHead>
                 <TableHead className="w-12" />

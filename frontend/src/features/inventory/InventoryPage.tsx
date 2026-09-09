@@ -114,7 +114,7 @@ export default function InventoryPage() {
     },
     {
       key: 'entry',
-      label: 'Registrar entrada',
+      label: t('inventario.registrarEntrada'),
       icon: <PiPackage />,
       separated: true,
       onSelect: () => setMovement('entry'),
@@ -133,7 +133,7 @@ export default function InventoryPage() {
     },
     {
       key: 'waste',
-      label: 'Registrar merma',
+      label: t('inventario.registrarMerma'),
       icon: <PiTrash />,
       danger: true,
       separated: true,
@@ -189,7 +189,7 @@ export default function InventoryPage() {
             isLoading={stocks.isLoading}
             stats={[
               {
-                label: 'Existencias listadas',
+                label: t('inventario.existenciasListadas'),
                 value: stocks.data?.count ?? 0,
                 help:
                   warehouse === 'all'

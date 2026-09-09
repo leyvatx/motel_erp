@@ -8,6 +8,7 @@ import { nombreDelProducto } from '@/lib/brand'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/auth'
 import { useUiStore } from '@/store/ui'
+import { ImageWithFallback } from '@/components/ui/image'
 
 export function Sidebar() {
   const { t } = useTranslation()
@@ -55,11 +56,11 @@ export function Sidebar() {
           )}
         >
           <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-brand-dark">
-            {logoUrl ? (
-              <img src={logoUrl} alt="" className="h-full w-full object-contain" />
-            ) : (
-              <PiBed className="h-4 w-4 text-white" aria-hidden />
-            )}
+            <ImageWithFallback
+              src={logoUrl}
+              className="h-full w-full object-contain"
+              fallback={<PiBed className="h-4 w-4 text-white" aria-hidden />}
+            />
           </div>
           <div
             className={cn(
@@ -70,7 +71,9 @@ export function Sidebar() {
             <p className="truncate text-sm font-semibold text-sidebar-accent-foreground">
               {businessName || nombreDelProducto()}
             </p>
-            <p className="truncate text-2xs text-sidebar-foreground/70">Administración</p>
+            <p className="truncate text-2xs text-sidebar-foreground/70">
+              {t('comun.administracion')}
+            </p>
           </div>
         </div>
 

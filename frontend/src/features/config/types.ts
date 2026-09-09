@@ -46,6 +46,6 @@ export interface TimeZoneOption {
 export const PRINTER_BACKENDS: readonly { value: PrinterBackend; label: string }[] = [
   { value: 'dummy', label: i18n.t('config.sinImpresora') },
   { value: 'network', label: i18n.t('config.impresoraDeRed') },
-  { value: 'usb', label: 'Impresora USB' },
+  { value: 'usb', label: 'config.impresoraUsb' },
   { value: 'file', label: i18n.t('config.archivoDeTexto') },
 ]

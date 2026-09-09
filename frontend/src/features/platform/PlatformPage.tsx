@@ -44,7 +44,7 @@ export default function PlatformPage() {
           }}
           placeholder={t('plataforma.buscarSucursal')}
           className="max-w-md"
-          aria-label="Buscar sucursales"
+          aria-label={t('plataforma.buscarSucursales')}
         />
       }
     >
@@ -57,7 +57,7 @@ export default function PlatformPage() {
                 <TableHead>Estado</TableHead>
                 <TableHead>Usuarios</TableHead>
                 <TableHead>Habitaciones</TableHead>
-                <TableHead>Zona horaria</TableHead>
+                <TableHead>{t('config.zonaHoraria')}</TableHead>
                 <TableHead>Alta</TableHead>
               </TableRow>
             </TableHeader>

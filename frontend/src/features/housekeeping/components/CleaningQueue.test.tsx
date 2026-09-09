@@ -80,25 +80,47 @@ describe('cola de limpieza', () => {
 
   // Las dos únicas salidas de una tarjeta, visibles y sin menú de por medio:
   // es la razón de que esta vista exista en lugar de la tabla.
-  it('cada tarjeta ofrece empezar y reportar problema sin abrir menús', () => {
+  it('cada tarjeta ofrece liberar y reportar problema sin abrir menús', () => {
     pintar([tarea(1, '204', 'PENDING')])
 
-    expect(screen.getByRole('button', { name: /empezar/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /todo bien/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /problema/i })).toBeInTheDocument()
   })
 
-  it('la tarea en proceso cambia a "Lista" y pide confirmar antes de cerrarla', async () => {
+  // Los dos botones, uno debajo del otro y del ancho entero: lado a lado, el
+  // dedo que falla cae en el de junto, y ahí los dos errores son caros.
+  it('los botones ocupan el ancho y pasan de 48 px de alto', () => {
+    pintar([tarea(1, '204', 'PENDING')])
+
+    for (const nombre of [/todo bien/i, /problema/i]) {
+      const boton = screen.getByRole('button', { name: nombre })
+      expect(boton.className).toContain('w-full')
+      expect(boton.className).toContain('h-14')
+    }
+  })
+
+  it('un toque libera la habitación, sin pasos intermedios', async () => {
     const finish = vi.spyOn(housekeepingApi, 'finish').mockResolvedValue(tarea(1, '204', 'DONE'))
     pintar([tarea(1, '204', 'IN_PROGRESS')])
 
-    fireEvent.click(screen.getByRole('button', { name: /lista/i }))
+    fireEvent.click(screen.getByRole('button', { name: /todo bien/i }))
 
-    // No se cierra de un toque: primero aparece la barra de confirmación, para
-    // que un roce con el guante no libere un cuarto sin limpiar.
-    expect(screen.getByText('Habitación 204 lista')).toBeInTheDocument()
-    expect(finish).not.toHaveBeenCalled()
+    await waitFor(() => expect(finish).toHaveBeenCalledWith(1, '', false))
+  })
 
-    fireEvent.click(screen.getByRole('button', { name: /confirmar/i }))
+  // El backend no deja saltar de "pendiente" a "hecha". Que eso obligue a dar
+  // dos toques -- empezar y luego terminar -- es trasladarle al pasillo un
+  // detalle del modelo de datos.
+  it('si la tarea no estaba iniciada, la inicia y la cierra en el mismo toque', async () => {
+    const start = vi
+      .spyOn(housekeepingApi, 'start')
+      .mockResolvedValue(tarea(1, '204', 'IN_PROGRESS'))
+    const finish = vi.spyOn(housekeepingApi, 'finish').mockResolvedValue(tarea(1, '204', 'DONE'))
+    pintar([tarea(1, '204', 'PENDING')])
+
+    fireEvent.click(screen.getByRole('button', { name: /todo bien/i }))
+
+    await waitFor(() => expect(start).toHaveBeenCalledWith(1))
     await waitFor(() => expect(finish).toHaveBeenCalledWith(1, '', false))
   })
 })

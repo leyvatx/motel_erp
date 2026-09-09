@@ -1,4 +1,5 @@
 import { PiBell, PiChecks } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -42,6 +43,7 @@ function NotificationRow({ item }: { item: Notification }) {
 }
 
 export function NotificationBell() {
+  const { t } = useTranslation()
   const { data: counter } = useUnreadCount()
   const { data, isLoading } = useNotifications({ page_size: 12 })
   const markAllRead = useMarkAllRead()
@@ -79,7 +81,7 @@ export function NotificationBell() {
               loading={markAllRead.isPending}
             >
               <PiChecks className="h-4 w-4" />
-              Marcar leidas
+              {t('comun.marcarLeidas')}
             </Button>
           ) : null}
         </div>
@@ -95,7 +97,7 @@ export function NotificationBell() {
             </ul>
           ) : (
             <p className="px-4 py-8 text-center text-sm text-muted-foreground">
-              No hay avisos pendientes.
+              {t('comun.sinAvisosPendientes')}
             </p>
           )}
         </div>

@@ -10,6 +10,7 @@ import {
 } from 'react-icons/pi'
 import type { IconType } from 'react-icons'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -67,6 +68,7 @@ interface Props {
 }
 
 export function StayTimeline({ stayId, folioId }: Props) {
+  const { t } = useTranslation()
   const user = useAuthStore((state) => state.user)
   const canViewAudit = canAccessSection(user, 'audit')
   const stayLogs = useAuditLogs(
@@ -87,7 +89,7 @@ export function StayTimeline({ stayId, folioId }: Props) {
   if (!canViewAudit) {
     return (
       <p className="py-4 text-center text-xs text-muted-foreground">
-        El historial detallado está disponible para gerencia.
+        {t('auditoria.historialParaGerencia')}
       </p>
     )
   }
@@ -105,7 +107,7 @@ export function StayTimeline({ stayId, folioId }: Props) {
   if (entries.length === 0) {
     return (
       <p className="py-6 text-center text-sm text-muted-foreground">
-        Sin movimientos registrados todavía.
+        {t('auditoria.sinMovimientosTodavia')}
       </p>
     )
   }
@@ -173,7 +175,7 @@ export function StayTimeline({ stayId, folioId }: Props) {
       </ol>
       <Button asChild variant="ghost" size="sm" className="w-full">
         <Link to={`/audit?target=rooms.stay&object_id=${stayId}`}>
-          Ver historial completo en Auditoría
+          {t('auditoria.verHistorialCompleto')}
         </Link>
       </Button>
     </div>

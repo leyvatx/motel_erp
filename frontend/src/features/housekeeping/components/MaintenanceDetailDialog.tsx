@@ -1,5 +1,8 @@
 import { useTranslation } from 'react-i18next'
+import { PiImageBroken } from 'react-icons/pi'
+
 import { Badge } from '@/components/ui/badge'
+import { ImageWithFallback } from '@/components/ui/image'
 import {
   Dialog,
   DialogContent,
@@ -69,10 +72,16 @@ export function MaintenanceDetailDialog({ report, onOpenChange }: Props) {
             rel="noreferrer"
             className="block overflow-hidden rounded-lg border focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
           >
-            <img
+            <ImageWithFallback
               src={ficha.photo_url}
-              alt={`Foto del reporte ${ficha.folio}`}
+              alt={t('limpieza.fotoDelProblema')}
               className="max-h-56 w-full object-cover"
+              fallback={
+                <span className="flex h-24 w-full items-center justify-center gap-2 bg-muted/60 text-xs text-muted-foreground">
+                  <PiImageBroken className="h-5 w-5" aria-hidden />
+                  {t('comun.imagenNoDisponible')}
+                </span>
+              }
             />
           </a>
         ) : null}

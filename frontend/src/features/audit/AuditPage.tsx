@@ -123,12 +123,12 @@ export default function AuditPage() {
 
   return (
     <PageShell
-      title="Auditoría"
+      title={t('auditoria.titulo')}
       description={t('auditoria.subtitulo')}
       actions={
         <Button variant="outline" onClick={download} loading={exporting} disabled={!totalSummary}>
           <PiDownloadSimple />
-          Exportar CSV
+          {t('auditoria.exportarCsv')}
         </Button>
       }
       toolbar={
@@ -136,7 +136,11 @@ export default function AuditPage() {
           <StatStrip
             isLoading={summary.isLoading}
             stats={[
-              { label: 'Operaciones', value: totalSummary, help: t('comun.conLosFiltrosActuales') },
+              {
+                label: t('auditoria.operaciones'),
+                value: totalSummary,
+                help: t('comun.conLosFiltrosActuales'),
+              },
               ...topActions.map((item) => ({ label: item.action_display, value: item.total })),
               ...Array.from({ length: Math.max(0, 3 - topActions.length) }, (_, index) => ({
                 label: `Sin actividad ${index + 1}`,
@@ -222,7 +226,7 @@ export default function AuditPage() {
                 setPage(1)
               }}
               className="w-40"
-              aria-label="Fecha inicial"
+              aria-label={t('auditoria.fechaInicial')}
             />
             <Input
               type="date"
@@ -232,21 +236,24 @@ export default function AuditPage() {
                 setPage(1)
               }}
               className="w-40"
-              aria-label="Fecha final"
+              aria-label={t('auditoria.fechaFinal')}
             />
-            <Button variant="ghost" size="icon" onClick={resetFilters} title="Limpiar filtros">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={resetFilters}
+              title={t('auditoria.limpiarFiltros')}
+            >
               <PiArrowCounterClockwise />
             </Button>
           </div>
           {target ? (
             <div className="flex items-center gap-2 text-sm">
               <Badge variant="outline">
-                Historial de {target}
+                {t('auditoria.historialDe', { que: target })}
                 {objectId ? ` #${objectId}` : ''}
               </Badge>
-              <span className="text-muted-foreground">
-                Abre Auditoría desde el menú para volver a todos los registros.
-              </span>
+              <span className="text-muted-foreground">{t('auditoria.abreAuditoria')}</span>
             </div>
           ) : null}
         </div>
@@ -259,9 +266,9 @@ export default function AuditPage() {
               <TableRow>
                 <TableHead>Fecha</TableHead>
                 <TableHead>Usuario</TableHead>
-                <TableHead>Acción</TableHead>
-                <TableHead>Módulo</TableHead>
-                <TableHead>Descripción</TableHead>
+                <TableHead>{t('auditoria.accion')}</TableHead>
+                <TableHead>{t('auditoria.modulo')}</TableHead>
+                <TableHead>{t('auditoria.descripcion')}</TableHead>
                 <TableHead>Objeto</TableHead>
               </TableRow>
             </TableHeader>

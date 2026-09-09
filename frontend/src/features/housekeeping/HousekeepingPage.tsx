@@ -99,7 +99,7 @@ export default function HousekeepingPage() {
   const taskActions = (task: CleaningTask): RowAction[] => [
     {
       key: 'start',
-      label: 'Iniciar limpieza',
+      label: t('limpieza.iniciarLimpieza'),
       icon: <PiPlay />,
       disabled: task.status === 'IN_PROGRESS',
       onSelect: () => start.mutate(task.id),
@@ -130,7 +130,7 @@ export default function HousekeepingPage() {
             onClick={() => setMine(!mine)}
           >
             <PiUserCheck />
-            {mine ? 'Ver todas' : t('limpieza.soloLasMias')}
+            {mine ? t('limpieza.verTodas') : t('limpieza.soloLasMias')}
           </Button>
           <Button className="h-11 sm:h-9" size="sm" onClick={() => setReporting(true)}>
             <PiWrench />
@@ -154,13 +154,13 @@ export default function HousekeepingPage() {
               help: t('limpieza.conCronometro'),
             },
             {
-              label: 'Mantenimiento abierto',
+              label: t('limpieza.mantenimientoAbierto'),
               value: openReports,
               tone: openReports > 0 ? 'warning' : 'positive',
               help: t('limpieza.reportesSinResolver'),
             },
             {
-              label: 'Urgentes',
+              label: t('limpieza.urgentes'),
               value: urgent,
               tone: urgent > 0 ? 'danger' : 'positive',
               help: t('limpieza.requierenAtencion'),
@@ -222,7 +222,7 @@ export default function HousekeepingPage() {
                             <TableRow
                               key={task.id}
                               onContextMenu={openContextMenu(
-                                `Habitación ${task.room_number}`,
+                                t('limpieza.habitacionNumero', { numero: task.room_number }),
                                 taskActions(task),
                               )}
                               className={cn(
@@ -246,13 +246,19 @@ export default function HousekeepingPage() {
                               </TableCell>
                               <TableCell className="text-xs text-muted-foreground">
                                 {task.started_at
-                                  ? `Inició ${formatRelative(task.started_at)}`
-                                  : `En espera ${formatRelative(task.created_at)}`}
+                                  ? t('limpieza.inicioHace', {
+                                      tiempo: formatRelative(task.started_at),
+                                    })
+                                  : t('limpieza.enEsperaDesde', {
+                                      tiempo: formatRelative(task.created_at),
+                                    })}
                               </TableCell>
                               <TableCell className="text-right">
                                 <RowActions
                                   items={taskActions(task)}
-                                  label={`habitación ${task.room_number}`}
+                                  label={t('limpieza.habitacionNumero', {
+                                    numero: task.room_number,
+                                  })}
                                 />
                               </TableCell>
                             </TableRow>
@@ -349,7 +355,7 @@ export default function HousekeepingPage() {
         <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background p-4 shadow-lg">
           <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-3">
             <span className="text-sm font-medium">
-              Terminar limpieza de habitación {closing.room_number}
+              {t('limpieza.terminarLimpiezaDe', { numero: closing.room_number })}
             </span>
             <Input
               value={notes}
@@ -390,7 +396,7 @@ function MaintenanceRow({ report, onDetail }: { report: MaintenanceReport; onDet
   const openContextMenu = useRowContextMenu()
 
   const actions: RowAction[] = [
-    { key: 'detail', label: 'Ver detalles', icon: <PiEye />, onSelect: onDetail },
+    { key: 'detail', label: t('limpieza.verDetalles'), icon: <PiEye />, onSelect: onDetail },
     {
       key: 'attend',
       label: t('limpieza.marcarEnAtencionDos'),
@@ -402,7 +408,7 @@ function MaintenanceRow({ report, onDetail }: { report: MaintenanceReport; onDet
     },
     {
       key: 'resolve',
-      label: 'Marcar resuelto',
+      label: t('limpieza.marcarResuelto'),
       icon: <PiCheckCircle />,
       disabled: report.status !== 'IN_PROGRESS',
       onSelect: () =>
@@ -421,7 +427,7 @@ function MaintenanceRow({ report, onDetail }: { report: MaintenanceReport; onDet
         <p className="font-medium">{report.title}</p>
         <p className="text-2xs text-muted-foreground">
           {report.room_number
-            ? `Habitación ${report.room_number}`
+            ? t('limpieza.habitacionNumero', { numero: report.room_number })
             : report.area || t('limpieza.areaComun')}{' '}
           · {formatDateTime(report.created_at)}
         </p>

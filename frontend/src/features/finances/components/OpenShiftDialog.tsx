@@ -35,10 +35,7 @@ export function OpenShiftDialog() {
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{t('caja.abrirTuTurno')}</DialogTitle>
-          <DialogDescription>
-            Cuenta el fondo del cajón y captúralo. Todo lo que cobres a partir de aquí queda ligado
-            a este turno y a tu usuario.
-          </DialogDescription>
+          <DialogDescription>{t('caja.cuentaElFondo')}</DialogDescription>
         </DialogHeader>
 
         <OpenShiftForm onOpened={hide} />

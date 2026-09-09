@@ -54,7 +54,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 window.location.assign('/login')
               }}
             >
-              Cerrar sesión
+              {i18n.t('comun.cerrarSesion')}
             </Button>
           }
         />

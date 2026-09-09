@@ -100,7 +100,7 @@ export function GlobalSearch({ onSelectStay }: Props) {
         onKeyDown={enTeclado}
         placeholder={t('comun.buscarGlobal')}
         className="bg-muted/50 pl-8 pr-14 shadow-none"
-        aria-label="Buscador global"
+        aria-label={t('comun.buscadorGlobal')}
         role="combobox"
         aria-expanded={mostrarPanel}
         aria-controls="resultados-busqueda"

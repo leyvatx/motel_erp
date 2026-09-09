@@ -45,9 +45,9 @@ import { useAuthStore } from '@/store/auth'
 import type { Role, User } from '@/types/api'
 
 const SECCIONES = [
-  { value: 'personal', label: 'Personal' },
-  { value: 'sesiones', label: 'Sesiones' },
-  { value: 'permisos', label: 'Permisos' },
+  { value: 'personal', label: 'usuarios.personal' },
+  { value: 'sesiones', label: 'usuarios.sesiones' },
+  { value: 'permisos', label: 'usuarios.permisos' },
 ] as const
 
 type Seccion = (typeof SECCIONES)[number]['value']
@@ -103,7 +103,7 @@ export default function UsersPage() {
   const actionsFor = (user: User): RowAction[] => [
     {
       key: 'edit',
-      label: 'Editar usuario',
+      label: t('usuarios.editarUsuario'),
       icon: <PiPencilSimple />,
       onSelect: () => openEdit(user),
     },
@@ -117,7 +117,7 @@ export default function UsersPage() {
     user.is_active
       ? {
           key: 'deactivate',
-          label: 'Desactivar usuario',
+          label: t('usuarios.desactivarUsuario'),
           icon: <PiUserMinus />,
           danger: true,
           separated: true,
@@ -130,7 +130,7 @@ export default function UsersPage() {
         }
       : {
           key: 'restore',
-          label: 'Reactivar usuario',
+          label: t('usuarios.reactivarUsuario'),
           icon: <PiUserCheck />,
           separated: true,
           onSelect: () => restore.mutate(user.id),
@@ -145,7 +145,7 @@ export default function UsersPage() {
         seccion === 'personal' ? (
           <Button onClick={openCreate}>
             <PiUserPlus />
-            Nuevo usuario
+            {t('usuarios.nuevoUsuario')}
           </Button>
         ) : undefined
       }
@@ -173,7 +173,7 @@ export default function UsersPage() {
               }}
               placeholder={t('usuarios.buscarUsuario')}
               className="min-w-64 flex-1 sm:max-w-sm"
-              aria-label="Buscar usuarios"
+              aria-label={t('usuarios.buscarUsuarios')}
             />
             <Select
               value={role}

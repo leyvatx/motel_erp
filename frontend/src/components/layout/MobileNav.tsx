@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { useEffect } from 'react'
 import { PiBed } from 'react-icons/pi'
 
@@ -6,6 +7,7 @@ import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useBrand } from '@/features/config/hooks'
 import { nombreDelProducto } from '@/lib/brand'
 import { useAuthStore } from '@/store/auth'
+import { ImageWithFallback } from '@/components/ui/image'
 
 interface Props {
   open: boolean
@@ -13,6 +15,7 @@ interface Props {
 }
 
 export function MobileNav({ open, onOpenChange }: Props) {
+  const { t } = useTranslation()
   const user = useAuthStore((state) => state.user)
   const { name: businessName, logoUrl } = useBrand()
 
@@ -35,17 +38,19 @@ export function MobileNav({ open, onOpenChange }: Props) {
       >
         <div className="flex h-14 shrink-0 items-center gap-2.5 border-b border-sidebar-border px-3">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-brand-dark">
-            {logoUrl ? (
-              <img src={logoUrl} alt="" className="h-full w-full object-contain" />
-            ) : (
-              <PiBed className="h-4 w-4 text-white" aria-hidden />
-            )}
+            <ImageWithFallback
+              src={logoUrl}
+              className="h-full w-full object-contain"
+              fallback={<PiBed className="h-4 w-4 text-white" aria-hidden />}
+            />
           </div>
           <div className="min-w-0 leading-tight">
             <SheetTitle className="truncate text-sm text-sidebar-accent-foreground">
               {businessName || nombreDelProducto()}
             </SheetTitle>
-            <p className="truncate text-2xs text-sidebar-foreground/70">Administración</p>
+            <p className="truncate text-2xs text-sidebar-foreground/70">
+              {t('comun.administracion')}
+            </p>
           </div>
         </div>
 

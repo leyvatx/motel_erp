@@ -8,6 +8,7 @@ import {
   PiSpeakerHigh,
   PiSpeakerSlash,
   PiCheck,
+  PiCloudSlash,
   PiSun,
   PiTranslate,
 } from 'react-icons/pi'
@@ -118,43 +119,41 @@ export function Topbar({ connection, onOpenMenu }: Props) {
 
             {/* Qué significa cada estado, dicho sin asustar.
                 "Reconectando" eterno se lee como "el sistema está caído" y no
-                lo está: se puede rentar, cobrar y capturar igual. Cuando el
-                tiempo real se da por vencido, el chip dice qué se pierde --
-                que los cambios de otras terminales ya no llegan solos -- y
-                ofrece volver a intentarlo. */}
-            <button
-              type="button"
-              onClick={() => realtimeChannels.forEach((canal) => canal.reintentar())}
-              disabled={connection !== 'degradado'}
-              className={cn(
-                'mx-1.5 hidden items-center gap-1.5 rounded-full border px-2 py-1 text-2xs font-medium sm:flex',
-                connection === 'degradado'
-                  ? 'text-muted-foreground hover:bg-accent'
-                  : 'cursor-default text-muted-foreground',
-              )}
-              title={
-                online
-                  ? t('comun.conectadoTiempoReal')
-                  : connection === 'degradado'
-                    ? t('comun.sinTiempoRealDetalle')
-                    : t('comun.reconectando')
-              }
-            >
+                lo está: se puede rentar, cobrar y capturar igual.
+
+                Rendido no lleva letrero ni punto que late: un aviso permanente
+                que nadie puede resolver deja de ser información y se vuelve
+                ruido -- y en un despliegue sin servidor de WebSocket es
+                permanente de verdad. Queda una nube tachada, gris, quieta, del
+                tamaño de un ícono; quien quiera saber por qué la señala, y de
+                paso vuelve a intentarlo. */}
+            {connection === 'degradado' ? (
+              <button
+                type="button"
+                onClick={() => realtimeChannels.forEach((canal) => canal.reintentar())}
+                className="mx-0.5 hidden h-11 w-11 items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:bg-accent hover:text-muted-foreground sm:flex lg:h-8 lg:w-8"
+                title={t('comun.sinTiempoRealDetalle')}
+                aria-label={t('comun.sinTiempoRealCorto')}
+              >
+                <PiCloudSlash className="h-4 w-4" />
+              </button>
+            ) : (
               <span
                 className={cn(
-                  'h-1.5 w-1.5 rounded-full',
-                  online && 'bg-status-available',
-                  connection === 'degradado' && 'bg-muted-foreground/50',
-                  !online && connection !== 'degradado' && 'animate-pulse-alert bg-status-cleaning',
+                  'mx-1.5 hidden items-center gap-1.5 rounded-full border px-2 py-1 text-2xs font-medium text-muted-foreground sm:flex',
                 )}
-                aria-hidden
-              />
-              {online
-                ? t('comun.enLinea')
-                : connection === 'degradado'
-                  ? t('comun.sinTiempoReal')
-                  : 'Reconectando'}
-            </button>
+                title={online ? t('comun.conectadoTiempoReal') : t('comun.reconectando')}
+              >
+                <span
+                  className={cn(
+                    'h-1.5 w-1.5 rounded-full',
+                    online ? 'bg-status-available' : 'animate-pulse-alert bg-status-cleaning',
+                  )}
+                  aria-hidden
+                />
+                {online ? t('comun.enLinea') : t('comun.reconectandoCorto')}
+              </span>
+            )}
 
             {/* Sonido y tema son ajustes, no operación: en 375 px la franja
                 no da para nueve controles y acababa cortando el menú del
@@ -164,8 +163,8 @@ export function Topbar({ connection, onOpenMenu }: Props) {
               size="icon-sm"
               className="hidden h-11 w-11 sm:inline-flex lg:h-8 lg:w-8"
               onClick={() => setSoundAlerts(!soundAlerts)}
-              aria-label={soundAlerts ? 'Silenciar alertas' : 'Activar alertas sonoras'}
-              title={soundAlerts ? 'Alertas sonoras activas' : 'Alertas sonoras silenciadas'}
+              aria-label={soundAlerts ? t('comun.silenciarAlertas') : t('comun.activarAlertas')}
+              title={soundAlerts ? t('comun.alertasActivas') : t('comun.alertasSilenciadas')}
             >
               {soundAlerts ? (
                 <PiSpeakerHigh />
@@ -243,17 +242,17 @@ export function Topbar({ connection, onOpenMenu }: Props) {
             {operational ? (
               <DropdownMenuItem className="sm:hidden" onSelect={() => setSoundAlerts(!soundAlerts)}>
                 {soundAlerts ? <PiSpeakerSlash /> : <PiSpeakerHigh />}
-                {soundAlerts ? 'Silenciar alertas' : 'Activar alertas'}
+                {soundAlerts ? t('comun.silenciarAlertas') : 'Activar alertas'}
               </DropdownMenuItem>
             ) : null}
             <DropdownMenuItem onSelect={() => setPasswordOpen(true)}>
               <PiKey />
-              Cambiar contraseña
+              {t('acceso.cambiarContrasena')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => logout.mutate()}>
               <PiSignOut />
-              Cerrar sesión
+              {t('comun.cerrarSesion')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

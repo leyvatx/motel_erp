@@ -1,7 +1,14 @@
 import { format, formatDistanceToNowStrict, parseISO } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { enUS, es } from 'date-fns/locale'
+
+import i18n from '@/lib/i18n'
 
 let regional = { locale: 'es-MX', currency: 'MXN' }
+
+/** El diccionario de fechas del idioma que se está usando ahora mismo. */
+function localeDeFechas() {
+  return i18n.language?.startsWith('en') ? enUS : es
+}
 
 let currencyFormatter = buildCurrencyFormatter()
 let numberFormatter = buildNumberFormatter()
@@ -54,22 +61,25 @@ export function formatQuantity(value: string | number | null | undefined): strin
 
 export function formatDateTime(iso: string | null | undefined): string {
   if (!iso) return '-'
-  return format(parseISO(iso), 'dd/MM/yyyy HH:mm', { locale: es })
+  return format(parseISO(iso), 'dd/MM/yyyy HH:mm', { locale: localeDeFechas() })
 }
 
 export function formatTime(iso: string | null | undefined): string {
   if (!iso) return '-'
-  return format(parseISO(iso), 'HH:mm', { locale: es })
+  return format(parseISO(iso), 'HH:mm', { locale: localeDeFechas() })
 }
 
 export function formatDate(iso: string | null | undefined): string {
   if (!iso) return '-'
-  return format(parseISO(iso), 'dd/MM/yyyy', { locale: es })
+  return format(parseISO(iso), 'dd/MM/yyyy', { locale: localeDeFechas() })
 }
 
 export function formatRelative(iso: string | null | undefined): string {
   if (!iso) return '-'
-  return formatDistanceToNowStrict(parseISO(iso), { locale: es, addSuffix: true })
+  return formatDistanceToNowStrict(parseISO(iso), {
+    locale: localeDeFechas(),
+    addSuffix: true,
+  })
 }
 
 export function formatCountdown(totalSeconds: number): string {

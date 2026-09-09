@@ -115,11 +115,11 @@ export function ChangePasswordDialog({
         <DialogFooter>
           {!required ? (
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
+              {t('recepcion.cancelar')}
             </Button>
           ) : null}
           <Button disabled={!valid} loading={mutation.isPending} onClick={submit}>
-            Guardar contraseña
+            {t('acceso.guardarContrasena')}
           </Button>
         </DialogFooter>
       </DialogContent>

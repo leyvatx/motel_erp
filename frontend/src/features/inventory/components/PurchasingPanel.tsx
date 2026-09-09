@@ -81,7 +81,7 @@ export function PurchasingPanel() {
     const result: RowAction[] = [
       {
         key: 'detail',
-        label: 'Ver detalle',
+        label: t('inventario.verDetalle'),
         icon: <PiEye />,
         onSelect: () => setDetail(order),
       },
@@ -105,7 +105,7 @@ export function PurchasingPanel() {
     if (order.status === 'DRAFT' || order.status === 'ORDERED') {
       result.push({
         key: 'cancel',
-        label: 'Cancelar compra',
+        label: t('inventario.cancelarCompra'),
         icon: <PiProhibit />,
         danger: true,
         separated: true,
@@ -250,7 +250,10 @@ function PurchaseDetailDialog({
             {order.folio} · {order.supplier_name}
           </DialogTitle>
           <DialogDescription>
-            Orden del {formatDate(order.order_date)} para {order.warehouse_name}
+            {t('inventario.ordenDelPara', {
+              fecha: formatDate(order.order_date),
+              almacen: order.warehouse_name,
+            })}
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-wrap gap-2 text-sm">
@@ -684,7 +687,7 @@ function ReceiveDialog({
         <DialogHeader>
           <DialogTitle>Recibir {order.folio}</DialogTitle>
           <DialogDescription>
-            Las cantidades recibidas entrarán a {order.warehouse_name} y quedarán en el Kardex.
+            {t('inventario.lasCantidadesEntraranA', { almacen: order.warehouse_name })}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">

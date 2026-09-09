@@ -48,7 +48,7 @@ function SesionAtorada({ onRetry, retrying }: { onRetry: () => void; retrying: b
         retrying={retrying}
         secondaryAction={
           <Button variant="ghost" loading={logout.isPending} onClick={() => logout.mutate()}>
-            Salir y entrar de nuevo
+            {t('comun.salirYEntrar')}
           </Button>
         }
       />

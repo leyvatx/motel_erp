@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { PiCheckCircle, PiInfo, PiWarning, PiX, PiXCircle } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 import { create } from 'zustand'
 
 import { cn } from '@/lib/utils'
@@ -73,6 +74,7 @@ const ICON_COLORS: Record<ToastVariant, string> = {
 }
 
 function ToastCard({ item }: { item: Toast }) {
+  const { t } = useTranslation()
   const dismiss = useToastStore((state) => state.dismiss)
   const Icon = ICONS[item.variant]
 
@@ -112,7 +114,7 @@ function ToastCard({ item }: { item: Toast }) {
         type="button"
         onClick={() => dismiss(item.id)}
         className="text-muted-foreground transition-colors hover:text-foreground"
-        aria-label="Cerrar aviso"
+        aria-label={t('comun.cerrarAviso')}
       >
         <PiX className="h-4 w-4" />
       </button>

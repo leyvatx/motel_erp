@@ -72,7 +72,7 @@ export function useStartCleaning() {
     mutationFn: (taskId: number) => housekeepingApi.start(taskId),
     onSuccess: (task) => {
       invalidate()
-      toast.info(`Limpieza iniciada - habitación ${task.room_number}`)
+      toast.info(t('limpieza.limpiezaIniciada', { numero: task.room_number }))
     },
     onError: (error) => toast.error(t('limpieza.noSePudoIniciar'), apiErrorMessage(error)),
   })
@@ -95,7 +95,10 @@ export function useFinishCleaningTask() {
     onSuccess: (task) => {
       invalidate()
       const minutos = Math.round((task.duration_seconds ?? 0) / 60)
-      toast.success(`Habitación ${task.room_number} lista`, `Tiempo de limpieza: ${minutos} min.`)
+      toast.success(
+        t('limpieza.habitacionLista', { numero: task.room_number }),
+        t('limpieza.tiempoDeLimpieza', { minutos }),
+      )
     },
     onError: (error) => toast.error(t('limpieza.noSePudoCerrarTarea'), apiErrorMessage(error)),
   })
@@ -124,7 +127,7 @@ export function useReportMaintenance() {
     mutationFn: (payload: MaintenancePayload) => housekeepingApi.report(payload),
     onSuccess: (report) => {
       invalidate()
-      toast.warning(`Reporte ${report.folio} levantado`, report.title)
+      toast.warning(t('limpieza.reporteLevantado', { folio: report.folio }), report.title)
     },
     onError: (error) => toast.error(t('limpieza.noSePudoReportar'), apiErrorMessage(error)),
   })

@@ -59,7 +59,7 @@ export function PreparandoEspacio({ desde, onCancelar }: Props) {
 
       <p className="mt-4 text-sm font-medium">{t(fase.texto)}</p>
       <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-        No cierres esta ventana. En cuanto esté, entras directo a configurar tu negocio.
+        {t('acceso.noCierresEstaVentana')}
       </p>
 
       {/* Tres puntos que se van llenando con el tiempo. No es progreso -- no se
@@ -83,7 +83,7 @@ export function PreparandoEspacio({ desde, onCancelar }: Props) {
           onClick={onCancelar}
           className="mt-5 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
         >
-          Cancelar y volver al formulario
+          {t('acceso.cancelarYVolver')}
         </button>
       ) : null}
     </div>

@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
 import { PiBeerBottle, PiCookie, PiPackage, PiSparkle, PiTShirt } from 'react-icons/pi'
 import type { IconType } from 'react-icons'
 
 import { cn } from '@/lib/utils'
+import { ImageWithFallback } from '@/components/ui/image'
 
 /**
  * La cara de un producto que no tiene foto.
@@ -55,28 +55,13 @@ export function ProductThumb({
   className?: string
   iconClassName?: string
 }) {
-  const [falló, setFalló] = useState(false)
-
-  // Un producto distinto en el mismo hueco -- al filtrar o al buscar -- trae
-  // una imagen nueva que merece su propia oportunidad.
-  useEffect(() => setFalló(false), [src])
-
-  if (!src || falló) {
-    return (
-      <span className={cn('flex items-center justify-center', className)}>
-        <ProductIcon categoria={categoria} className={iconClassName} />
-      </span>
-    )
-  }
-
   return (
     <span className={cn('flex items-center justify-center overflow-hidden', className)}>
-      <img
+      <ImageWithFallback
         src={src}
-        alt=""
         loading="lazy"
-        onError={() => setFalló(true)}
         className="h-full w-full object-cover"
+        fallback={<ProductIcon categoria={categoria} className={iconClassName} />}
       />
     </span>
   )

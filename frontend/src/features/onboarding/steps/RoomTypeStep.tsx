@@ -44,7 +44,7 @@ export function RoomTypeStep({ onDone }: { onDone: () => void }) {
           id="setup-type"
           value={name}
           onChange={(event) => setName(event.target.value)}
-          placeholder="Sencilla"
+          placeholder={t('asistente.ejemploTipoSencilla')}
           autoFocus
         />
       </StepField>

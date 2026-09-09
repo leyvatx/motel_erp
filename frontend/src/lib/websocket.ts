@@ -24,6 +24,16 @@ const MAX_BACKOFF_MS = 30_000
  *  regrese la red o que alguien vuelva a la pestaña. */
 const INTENTOS_ANTES_DE_RENDIRSE = 6
 
+/** Cuánto tiene que aguantar abierta una conexión para contar como buena.
+ *
+ *  El contador de intentos se reiniciaba en cuanto el socket abría. Si el
+ *  servidor acepta el saludo y corta enseguida -- un proxy que enruta el
+ *  upgrade a algo que no habla WebSocket, o una instancia que se está
+ *  reciclando -- el ciclo abrir/cerrar reinicia el contador cada vuelta, nunca
+ *  llega al límite y el indicador dice "Reconectando" para siempre. Abrir no
+ *  es haber conectado: hay que durar. */
+const CONEXION_QUE_CUENTA_MS = 10_000
+
 /** El ticket no puede tardar más que esto. Sin corte, un servidor que acepta la
  *  conexión y no contesta deja al canal esperando sin estado ni reintento. */
 const CORTE_DEL_TICKET_MS = 15_000
@@ -106,6 +116,7 @@ export class RealtimeChannel {
   private readonly messageHandlers = new Set<MessageHandler>()
   private readonly stateHandlers = new Set<StateHandler>()
   private reconnectAttempts = 0
+  private abiertoEn = 0
   private pingTimer: number | null = null
   private reconnectTimer: number | null = null
   private manuallyClosed = false
@@ -175,7 +186,7 @@ export class RealtimeChannel {
     this.socket = socket
 
     socket.onopen = () => {
-      this.reconnectAttempts = 0
+      this.abiertoEn = Date.now()
       this.setState('open')
       this.startPing()
     }
@@ -197,6 +208,14 @@ export class RealtimeChannel {
     socket.onclose = () => {
       this.stopPing()
       this.setState('closed')
+
+      // La espera vuelve a empezar solo si la conexión sirvió de algo. Un
+      // socket que vivió medio segundo no prueba que haya tiempo real: prueba
+      // lo contrario, y contarlo como éxito es lo que dejaba el ciclo abierto.
+      if (this.abiertoEn && Date.now() - this.abiertoEn >= CONEXION_QUE_CUENTA_MS) {
+        this.reconnectAttempts = 0
+      }
+      this.abiertoEn = 0
 
       if (this.manuallyClosed || generation !== this.generation) return
       this.scheduleReconnect()

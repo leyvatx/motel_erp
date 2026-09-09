@@ -33,6 +33,7 @@ function linkClass(isActive: boolean, expanded: boolean): string {
 }
 
 function ConfigSubmenu({ onNavigate }: { onNavigate?: () => void }) {
+  const { t } = useTranslation()
   const { search } = useLocation()
   const pedida = new URLSearchParams(search).get('seccion')
   const actual = isConfigSection(pedida) ? pedida : DEFAULT_CONFIG_SECTION
@@ -52,7 +53,7 @@ function ConfigSubmenu({ onNavigate }: { onNavigate?: () => void }) {
                 : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/40 hover:text-sidebar-accent-foreground',
             )}
           >
-            {section.label}
+            {t(section.clave, { defaultValue: section.label })}
           </NavLink>
         </li>
       ))}

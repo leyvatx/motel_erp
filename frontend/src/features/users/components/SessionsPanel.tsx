@@ -45,6 +45,7 @@ function Fila({
   session: UserSession
   onRevoke: (session: UserSession) => void
 }) {
+  const { t } = useTranslation()
   const Icono = iconoDe(session)
 
   return (
@@ -64,7 +65,7 @@ function Fila({
           <p className="truncate text-sm font-medium leading-none">{session.user_full_name}</p>
           {session.is_current ? (
             <Badge variant="secondary" className="text-2xs">
-              Este equipo
+              {t('usuarios.esteEquipo')}
             </Badge>
           ) : null}
         </div>
@@ -102,7 +103,7 @@ function Fila({
         className="shrink-0 self-start text-destructive hover:bg-destructive/10 hover:text-destructive sm:self-center"
       >
         <PiPower />
-        Cerrar
+        {t('recepcion.cerrar')}
       </Button>
     </div>
   )
@@ -138,10 +139,10 @@ export function SessionsPanel() {
       <StatStrip
         isLoading={isPending}
         stats={[
-          { label: 'Sesiones abiertas', value: sesiones.length },
+          { label: t('usuarios.sesionesAbiertas'), value: sesiones.length },
           { label: 'Personas', value: resumen.personas, help: t('usuarios.conAlMenosUnaSesion') },
           {
-            label: 'Equipos distintos',
+            label: t('usuarios.equiposDistintos'),
             value: resumen.equipos,
             help: t('usuarios.porDireccionIp'),
           },
@@ -159,9 +160,7 @@ export function SessionsPanel() {
             <PiShieldCheck className="h-4 w-4 text-muted-foreground" aria-hidden />
             <p className="text-sm font-medium">{t('usuarios.quienEstaDentro')}</p>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Cerrar una sesión la corta al instante, no cuando venza su token.
-          </p>
+          <p className="text-xs text-muted-foreground">{t('usuarios.cerrarSesionCorta')}</p>
         </div>
 
         {isPending ? (
@@ -181,9 +180,7 @@ export function SessionsPanel() {
           <div className="px-4 py-14 text-center">
             <PiShieldCheck className="mx-auto h-7 w-7 text-muted-foreground/50" aria-hidden />
             <p className="mt-3 text-sm font-medium">{t('usuarios.sinSesionAbierta')}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Aparecerán aquí en cuanto alguien entre al sistema.
-            </p>
+            <p className="mt-1 text-xs text-muted-foreground">{t('usuarios.apareceranAlEntrar')}</p>
           </div>
         ) : (
           <div className="divide-y">
@@ -201,7 +198,7 @@ export function SessionsPanel() {
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10">
                 <PiWarningCircle className="h-4 w-4 text-destructive" aria-hidden />
               </span>
-              ¿Cerrar esta sesión?
+              {t('usuarios.cerrarEstaSesion')}
             </DialogTitle>
             <DialogDescription>
               {porCerrar?.is_current
@@ -221,11 +218,11 @@ export function SessionsPanel() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setPorCerrar(null)}>
-              Cancelar
+              {t('recepcion.cancelar')}
             </Button>
             <Button variant="destructive" loading={revoke.isPending} onClick={confirmar}>
               <PiPower />
-              Cerrar sesión
+              {t('comun.cerrarSesion')}
             </Button>
           </DialogFooter>
         </DialogContent>

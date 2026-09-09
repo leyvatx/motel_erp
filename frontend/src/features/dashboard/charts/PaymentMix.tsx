@@ -11,9 +11,9 @@ import type { Shift } from '@/features/finances/types'
  * su propia tarjeta porque el problema que vinimos a resolver era el alto.
  */
 const METODOS = [
-  { campo: 'cash_sales', label: 'Efectivo', token: '--status-available' },
-  { campo: 'card_sales', label: 'Tarjeta', token: '--brand-accent' },
-  { campo: 'transfer_sales', label: 'Transfer.', token: '--status-cleaning' },
+  { campo: 'cash_sales', label: 'tablero.efectivo', token: '--status-available' },
+  { campo: 'card_sales', label: 'tablero.tarjeta', token: '--brand-accent' },
+  { campo: 'transfer_sales', label: 'tablero.transferencia', token: '--status-cleaning' },
 ] as const
 
 export function PaymentMix({ shift, className }: { shift?: Shift | null; className?: string }) {

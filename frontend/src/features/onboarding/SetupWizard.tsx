@@ -93,12 +93,9 @@ export function SetupWizard() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <PiCheckCircle className="h-5 w-5 text-status-available" aria-hidden />
-                Todo listo
+                {t('asistente.todoListo')}
               </DialogTitle>
-              <DialogDescription>
-                Ya puedes rentar. Lo demás -- inventario, usuarios, precios especiales -- se
-                configura cuando lo necesites.
-              </DialogDescription>
+              <DialogDescription>{t('asistente.yaPuedesRentar')}</DialogDescription>
             </DialogHeader>
 
             <Button
@@ -142,11 +139,14 @@ export function SetupWizard() {
                 </Button>
               ) : (
                 <p className="text-xs text-muted-foreground">
-                  Faltan {restantes.length} de {steps.length}
+                  {t('asistente.faltanDe', {
+                    restantes: restantes.length,
+                    total: steps.length,
+                  })}
                 </p>
               )}
               <Button variant="ghost" size="sm" onClick={cerrar}>
-                Saltar por ahora
+                {t('asistente.saltarPorAhora')}
               </Button>
             </div>
           </>

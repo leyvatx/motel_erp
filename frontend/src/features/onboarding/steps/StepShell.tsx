@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -28,7 +29,7 @@ export function StepShell({
   valid,
   submitting,
   onSubmit,
-  submitLabel = 'Continuar',
+  submitLabel,
   ayuda,
   loading = false,
 }: {
@@ -36,12 +37,15 @@ export function StepShell({
   valid: boolean
   submitting: boolean
   onSubmit: () => void
+  /** Qué dice el botón. Sin esto, "Continuar". */
   submitLabel?: string
   /** Qué falta para poder avanzar. Se muestra cuando el botón está apagado. */
   ayuda?: string | null
   /** El paso todavía está trayendo lo que ya estaba guardado. */
   loading?: boolean
 }) {
+  const { t } = useTranslation()
+
   return (
     <form
       className="space-y-4"
@@ -67,7 +71,7 @@ export function StepShell({
         disabled={!valid || loading}
         loading={submitting || loading}
       >
-        {submitLabel}
+        {submitLabel ?? t('asistente.continuar')}
       </Button>
     </form>
   )

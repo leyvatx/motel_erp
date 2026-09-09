@@ -84,6 +84,59 @@ describe('cuando el navegador ni siquiera deja abrir el socket', () => {
   })
 })
 
+describe('cuando el servidor acepta el saludo y corta enseguida', () => {
+  // El otro camino al "Reconectando" eterno, y el que sobrevivía al arreglo
+  // anterior: aquí el socket sí abre. Un proxy que enruta el upgrade a algo que
+  // no habla WebSocket deja pasar el saludo y cierra en el acto. Como el
+  // contador de intentos se reiniciaba en `onopen`, cada vuelta empezaba de
+  // cero y el canal nunca se daba por vencido.
+  it('se rinde igual, porque abrir medio segundo no es haber conectado', async () => {
+    vi.useFakeTimers()
+    vi.stubEnv('VITE_API_URL', 'http://localhost:8000')
+    vi.spyOn(authSnapshot, 'access').mockReturnValue('token-de-prueba')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ticket: 't', expires_in: 30 }) }),
+    )
+
+    let abiertos = 0
+    vi.stubGlobal(
+      'WebSocket',
+      class {
+        static OPEN = 1
+        static CONNECTING = 0
+        readyState = 0
+        onopen: (() => void) | null = null
+        onclose: (() => void) | null = null
+        onerror: (() => void) | null = null
+        onmessage: (() => void) | null = null
+        constructor() {
+          abiertos += 1
+          setTimeout(() => {
+            this.readyState = 3
+            this.onopen?.()
+            this.onclose?.()
+          }, 50)
+        }
+        close() {}
+      },
+    )
+
+    const canal = new RealtimeChannel('/ws/ops/')
+    canal.connect()
+    for (let vuelta = 0; vuelta < 12; vuelta += 1) {
+      await vi.advanceTimersByTimeAsync(60_000)
+    }
+
+    expect(canal.getState()).toBe('degradado')
+    // Acotado: sin el arreglo, el ciclo abrir/cerrar seguiría para siempre.
+    expect(abiertos).toBeLessThanOrEqual(8)
+
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+  })
+})
+
 describe('contenido mixto', () => {
   it('sube a wss:// una configuración ws:// cuando la página va por https', () => {
     vi.stubGlobal('location', { ...window.location, protocol: 'https:' })

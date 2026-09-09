@@ -35,11 +35,11 @@ import { apiErrorMessage } from '@/lib/axios'
 import { formatDuration, formatMoney, formatQuantity } from '@/lib/format'
 
 const tabs: { value: ReportKind; label: string }[] = [
-  { value: 'revenue', label: 'Ingresos' },
-  { value: 'occupancy', label: 'Ocupación' },
-  { value: 'products', label: 'Productos' },
-  { value: 'shifts', label: 'Turnos' },
-  { value: 'housekeeping', label: 'Limpieza' },
+  { value: 'revenue', label: 'reportes.ingresos' },
+  { value: 'occupancy', label: 'reportes.ocupacion' },
+  { value: 'products', label: 'reportes.productos' },
+  { value: 'shifts', label: 'reportes.turnos' },
+  { value: 'housekeeping', label: 'reportes.limpieza' },
 ]
 
 function dateInput(date: Date): string {
@@ -59,10 +59,10 @@ function LoadingReport() {
 function RevenueView({ data }: { data: RevenueReport }) {
   const { t } = useTranslation()
   const stats: Stat[] = [
-    { label: 'Ingresos', value: formatMoney(data.summary.revenue), tone: 'positive' },
-    { label: 'Gastos', value: formatMoney(data.summary.expenses), tone: 'warning' },
-    { label: 'Neto', value: formatMoney(data.summary.net) },
-    { label: 'Pagos', value: data.summary.payments },
+    { label: t('reportes.ingresos'), value: formatMoney(data.summary.revenue), tone: 'positive' },
+    { label: t('reportes.gastos'), value: formatMoney(data.summary.expenses), tone: 'warning' },
+    { label: t('reportes.neto'), value: formatMoney(data.summary.net) },
+    { label: t('reportes.pagos'), value: data.summary.payments },
   ]
   return (
     <>
@@ -90,8 +90,8 @@ function OccupancyView({ data }: { data: OccupancyReport }) {
       <StatStrip
         stats={[
           { label: t('reportes.ocupacionEstimada'), value: `${data.summary.occupancy_rate}%` },
-          { label: 'Rentas', value: data.summary.rentals },
-          { label: 'Habitaciones', value: data.summary.rooms },
+          { label: t('reportes.rentas'), value: data.summary.rentals },
+          { label: t('reportes.habitaciones'), value: data.summary.rooms },
           { label: 'Estancia promedio', value: `${data.summary.average_minutes} min` },
         ]}
       />
@@ -114,10 +114,14 @@ function ProductsView({ data }: { data: ProductsReport }) {
     <>
       <StatStrip
         stats={[
-          { label: 'Productos vendidos', value: data.summary.products },
-          { label: 'Unidades', value: formatQuantity(data.summary.units) },
-          { label: 'Ingreso', value: formatMoney(data.summary.revenue), tone: 'positive' },
-          { label: 'Margen estimado', value: formatMoney(data.summary.margin) },
+          { label: t('reportes.productosVendidos'), value: data.summary.products },
+          { label: t('reportes.unidades'), value: formatQuantity(data.summary.units) },
+          {
+            label: t('reportes.ingreso'),
+            value: formatMoney(data.summary.revenue),
+            tone: 'positive',
+          },
+          { label: t('reportes.margenEstimado'), value: formatMoney(data.summary.margin) },
         ]}
       />
       <Card className="overflow-hidden">
@@ -161,14 +165,18 @@ function ShiftsView({ data }: { data: ShiftsReport }) {
     <>
       <StatStrip
         stats={[
-          { label: 'Ventas', value: formatMoney(data.summary.sales), tone: 'positive' },
-          { label: 'Gastos', value: formatMoney(data.summary.expenses), tone: 'warning' },
+          { label: t('reportes.ventas'), value: formatMoney(data.summary.sales), tone: 'positive' },
           {
-            label: 'Diferencia acumulada',
+            label: t('reportes.gastos'),
+            value: formatMoney(data.summary.expenses),
+            tone: 'warning',
+          },
+          {
+            label: t('reportes.diferenciaAcumulada'),
             value: formatMoney(data.summary.difference),
             tone: Number(data.summary.difference) < 0 ? 'danger' : 'neutral',
           },
-          { label: 'Turnos', value: data.summary.shifts },
+          { label: t('reportes.turnos'), value: data.summary.shifts },
         ]}
       />
       <Card className="overflow-hidden">
@@ -213,15 +221,18 @@ function HousekeepingView({ data }: { data: HousekeepingReport }) {
     <>
       <StatStrip
         stats={[
-          { label: 'Limpiezas', value: data.summary.tasks },
-          { label: 'Tiempo promedio', value: formatDuration(data.summary.average_seconds) },
+          { label: t('reportes.limpiezas'), value: data.summary.tasks },
           {
-            label: 'Incidencias',
+            label: t('reportes.tiempoPromedio'),
+            value: formatDuration(data.summary.average_seconds),
+          },
+          {
+            label: t('reportes.incidencias'),
             value: data.summary.issues,
             tone: data.summary.issues ? 'warning' : 'neutral',
           },
           {
-            label: 'Mantenimientos',
+            label: t('reportes.mantenimientos'),
             value: `${data.summary.maintenance_resolved}/${data.summary.maintenance}`,
             help: 'Resueltos / reportados',
           },
@@ -281,7 +292,7 @@ export default function ReportsPage() {
     content = (
       <Card>
         <CardContent className="py-12 text-center text-sm text-destructive">
-          No se pudo cargar el reporte.
+          {t('reportes.noSePudoCargarReporte')}
         </CardContent>
       </Card>
     )
@@ -301,7 +312,7 @@ export default function ReportsPage() {
       actions={
         <Button variant="outline" onClick={download} loading={exporting} disabled={!report.data}>
           <PiDownloadSimple />
-          Exportar CSV
+          {t('auditoria.exportarCsv')}
         </Button>
       }
       toolbar={
@@ -321,7 +332,7 @@ export default function ReportsPage() {
               value={from}
               onChange={(event) => setFrom(event.target.value)}
               className="w-40"
-              aria-label="Fecha inicial"
+              aria-label={t('auditoria.fechaInicial')}
             />
             <span className="text-sm text-muted-foreground">a</span>
             <Input
@@ -329,7 +340,7 @@ export default function ReportsPage() {
               value={to}
               onChange={(event) => setTo(event.target.value)}
               className="w-40"
-              aria-label="Fecha final"
+              aria-label={t('auditoria.fechaFinal')}
             />
           </div>
         </div>
@@ -340,7 +351,7 @@ export default function ReportsPage() {
         {from > to ? (
           <Card>
             <CardContent className="py-8 text-center text-sm text-destructive">
-              La fecha inicial debe ser anterior a la fecha final.
+              {t('reportes.fechaInicialAnterior')}
             </CardContent>
           </Card>
         ) : (

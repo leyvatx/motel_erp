@@ -42,7 +42,13 @@ function ProductPickerConAlta({ catalog }: { catalog: Product[] }) {
   const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return (
     <QueryClientProvider client={cliente}>
-      <ProductPicker catalog={catalog} isLoading={false} cart={cart} autoFocus={false} allowCreate />
+      <ProductPicker
+        catalog={catalog}
+        isLoading={false}
+        cart={cart}
+        autoFocus={false}
+        allowCreate
+      />
     </QueryClientProvider>
   )
 }
@@ -103,9 +109,7 @@ describe('catálogo visual de alta velocidad', () => {
   })
 
   it('ofrece dar de alta un producto desde la cuadrícula, no desde otro menú', () => {
-    render(
-      <ProductPickerConAlta catalog={[producto()]} />,
-    )
+    render(<ProductPickerConAlta catalog={[producto()]} />)
 
     expect(screen.getByRole('button', { name: /Añadir producto/ })).toBeTruthy()
   })

@@ -29,9 +29,9 @@ import { playSuccessTone } from '@/lib/sound'
 import type { PaymentMethod } from '@/types/api'
 
 const METHODS: { value: PaymentMethod; label: string }[] = [
-  { value: 'CASH', label: 'Efectivo' },
-  { value: 'CARD', label: 'Tarjeta' },
-  { value: 'TRANSFER', label: 'Transferencia' },
+  { value: 'CASH', label: 'caja.efectivo' },
+  { value: 'CARD', label: 'caja.tarjeta' },
+  { value: 'TRANSFER', label: 'caja.transferencia' },
 ]
 
 const QUICK_CASH = [50, 100, 200, 500, 1000]
@@ -147,8 +147,10 @@ export function PosTerminal() {
 
             {isRoomOrder && targetStay ? (
               <p className="text-2xs text-muted-foreground">
-                Se carga a la cuenta {targetStay.code} y se cobra al hacer el check-out. Cuenta
-                actual: {formatMoney(targetStay.folio_total)}.
+                {t('caja.seCargaALaCuentaCodigo', {
+                  codigo: targetStay.code,
+                  total: formatMoney(targetStay.folio_total),
+                })}
               </p>
             ) : (
               <p className="text-2xs text-muted-foreground">
@@ -193,8 +195,8 @@ export function PosTerminal() {
           {isRoomOrder ? (
             <>
               <div className="rounded-md border border-brand-accent/40 bg-brand-accent/5 px-3 py-2 text-xs">
-                {t('caja.seCargaraALaHabitacion')} <strong>{target?.number}</strong> y quedará en su
-                cuenta hasta el check-out.
+                {t('caja.seCargaraALaHabitacion')} <strong>{target?.number}</strong>{' '}
+                {t('caja.hastaElCheckout')}
               </div>
               <Button
                 className="h-11 w-full text-base"
@@ -203,7 +205,7 @@ export function PosTerminal() {
                 onClick={() => chargeToRoom.mutate(cart.items, { onSuccess: resetCart })}
               >
                 <PiBed />
-                Cargar a la habitación {target?.number}
+                {t('caja.cargarALaHabitacionNumero', { numero: target?.number })}
               </Button>
             </>
           ) : (

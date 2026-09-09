@@ -27,6 +27,7 @@ import {
   type BusinessProfilePayload,
   type PrinterBackend,
 } from '@/features/config/types'
+import { ImageWithFallback } from '@/components/ui/image'
 
 const MAX_LOGO_KB = 512
 
@@ -236,15 +237,14 @@ export function BusinessSettings() {
               <Label>{t('config.logotipo')}</Label>
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/40">
-                  {profile.logo_url ? (
-                    <img
-                      src={profile.logo_url}
-                      alt={t('config.logotipo')}
-                      className="h-full w-full object-contain"
-                    />
-                  ) : (
-                    <PiImageSquare className="h-5 w-5 text-muted-foreground" aria-hidden />
-                  )}
+                  <ImageWithFallback
+                    src={profile.logo_url}
+                    alt={t('config.logotipo')}
+                    className="h-full w-full object-contain"
+                    fallback={
+                      <PiImageSquare className="h-5 w-5 text-muted-foreground" aria-hidden />
+                    }
+                  />
                 </div>
 
                 <div className="flex flex-wrap gap-2">

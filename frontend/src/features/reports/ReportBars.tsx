@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { formatMoney, formatQuantity } from '@/lib/format'
 
 export function ReportBars({
@@ -7,11 +8,12 @@ export function ReportBars({
   rows: { label: string; value: number }[]
   money?: boolean
 }) {
+  const { t } = useTranslation()
   const max = Math.max(...rows.map((row) => row.value), 1)
   if (!rows.length)
     return (
       <p className="py-10 text-center text-sm text-muted-foreground">
-        No hay datos en este periodo.
+        {t('reportes.sinDatosEnPeriodo')}
       </p>
     )
   return (

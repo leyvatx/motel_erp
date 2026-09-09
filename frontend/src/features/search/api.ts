@@ -93,7 +93,7 @@ export async function searchEverything(
   const grupos: SearchGroup[] = [
     {
       kind: 'stay',
-      label: 'Rentas activas',
+      label: i18n.t('comun.rentasActivas'),
       hits: rentas.map((stay) => ({
         key: `stay-${stay.id}`,
         kind: 'stay' as const,
@@ -104,7 +104,7 @@ export async function searchEverything(
     },
     {
       kind: 'room',
-      label: 'Habitaciones',
+      label: i18n.t('comun.habitaciones'),
       hits: cuartos.map((room) => ({
         key: `room-${room.id}`,
         kind: 'room' as const,
@@ -116,7 +116,7 @@ export async function searchEverything(
     },
     {
       kind: 'reservation',
-      label: 'Reservaciones',
+      label: i18n.t('comun.reservaciones'),
       hits: reservas.map((reservation) => ({
         key: `reservation-${reservation.id}`,
         kind: 'reservation' as const,
@@ -132,10 +132,10 @@ export async function searchEverything(
         query: reservation.code,
       })),
     },
-    { kind: 'guest', label: 'Huéspedes', hits: huespedes(term, rentas, reservas) },
+    { kind: 'guest', label: i18n.t('comun.huespedes'), hits: huespedes(term, rentas, reservas) },
     {
       kind: 'folio',
-      label: 'Folios',
+      label: i18n.t('comun.folios'),
       hits: cuentas.map((folio) => ({
         key: `folio-${folio.id}`,
         kind: 'folio' as const,

@@ -31,7 +31,7 @@ export function TariffStep({ onDone }: { onDone: () => void }) {
     create.mutate(
       {
         room_type: Number(tipo),
-        name: `${hours} horas`,
+        name: t('asistente.horasNombre', { horas: hours }),
         duration_minutes: Math.round(Number(hours) * 60),
         base_price: price.trim(),
         overstay_hour_price: '0.00',
@@ -86,8 +86,7 @@ export function TariffStep({ onDone }: { onDone: () => void }) {
       </div>
 
       <p className="text-xs leading-relaxed text-muted-foreground">
-        Queda como la tarifa sugerida al rentar. Los recargos de fin de semana o día festivo se
-        agregan después en Configuración → Precios especiales.
+        {t('asistente.quedaComoSugerida')}
       </p>
     </StepShell>
   )

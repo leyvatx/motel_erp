@@ -303,7 +303,7 @@ function AccionesRapidas({
             onClick: () => onRent(room),
           },
           {
-            label: 'Limpieza',
+            label: t('recepcion.limpiezaEtiqueta'),
             icon: <LuSparkles className="h-3 w-3" aria-hidden />,
             onClick: () => onRequestCleaning(room),
           },
@@ -321,7 +321,7 @@ function AccionesRapidas({
       case 'CLEANING':
         return [
           {
-            label: 'Limpieza lista',
+            label: t('recepcion.limpiezaLista'),
             icon: <LuSparkles className="h-3 w-3" aria-hidden />,
             onClick: () => onFinishCleaning(room),
           },

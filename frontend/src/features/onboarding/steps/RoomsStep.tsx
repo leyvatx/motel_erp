@@ -86,13 +86,15 @@ export function RoomsStep({ onDone }: { onDone: () => void }) {
         hechas += 1
         setProgreso({ hechas, total })
       }
-      toast.success('Habitaciones creadas', `${hechas} listas para rentar.`)
+      toast.success(t('asistente.habitacionesCreadas'), t('asistente.listasParaRentar', { hechas }))
       onDone()
     } catch (error) {
       setInicio(String(primera + hechas))
       setCantidad(String(total - hechas))
       toast.error(
-        hechas > 0 ? `Se crearon ${hechas} de ${total}` : t('asistente.noSePudoCrearPrimera'),
+        hechas > 0
+          ? t('asistente.seCrearonDe', { hechas, total })
+          : t('asistente.noSePudoCrearPrimera'),
         apiErrorMessage(error),
       )
     } finally {
@@ -108,7 +110,9 @@ export function RoomsStep({ onDone }: { onDone: () => void }) {
       valid={valid}
       submitting={progreso !== null}
       onSubmit={() => void crear()}
-      submitLabel={valid ? `Crear ${total} habitaciones` : 'Crear habitaciones'}
+      submitLabel={
+        valid ? t('asistente.crearNHabitaciones', { total }) : t('asistente.crearHabitaciones')
+      }
     >
       {opciones.length > 1 ? (
         <StepField label={t('asistente.deQueTipo')} htmlFor="setup-rooms-type">
@@ -128,7 +132,7 @@ export function RoomsStep({ onDone }: { onDone: () => void }) {
       ) : null}
 
       <div className="grid grid-cols-3 gap-3">
-        <StepField label="Cuántas" htmlFor="setup-rooms-count">
+        <StepField label={t('asistente.cuantas')} htmlFor="setup-rooms-count">
           <Input
             id="setup-rooms-count"
             type="number"
@@ -153,7 +157,7 @@ export function RoomsStep({ onDone }: { onDone: () => void }) {
           />
         </StepField>
 
-        <StepField label="Piso" htmlFor="setup-rooms-floor">
+        <StepField label={t('asistente.piso')} htmlFor="setup-rooms-floor">
           <Input
             id="setup-rooms-floor"
             type="number"
@@ -173,7 +177,7 @@ export function RoomsStep({ onDone }: { onDone: () => void }) {
             />
           </div>
           <p className="text-xs text-muted-foreground">
-            Creando {progreso.hechas} de {progreso.total}…
+            {t('asistente.creandoDe', { hechas: progreso.hechas, total: progreso.total })}
           </p>
         </div>
       ) : (
@@ -181,8 +185,12 @@ export function RoomsStep({ onDone }: { onDone: () => void }) {
           {!valid
             ? t('asistente.indicaCuantas')
             : sugerido !== undefined && !tocado.current
-              ? `Se numerarán de la ${primera} a la ${primera + total - 1}. Tomamos ${sugerido} de lo que nos dijiste al registrarte; cámbialo si no es exacto.`
-              : `Se numerarán de la ${primera} a la ${primera + total - 1}.`}
+              ? t('asistente.seNumeraranConSugerencia', {
+                  primera,
+                  ultima: primera + total - 1,
+                  sugerido,
+                })
+              : t('asistente.seNumeraranDeA', { primera, ultima: primera + total - 1 })}
         </p>
       )}
     </StepShell>

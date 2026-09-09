@@ -152,9 +152,7 @@ export function ProductImagePicker({ actual, categoria = '', onChange, className
           </div>
 
           <p className="text-2xs leading-relaxed text-muted-foreground">
-            {muestra
-              ? 'Se ve en la tarjeta del punto de venta.'
-              : 'Sin foto usamos un ícono según la categoría. Puedes agregarla después.'}
+            {muestra ? t('inventario.seVeEnLaTarjeta') : t('inventario.sinFotoUsamosIcono')}
           </p>
         </div>
       </div>

@@ -77,7 +77,7 @@ export default function ConfigPage() {
   const roomActions = (room: Room): RowAction[] => [
     {
       key: 'edit',
-      label: 'Editar',
+      label: t('comun.editar'),
       icon: <PiPencilSimple />,
       onSelect: () => setRoomForm({ open: true, room }),
     },
@@ -95,7 +95,7 @@ export default function ConfigPage() {
   const typeActions = (item: RoomType): RowAction[] => [
     {
       key: 'edit',
-      label: 'Editar',
+      label: t('comun.editar'),
       icon: <PiPencilSimple />,
       onSelect: () => setTypeForm({ open: true, item }),
     },
@@ -119,7 +119,7 @@ export default function ConfigPage() {
   const tariffActions = (item: TariffBlock): RowAction[] => [
     {
       key: 'edit',
-      label: 'Editar',
+      label: t('comun.editar'),
       icon: <PiPencilSimple />,
       onSelect: () => setTariffForm({ open: true, item }),
     },
@@ -144,7 +144,7 @@ export default function ConfigPage() {
         <TabsList className="w-fit">
           {CONFIG_SECTIONS.map((section) => (
             <TabsTrigger key={section.value} value={section.value}>
-              {section.label}
+              {t(section.clave, { defaultValue: section.label })}
             </TabsTrigger>
           ))}
         </TabsList>

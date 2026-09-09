@@ -70,10 +70,7 @@ export function PermissionMatrix() {
         <PiLockKey aria-hidden />
         <div className="space-y-1">
           <AlertTitle>{t('usuarios.permisosNoSeEditan')}</AlertTitle>
-          <AlertDescription>
-            La matriz está fijada por el sistema y es igual en todas las sucursales. Para cambiar lo
-            que alguien puede hacer, cámbiale el rol desde la pestaña Personal.
-          </AlertDescription>
+          <AlertDescription>{t('usuarios.matrizFijada')}</AlertDescription>
         </div>
       </Alert>
 

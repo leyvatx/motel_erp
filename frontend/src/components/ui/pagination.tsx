@@ -55,7 +55,7 @@ export function Pagination({
             <SelectContent>
               {SIZES.map((size) => (
                 <SelectItem key={size} value={String(size)}>
-                  {size} / pág.
+                  {t('comun.porPagina', { cuantos: size })}
                 </SelectItem>
               ))}
             </SelectContent>

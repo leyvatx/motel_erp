@@ -1,4 +1,5 @@
 import { PiCheck, PiRocketLaunch } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -7,6 +8,7 @@ import { cn } from '@/lib/utils'
 import { useUiStore } from '@/store/ui'
 
 export function SetupChecklist() {
+  const { t } = useTranslation()
   const { steps, pending, loading, applies } = useSetupStatus()
   const reopen = useUiStore((state) => state.reopenSetup)
 
@@ -17,10 +19,13 @@ export function SetupChecklist() {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <PiRocketLaunch className="h-4 w-4 text-primary" aria-hidden />
-          Termina de configurar tu negocio
+          {t('asistente.terminaDeConfigurar')}
         </CardTitle>
         <CardDescription>
-          Faltan {pending.length} de {steps.length} pasos para que recepción pueda rentar.
+          {t('asistente.faltanPasosParaRentar', {
+            restantes: pending.length,
+            total: steps.length,
+          })}
         </CardDescription>
       </CardHeader>
 
@@ -47,7 +52,7 @@ export function SetupChecklist() {
         </ul>
 
         <Button size="sm" onClick={reopen}>
-          Continuar configuración
+          {t('asistente.continuarConfiguracion')}
         </Button>
       </CardContent>
     </Card>

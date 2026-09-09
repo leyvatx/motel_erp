@@ -106,7 +106,7 @@ export function ModuleHelp({ modulo, variant = 'outline' }: Props) {
     <>
       {variant === 'link' ? (
         <Button variant="link" className="h-auto p-0" onClick={() => setAbierta(true)}>
-          Ver cómo funciona
+          {t('portada.heroSecundario')}
         </Button>
       ) : (
         <Button

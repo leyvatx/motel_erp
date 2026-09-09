@@ -14,6 +14,8 @@ import {
 } from 'react-icons/pi'
 import type { IconType } from 'react-icons'
 
+import i18n from '@/lib/i18n'
+
 export interface NavItem {
   section: string
   to: string
@@ -32,12 +34,12 @@ export interface NavGroup {
  *  apuntar a una pestaña concreta y para que un enlace de otra pantalla caiga
  *  donde debe en vez de en la primera. */
 export const CONFIG_SECTIONS = [
-  { value: 'negocio', label: 'Negocio' },
-  { value: 'habitaciones', label: 'Habitaciones' },
-  { value: 'tipos', label: 'Tipos' },
-  { value: 'tarifas', label: 'Tarifas' },
-  { value: 'precios', label: 'Precios especiales' },
-  { value: 'apariencia', label: 'Apariencia' },
+  { value: 'negocio', label: 'Negocio', clave: 'nav.cfgNegocio' },
+  { value: 'habitaciones', label: 'Habitaciones', clave: 'nav.cfgHabitaciones' },
+  { value: 'tipos', label: 'Tipos', clave: 'nav.cfgTipos' },
+  { value: 'tarifas', label: 'Tarifas', clave: 'nav.cfgTarifas' },
+  { value: 'precios', label: 'Precios especiales', clave: 'nav.cfgPrecios' },
+  { value: 'apariencia', label: 'Apariencia', clave: 'nav.cfgApariencia' },
 ] as const
 
 export type ConfigSection = (typeof CONFIG_SECTIONS)[number]['value']
@@ -96,8 +98,17 @@ export const NAV_GROUPS: readonly NavGroup[] = [
 
 const ALL_ITEMS: readonly NavItem[] = NAV_GROUPS.flatMap((group) => group.items)
 
+/** El nombre de la sección para el título de la pestaña.
+ *
+ *  Traducido: la pestaña decía "Ama de llaves" encima de una pantalla que ya
+ *  estaba en inglés, porque devolvía la etiqueta de respaldo tal cual. Va por
+ *  la instancia y no por el hook porque quien la llama es una función suelta;
+ *  `useDocumentTitle` ya rehace el efecto cuando cambia el idioma. */
 export function sectionTitle(pathname: string): string | undefined {
-  return ALL_ITEMS.find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`))?.label
+  const item = ALL_ITEMS.find(
+    (candidato) => pathname === candidato.to || pathname.startsWith(`${candidato.to}/`),
+  )
+  return item ? i18n.t(`nav.${item.section}`, { defaultValue: item.label }) : undefined
 }
 
 /** La etiqueta del menú en el idioma de quien mira.

@@ -88,12 +88,13 @@ export function ErrorState({
 
 /** Espera con la forma de lo que viene, no un giro sobre fondo vacío. */
 export function LoadingState({ rows = 5, className }: { rows?: number; className?: string }) {
+  const { t } = useTranslation()
   return (
     <div className={cn('space-y-2', className)} aria-busy="true" aria-live="polite">
       {Array.from({ length: rows }).map((_, index) => (
         <Skeleton key={index} className="h-12 w-full rounded-lg" />
       ))}
-      <span className="sr-only">Cargando</span>
+      <span className="sr-only">{t('comun.cargando')}</span>
     </div>
   )
 }
@@ -139,7 +140,7 @@ export function OfflineState({
        *  detrás de esta pantalla, porque esta pantalla aparece justamente
        *  cuando no se pudo cargar nada. */}
       <Button variant="outline" className="mt-3" onClick={() => window.location.reload()}>
-        Reintentar ahora
+        {t('comun.reintentarAhora')}
       </Button>
     </div>
   )

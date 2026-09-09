@@ -119,7 +119,12 @@ export default function FrontDeskPage() {
     const stay = room.current_stay
     if (stay) {
       return [
-        { key: 'detail', label: 'Ver renta', icon: <PiEye />, onSelect: () => setStayId(stay.id) },
+        {
+          key: 'detail',
+          label: t('recepcion.verRenta'),
+          icon: <PiEye />,
+          onSelect: () => setStayId(stay.id),
+        },
         {
           key: 'extend',
           label: t('recepcion.extenderTiempo'),

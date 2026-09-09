@@ -76,10 +76,7 @@ function NewExpenseDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('caja.registrarGasto')}</DialogTitle>
-          <DialogDescription>
-            Arriba del umbral configurado, el gasto espera aprobación de gerencia antes de salir de
-            caja.
-          </DialogDescription>
+          <DialogDescription>{t('caja.avisoAprobacion')}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
@@ -179,13 +176,13 @@ export function ExpensesPanel({ openIntent = 0 }: { openIntent?: number }) {
     return [
       {
         key: 'approve',
-        label: 'Aprobar gasto',
+        label: t('caja.aprobarGasto'),
         icon: <PiCheck />,
         onSelect: () => review.mutate({ expenseId: expense.id, approve: true }),
       },
       {
         key: 'reject',
-        label: 'Rechazar gasto',
+        label: t('caja.rechazarGasto'),
         icon: <PiX />,
         danger: true,
         separated: true,

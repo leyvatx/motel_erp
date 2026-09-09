@@ -167,10 +167,7 @@ function Detail({
           </div>
         </div>
 
-        <p className="text-2xs text-muted-foreground">
-          El Kardex es inmutable: una corrección se registra con un movimiento en sentido contrario,
-          nunca borrando el original.
-        </p>
+        <p className="text-2xs text-muted-foreground">{t('inventario.kardexInmutable')}</p>
       </DialogContent>
     </Dialog>
   )

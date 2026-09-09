@@ -72,7 +72,7 @@ export function AuditDetailDialog({
           </div>
           {log.object_repr ? (
             <div className="sm:col-span-2">
-              <p className="text-xs text-muted-foreground">Objeto afectado</p>
+              <p className="text-xs text-muted-foreground">{t('auditoria.objetoAfectado')}</p>
               <p className="font-medium">{log.object_repr}</p>
             </div>
           ) : null}
@@ -80,7 +80,7 @@ export function AuditDetailDialog({
 
         {changes.length ? (
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold">Cambios realizados</h3>
+            <h3 className="text-sm font-semibold">{t('auditoria.cambiosRealizados')}</h3>
             {changes.map(([field, change]) => (
               <div key={field} className="rounded-lg border p-3">
                 <p className="mb-2 text-xs font-medium text-muted-foreground">{fieldName(field)}</p>

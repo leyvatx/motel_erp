@@ -105,9 +105,7 @@ export function ReservationFormDialog({
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{t('reservaciones.nuevaReservacion')}</DialogTitle>
-          <DialogDescription>
-            La habitación puede asignarse ahora o al registrar la llegada.
-          </DialogDescription>
+          <DialogDescription>{t('reservaciones.puedeAsignarseDespues')}</DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-3">
@@ -178,7 +176,7 @@ export function ReservationFormDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="reservation-end">Salida estimada</Label>
+              <Label htmlFor="reservation-end">{t('reservaciones.salidaEstimada')}</Label>
               <Input
                 id="reservation-end"
                 type="datetime-local"
@@ -254,15 +252,16 @@ export function ReservationFormDialog({
           </div>
           {selectedTariff ? (
             <div className="rounded-md bg-muted px-3 py-2 text-sm">
-              Precio previsto: <strong>{formatMoney(selectedTariff.current_price)}</strong>
+              {t('reservaciones.precioPrevisto')}{' '}
+              <strong>{formatMoney(selectedTariff.current_price)}</strong>
             </div>
           ) : null}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
+              {t('recepcion.cancelar')}
             </Button>
             <Button type="submit" loading={create.isPending} disabled={!roomType || !start || !end}>
-              Guardar reservación
+              {t('reservaciones.guardarReservacion')}
             </Button>
           </DialogFooter>
         </form>
@@ -306,7 +305,7 @@ export function ReservationCheckInDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Registrar llegada</DialogTitle>
+          <DialogTitle>{t('reservaciones.registrarLlegada')}</DialogTitle>
           <DialogDescription>
             {reservation.code} · {reservation.guest_name || t('reservaciones.huespedSinNombre')}
           </DialogDescription>
@@ -328,10 +327,10 @@ export function ReservationCheckInDialog({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Bloque tarifario</Label>
+            <Label>{t('reservaciones.bloqueTarifario')}</Label>
             <Select value={tariff} onValueChange={setTariff}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecciona tarifa" />
+                <SelectValue placeholder={t('reservaciones.seleccionaTarifa')} />
               </SelectTrigger>
               <SelectContent>
                 {(tariffs.data?.results ?? []).map((item) => (
@@ -345,7 +344,7 @@ export function ReservationCheckInDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
+            {t('recepcion.cancelar')}
           </Button>
           <Button
             disabled={!room || !tariff}
@@ -357,7 +356,7 @@ export function ReservationCheckInDialog({
               )
             }
           >
-            Iniciar renta
+            {t('reservaciones.iniciarRenta')}
           </Button>
         </DialogFooter>
       </DialogContent>

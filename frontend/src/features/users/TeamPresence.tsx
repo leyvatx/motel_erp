@@ -121,7 +121,12 @@ export function TeamPresence() {
                 <p className="truncate text-xs text-muted-foreground">
                   {member.role_display}
                   {member.is_online && member.last_section ? (
-                    <span> · en {traducirSeccion(t, member.last_section)}</span>
+                    <span>
+                      {' '}
+                      {t('usuarios.enSeccion', {
+                        seccion: traducirSeccion(t, member.last_section),
+                      })}
+                    </span>
                   ) : null}
                 </p>
               </div>

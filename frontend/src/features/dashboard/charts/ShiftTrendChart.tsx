@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import {
   Area,
   Bar,
@@ -43,13 +44,14 @@ function Etiqueta({
 }
 
 export function ShiftTrendChart({ hours, loading }: Props) {
+  const { t } = useTranslation()
   if (loading) return <Skeleton className="h-full min-h-32 w-full" />
 
   if (hours.length === 0) {
     return (
       <div className="flex h-full min-h-32 items-center justify-center">
         <p className="text-center text-sm text-muted-foreground">
-          Sin turno abierto. La tendencia aparece al abrir caja.
+          {t('tablero.sinTurnoTendencia')}
         </p>
       </div>
     )
@@ -98,7 +100,7 @@ export function ShiftTrendChart({ hours, loading }: Props) {
         <Bar
           yAxisId="rentas"
           dataKey="rentals"
-          name="Rentas"
+          name={t('tablero.rentas')}
           fill="hsl(var(--muted-foreground))"
           fillOpacity={0.25}
           barSize={10}
@@ -108,7 +110,7 @@ export function ShiftTrendChart({ hours, loading }: Props) {
           yAxisId="dinero"
           type="monotone"
           dataKey={(fila: ShiftTrendHour) => Number(fila.sales)}
-          name="Ventas"
+          name={t('tablero.ventas')}
           stroke="hsl(var(--brand-accent))"
           strokeWidth={2}
           fill="url(#ventasTurno)"

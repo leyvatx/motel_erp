@@ -91,7 +91,7 @@ function abrirAviso(): void {
   esperando += 1
   if (avisoId !== null) return
   avisoId = useToastStore.getState().push({
-    title: 'Despertando servidores',
+    title: i18n.t('comun.despertandoServidores'),
     description: i18n.t('comun.esperaUnosSegundos'),
     variant: 'info',
     // Se quita solo si algo sale mal con la cuenta; lo normal es que lo cierre

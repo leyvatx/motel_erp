@@ -72,7 +72,9 @@ export function RoomActionsDialog({ room, open, onOpenChange, onRent }: Props) {
           {reservation && rentable ? (
             <Button className="w-full justify-start" onClick={() => setCheckingIn(true)}>
               <PiSignIn className="h-4 w-4" />
-              Registrar llegada de {reservation.guest_name || reservation.code}
+              {t('recepcion.registrarLlegadaDe', {
+                quien: reservation.guest_name || reservation.code,
+              })}
             </Button>
           ) : null}
 

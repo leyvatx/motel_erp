@@ -200,7 +200,6 @@ export function ProductPicker({
             aria-label={t('venta.buscarProducto')}
           />
         </div>
-
       </div>
 
       {/* Categorías como fichas deslizables: en una tableta de mostrador un

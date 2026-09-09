@@ -63,14 +63,19 @@ export function ShiftBar({ shift, onRegisterExpense }: Props) {
             )}
             aria-hidden
           />
-          <span className="text-sm font-medium">{open ? 'Turno abierto' : 'Turno cerrado'}</span>
+          <span className="text-sm font-medium">
+            {open ? t('caja.turnoAbierto') : t('caja.turnoCerrado')}
+          </span>
           <Badge variant="secondary" className="font-mono">
             {shift.code}
           </Badge>
         </div>
 
         <span className="text-xs text-muted-foreground">
-          {shift.cashier_name} · desde {formatTime(shift.opened_at)}
+          {t('caja.cajeroDesde', {
+            cajero: shift.cashier_name,
+            hora: formatTime(shift.opened_at),
+          })}
         </span>
 
         <span className="text-xs text-muted-foreground">
@@ -157,11 +162,8 @@ function CloseShiftDialog({ shift, onClose }: { shift: Shift; onClose: () => voi
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Cerrar turno {shift.code}</DialogTitle>
-          <DialogDescription>
-            Cuenta el efectivo del cajón y captúralo. El sistema calculará lo esperado hasta después
-            de que declares, para que el conteo sea a ciegas.
-          </DialogDescription>
+          <DialogTitle>{t('caja.cerrarTurnoCodigo', { codigo: shift.code })}</DialogTitle>
+          <DialogDescription>{t('caja.conteoACiegas')}</DialogDescription>
         </DialogHeader>
 
         <CashBreakdownInput
@@ -172,8 +174,7 @@ function CloseShiftDialog({ shift, onClose }: { shift: Shift; onClose: () => voi
         />
 
         <p className="rounded-md bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
-          Si quedan gastos pendientes de aprobación o cuentas abiertas cobradas en este turno, el
-          cierre se detendrá y te dirá cuáles son.
+          {t('caja.elCierreSeDetendra')}
         </p>
 
         <DialogFooter>

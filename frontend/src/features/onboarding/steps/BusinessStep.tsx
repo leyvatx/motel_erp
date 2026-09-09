@@ -11,6 +11,7 @@ import {
   useUpdateBusinessProfile,
 } from '@/features/config/hooks'
 import { apiErrorMessage } from '@/lib/axios'
+import { ImageWithFallback } from '@/components/ui/image'
 
 /** Mismo tope que valida el servidor para el logotipo. */
 const MAX_BYTES = 512 * 1024
@@ -98,7 +99,9 @@ export function BusinessStep({ onDone }: { onDone: () => void }) {
       onSubmit={() => void submit()}
       // El nombre es obligatorio; el logotipo no. Cuando sólo falta el
       // logotipo, el botón lo dice en vez de prometer algo que no se hizo.
-      submitLabel={nombreListo && !logoListo ? t('asistente.continuarSinLogotipo') : 'Continuar'}
+      submitLabel={
+        nombreListo && !logoListo ? t('asistente.continuarSinLogotipo') : t('asistente.continuar')
+      }
       ayuda={falta}
       loading={profile.isPending}
     >
@@ -114,23 +117,19 @@ export function BusinessStep({ onDone }: { onDone: () => void }) {
             tocado.current = true
             setName(event.target.value)
           }}
-          placeholder="Sucursal Centro"
+          placeholder={t('asistente.ejemploSucursal')}
           autoFocus
         />
       </StepField>
 
-      <StepField label="Logotipo (opcional)" htmlFor="setup-logo">
+      <StepField label={t('asistente.logotipoOpcional')} htmlFor="setup-logo">
         <div className="flex items-center gap-3">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/40">
-            {(vistaPrevia ?? profile.data?.logo_url) ? (
-              <img
-                src={vistaPrevia ?? profile.data?.logo_url ?? ''}
-                alt=""
-                className="h-full w-full object-contain"
-              />
-            ) : (
-              <PiImageSquare className="h-5 w-5 text-muted-foreground" aria-hidden />
-            )}
+            <ImageWithFallback
+              src={vistaPrevia ?? profile.data?.logo_url}
+              className="h-full w-full object-contain"
+              fallback={<PiImageSquare className="h-5 w-5 text-muted-foreground" aria-hidden />}
+            />
           </div>
           <Button
             type="button"
@@ -139,7 +138,9 @@ export function BusinessStep({ onDone }: { onDone: () => void }) {
             onClick={() => fileRef.current?.click()}
           >
             <PiImageSquare />
-            {(logo ?? profile.data?.logo_url) ? 'Cambiar imagen' : 'Subir imagen'}
+            {(logo ?? profile.data?.logo_url)
+              ? t('asistente.cambiarImagen')
+              : t('asistente.subirImagen')}
           </Button>
           <input
             id="setup-logo"

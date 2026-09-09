@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { PiCamera, PiTrash } from 'react-icons/pi'
-import i18n from '@/lib/i18n'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,24 +23,20 @@ import { queryKeys } from '@/lib/queryClient'
 import { cn } from '@/lib/utils'
 
 const CATEGORIES = [
-  { value: 'PLUMBING', label: i18n.t('limpieza.aguaODrenaje') },
-  { value: 'ELECTRICAL', label: i18n.t('limpieza.luzOContactos') },
-  { value: 'AIR_CONDITIONING', label: 'Clima' },
-  { value: 'FURNITURE', label: 'Mueble roto' },
-  { value: 'ELECTRONICS', label: i18n.t('limpieza.televisionOAparatos') },
-  { value: 'STRUCTURE', label: i18n.t('limpieza.puertaVentanaPared') },
-  { value: 'OTHER', label: 'Otra cosa' },
+  { value: 'PLUMBING', label: 'limpieza.aguaODrenaje' },
+  { value: 'ELECTRICAL', label: 'limpieza.luzOContactos' },
+  { value: 'AIR_CONDITIONING', label: 'limpieza.clima' },
+  { value: 'FURNITURE', label: 'limpieza.muebleRoto' },
+  { value: 'ELECTRONICS', label: 'limpieza.televisionOAparatos' },
+  { value: 'STRUCTURE', label: 'limpieza.puertaVentanaPared' },
+  { value: 'OTHER', label: 'limpieza.otraCosa' },
 ] as const
 
 const PRIORITIES: { value: MaintenancePriority; label: string; ayuda: string }[] = [
-  { value: 'LOW', label: 'Puede esperar', ayuda: i18n.t('limpieza.noEstorbaParaRentar') },
-  { value: 'MEDIUM', label: 'Normal', ayuda: i18n.t('limpieza.hayQueArreglarloPronto') },
-  { value: 'HIGH', label: 'Urgente', ayuda: i18n.t('limpieza.molestaAlHuesped') },
-  {
-    value: 'URGENT',
-    label: i18n.t('limpieza.noSePuedeUsar'),
-    ayuda: i18n.t('limpieza.elCuartoNoSirve'),
-  },
+  { value: 'LOW', label: 'limpieza.puedeEsperar', ayuda: 'limpieza.noEstorbaParaRentar' },
+  { value: 'MEDIUM', label: 'limpieza.normal', ayuda: 'limpieza.hayQueArreglarloPronto' },
+  { value: 'HIGH', label: 'limpieza.urgente', ayuda: 'limpieza.molestaAlHuesped' },
+  { value: 'URGENT', label: 'limpieza.noSePuedeUsar', ayuda: 'limpieza.elCuartoNoSirve' },
 ]
 
 const MAX_BYTES = 4 * 1024 * 1024
@@ -61,6 +57,7 @@ interface Props {
  * más que enseñarla.
  */
 export function ReportMaintenanceDialog({ open, onOpenChange, defaultRoomId }: Props) {
+  const { t } = useTranslation()
   const report = useReportMaintenance()
   const archivoRef = useRef<HTMLInputElement>(null)
   const { data: rooms } = useQuery({
@@ -101,7 +98,7 @@ export function ReportMaintenanceDialog({ open, onOpenChange, defaultRoomId }: P
   const elegirFoto = (archivo: File | undefined): void => {
     if (!archivo) return
     if (archivo.size > MAX_BYTES) {
-      setErrorFoto(i18n.t('limpieza.fotoMuyPesada'))
+      setErrorFoto(t('limpieza.fotoMuyPesada'))
       return
     }
     setErrorFoto(null)
@@ -141,40 +138,40 @@ export function ReportMaintenanceDialog({ open, onOpenChange, defaultRoomId }: P
     <ResponsiveDialog
       open={open}
       onOpenChange={onOpenChange}
-      title={i18n.t('limpieza.reportarUnProblema')}
-      description={i18n.t('limpieza.quedaConFolio')}
+      title={t('limpieza.reportarUnProblema')}
+      description={t('limpieza.quedaConFolio')}
       className="sm:max-w-lg"
       footer={
         <>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {i18n.t('limpieza.cancelar')}
+            {t('limpieza.cancelar')}
           </Button>
           <Button disabled={!isValid} loading={report.isPending} onClick={submit}>
-            {i18n.t('limpieza.enviarReporte')}
+            {t('limpieza.enviarReporte')}
           </Button>
         </>
       }
     >
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="title">{i18n.t('limpieza.quePasa')}</Label>
+          <Label htmlFor="title">{t('limpieza.quePasa')}</Label>
           <Input
             id="title"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            placeholder={i18n.t('limpieza.ejemploFalla')}
+            placeholder={t('limpieza.ejemploFalla')}
             className="h-11"
           />
           {errores.title ? <p className="text-xs text-destructive">{errores.title}</p> : null}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="description">{i18n.t('limpieza.cuentaloConDetalle')}</Label>
+          <Label htmlFor="description">{t('limpieza.cuentaloConDetalle')}</Label>
           <Textarea
             id="description"
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            placeholder={i18n.t('limpieza.ejemploDetalle')}
+            placeholder={t('limpieza.ejemploDetalle')}
             rows={3}
           />
           {errores.description ? (
@@ -186,7 +183,7 @@ export function ReportMaintenanceDialog({ open, onOpenChange, defaultRoomId }: P
             galería; en escritorio el navegador lo ignora y abre el explorador
             de archivos, que ahí es justo lo que se espera. */}
         <div className="space-y-2">
-          <Label>{i18n.t('limpieza.fotoOpcional')}</Label>
+          <Label>{t('limpieza.fotoOpcional')}</Label>
           <input
             ref={archivoRef}
             type="file"
@@ -201,7 +198,7 @@ export function ReportMaintenanceDialog({ open, onOpenChange, defaultRoomId }: P
             <div className="flex items-center gap-3 rounded-lg border p-2">
               <img
                 src={vistaPrevia}
-                alt="Foto del problema"
+                alt={t('limpieza.fotoDelProblema')}
                 className="h-16 w-16 shrink-0 rounded-md object-cover"
               />
               <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{foto?.name}</p>
@@ -209,7 +206,7 @@ export function ReportMaintenanceDialog({ open, onOpenChange, defaultRoomId }: P
                 variant="ghost"
                 size="icon"
                 className="h-11 w-11 shrink-0 text-destructive"
-                aria-label={i18n.t('limpieza.quitarLaFoto')}
+                aria-label={t('limpieza.quitarLaFoto')}
                 onClick={() => {
                   setFoto(null)
                   if (archivoRef.current) archivoRef.current.value = ''
@@ -225,7 +222,7 @@ export function ReportMaintenanceDialog({ open, onOpenChange, defaultRoomId }: P
               onClick={() => archivoRef.current?.click()}
             >
               <PiCamera className="h-5 w-5" />
-              {i18n.t('limpieza.tomarUnaFoto')}
+              {t('limpieza.tomarUnaFoto')}
             </Button>
           )}
 
@@ -235,15 +232,15 @@ export function ReportMaintenanceDialog({ open, onOpenChange, defaultRoomId }: P
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="room">{i18n.t('limpieza.donde')}</Label>
+            <Label htmlFor="room">{t('limpieza.donde')}</Label>
             <Select value={roomId} onValueChange={setRoomId}>
               <SelectTrigger id="room" className="h-11">
-                <SelectValue placeholder={i18n.t('limpieza.areaComun')} />
+                <SelectValue placeholder={t('limpieza.areaComun')} />
               </SelectTrigger>
               <SelectContent>
                 {(rooms?.results ?? []).map((room) => (
                   <SelectItem key={room.id} value={String(room.id)}>
-                    Habitación {room.number}
+                    {t('limpieza.habitacionNumero', { numero: room.number })}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -251,7 +248,7 @@ export function ReportMaintenanceDialog({ open, onOpenChange, defaultRoomId }: P
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="category">{i18n.t('limpieza.queEs')}</Label>
+            <Label htmlFor="category">{t('limpieza.queEs')}</Label>
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger id="category" className="h-11">
                 <SelectValue />
@@ -259,7 +256,7 @@ export function ReportMaintenanceDialog({ open, onOpenChange, defaultRoomId }: P
               <SelectContent>
                 {CATEGORIES.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                    {t(option.label)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -270,7 +267,7 @@ export function ReportMaintenanceDialog({ open, onOpenChange, defaultRoomId }: P
         {/* Botones y no un desplegable: la urgencia es la decisión que cambia
             si alguien va corriendo o no, y merece verse entera de un vistazo. */}
         <fieldset className="space-y-2">
-          <legend className="text-sm font-medium">{i18n.t('limpieza.queTanUrgente')}</legend>
+          <legend className="text-sm font-medium">{t('limpieza.queTanUrgente')}</legend>
           <div className="grid grid-cols-2 gap-2">
             {PRIORITIES.map((option) => (
               <button
@@ -286,8 +283,8 @@ export function ReportMaintenanceDialog({ open, onOpenChange, defaultRoomId }: P
                     : 'hover:bg-accent/50',
                 )}
               >
-                <span className="block text-sm font-medium">{option.label}</span>
-                <span className="block text-2xs text-muted-foreground">{option.ayuda}</span>
+                <span className="block text-sm font-medium">{t(option.label)}</span>
+                <span className="block text-2xs text-muted-foreground">{t(option.ayuda)}</span>
               </button>
             ))}
           </div>
@@ -301,9 +298,9 @@ export function ReportMaintenanceDialog({ open, onOpenChange, defaultRoomId }: P
             className="mt-0.5 h-4 w-4 rounded border-input"
           />
           <span>
-            {i18n.t('limpieza.noSePuedeRentar')}
+            {t('limpieza.noSePuedeRentar')}
             <span className="block text-xs text-muted-foreground">
-              {i18n.t('limpieza.quedaFueraDeServicio')}
+              {t('limpieza.quedaFueraDeServicio')}
             </span>
           </span>
         </label>

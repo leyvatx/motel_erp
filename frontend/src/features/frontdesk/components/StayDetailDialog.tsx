@@ -45,9 +45,9 @@ interface Props {
 }
 
 const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
-  { value: 'CASH', label: 'Efectivo' },
-  { value: 'CARD', label: 'Tarjeta' },
-  { value: 'TRANSFER', label: 'Transferencia' },
+  { value: 'CASH', label: 'recepcion.efectivo' },
+  { value: 'CARD', label: 'recepcion.tarjeta' },
+  { value: 'TRANSFER', label: 'recepcion.transferencia' },
 ]
 
 export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
@@ -140,7 +140,7 @@ export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
 
             {/* Jerarquía de acciones, no una fila de cuatro iguales.
              *
-             *  "Cobrar y salir" es lo que termina la renta y lo que se hace en
+             *  t('recepcion.cobrarYSalir') es lo que termina la renta y lo que se hace en
              *  el 90 % de las aperturas de este diálogo: va solo, ancho
              *  completo y como acción principal. Consumo y extender son
              *  intermedios y quedan debajo, a la mitad.
@@ -156,7 +156,7 @@ export function StayDetailDialog({ stayId, open, onOpenChange }: Props) {
               <div className="space-y-2">
                 <Button className="h-11 w-full text-base" onClick={() => setPanel('checkout')}>
                   <PiCreditCard className="h-4 w-4" />
-                  Cobrar y salir
+                  {t('recepcion.cobrarYSalir')}
                   {toNumber(stay.folio_balance) > 0 ? (
                     <span className="font-semibold tabular">{formatMoney(stay.folio_balance)}</span>
                   ) : null}
@@ -264,7 +264,9 @@ function FolioBreakdown({
         <span className="text-xs font-medium text-muted-foreground">{t('recepcion.cuenta')}</span>
         <div className="text-right">
           <p className="text-xl font-bold tabular">{formatMoney(total)}</p>
-          <p className="text-xs text-muted-foreground">Por cobrar {formatMoney(balance)}</p>
+          <p className="text-xs text-muted-foreground">
+            {t('recepcion.porCobrarMonto', { monto: formatMoney(balance) })}
+          </p>
         </div>
       </div>
 
@@ -352,7 +354,7 @@ function ChargePanel({
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Se carga a la cuenta de la habitación {roomNumber} y se cobra al hacer el check-out.
+        {t('recepcion.seCargaALaHabitacionNumero', { numero: roomNumber })}
       </p>
 
       <div className="flex justify-end gap-2">
@@ -372,7 +374,7 @@ function ChargePanel({
           }
         >
           <PiBed className="h-4 w-4" />
-          Cargar a la habitación {roomNumber}
+          {t('recepcion.cargarALaHabitacionNumero', { numero: roomNumber })}
         </Button>
       </div>
     </div>
@@ -484,8 +486,7 @@ function CheckoutPanel({
       <div className="space-y-3 rounded-md border p-4">
         <p className="text-sm font-medium">{t('recepcion.faltaAbrirTurno')}</p>
         <p className="text-xs leading-relaxed text-muted-foreground">
-          El cobro entra al corte del turno y ahora mismo no hay ninguno abierto. Ábrelo con el
-          efectivo con el que empiezas y vuelve aquí; la habitación sigue activa mientras tanto.
+          {t('recepcion.sinTurnoParaCobrar')}
         </p>
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onCancel}>

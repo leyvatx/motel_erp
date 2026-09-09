@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts'
 
 import { Skeleton } from '@/components/ui/skeleton'
@@ -29,6 +30,7 @@ interface Props {
 }
 
 export function RoomDonut({ data, total, loading }: Props) {
+  const { t } = useTranslation()
   // Una rebanada en cero le mete a Recharts un sector de ángulo nulo que aun
   // así dibuja su borde: una rayita suelta sobre el anillo.
   const slices = useMemo(() => data.filter((item) => item.count > 0), [data])
@@ -49,7 +51,7 @@ export function RoomDonut({ data, total, loading }: Props) {
   if (total === 0) {
     return (
       <p className="py-8 text-center text-sm text-muted-foreground">
-        Aún no hay habitaciones configuradas.
+        {t('tablero.sinHabitacionesConfiguradas')}
       </p>
     )
   }

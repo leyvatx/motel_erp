@@ -102,13 +102,11 @@ export function UserFormDialog({
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{user ? `Editar ${user.full_name}` : 'Nuevo usuario'}</DialogTitle>
-          <DialogDescription>
-            Define sus datos de acceso y el rol que tendrá dentro de esta sucursal.
-          </DialogDescription>
+          <DialogDescription>{t('usuarios.defineSusDatos')}</DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Nombre completo" htmlFor="user-full-name">
+          <Field label={t('corporativo.nombreCompleto')} htmlFor="user-full-name">
             <Input
               id="user-full-name"
               value={fullName}
@@ -194,17 +192,17 @@ export function UserFormDialog({
           <span>
             <span className="block font-medium">{t('usuarios.cambiarAlIniciar')}</span>
             <span className="text-xs text-muted-foreground">
-              Recomendado cuando otra persona asigna la contraseña inicial.
+              {t('usuarios.recomendadoCuandoOtra')}
             </span>
           </span>
         </label>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
+            {t('recepcion.cancelar')}
           </Button>
           <Button disabled={!valid} loading={create.isPending || update.isPending} onClick={submit}>
-            Guardar
+            {t('config.guardar')}
           </Button>
         </DialogFooter>
       </DialogContent>

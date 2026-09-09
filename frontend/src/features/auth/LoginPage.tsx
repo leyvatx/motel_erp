@@ -16,6 +16,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { apiErrorMessage } from '@/lib/axios'
 import { nombreDelProducto } from '@/lib/brand'
 import { defaultRouteFor, useAuthStore } from '@/store/auth'
+import { ImageWithFallback } from '@/components/ui/image'
 
 const construirEsquema = (t: (clave: string) => string) =>
   z.object({
@@ -77,11 +78,11 @@ export default function LoginPage() {
       <div className="relative w-full max-w-[22rem] space-y-8">
         <div className="flex flex-col items-center gap-4 text-center">
           <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border bg-card">
-            {logoUrl ? (
-              <img src={logoUrl} alt="" className="h-full w-full object-contain" />
-            ) : (
-              <PiBed className="h-5 w-5" aria-hidden />
-            )}
+            <ImageWithFallback
+              src={logoUrl}
+              className="h-full w-full object-contain"
+              fallback={<PiBed className="h-5 w-5" aria-hidden />}
+            />
           </div>
           <div className="space-y-1.5">
             <h1 className="text-2xl font-semibold tracking-tightest">
@@ -105,7 +106,7 @@ export default function LoginPage() {
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
-                placeholder="recepcion  ·  laura@tunegocio.mx"
+                placeholder={t('acceso.ejemploUsuarioOCorreo')}
                 aria-invalid={Boolean(errors.username)}
                 {...register('username')}
               />
@@ -139,7 +140,7 @@ export default function LoginPage() {
                   {...register('motel')}
                 />
                 <p className="text-xs leading-relaxed text-muted-foreground">
-                  Solo si trabajas en otra sucursal: escribe su identificador.
+                  {t('acceso.soloSiOtraSucursal')}
                 </p>
               </div>
             ) : null}
@@ -202,19 +203,19 @@ export default function LoginPage() {
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-2xs font-semibold">
               1
             </span>
-            Pídele a gerencia o al encargado del turno que entre a Usuarios.
+            {t('acceso.pideleAGerencia')}
           </li>
           <li className="flex gap-3">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-2xs font-semibold">
               2
             </span>
-            Ahí puede darte una contraseña temporal para tu usuario.
+            {t('acceso.puedeDarteTemporal')}
           </li>
           <li className="flex gap-3">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-2xs font-semibold">
               3
             </span>
-            Al entrar con ella, el sistema te pedirá que elijas una nueva.
+            {t('acceso.alEntrarConElla')}
           </li>
         </ol>
       </ResponsiveDialog>

@@ -27,9 +27,9 @@ import { apiErrorMessage, apiFieldErrors } from '@/lib/axios'
 /** Los tres cajones con los que arranca cualquier negocio de hospedaje.
  *  No son una taxonomía: son un atajo para no dejar a nadie atorado. */
 const SUGERIDAS = [
-  { name: 'Bebidas', kind: 'BEVERAGE' },
-  { name: 'Botanas', kind: 'FOOD' },
-  { name: 'Amenidades', kind: 'AMENITY' },
+  { clave: 'inventario.bebidas', kind: 'BEVERAGE' },
+  { clave: 'inventario.botanas', kind: 'FOOD' },
+  { clave: 'inventario.amenidadesCategoria', kind: 'AMENITY' },
 ] as const
 
 const UNIDADES = [
@@ -260,7 +260,7 @@ export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onC
               <div className="flex flex-wrap gap-2">
                 {SUGERIDAS.map((sugerida) => (
                   <Button
-                    key={sugerida.name}
+                    key={sugerida.clave}
                     type="button"
                     variant="outline"
                     size="sm"
@@ -268,7 +268,7 @@ export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onC
                     onClick={() =>
                       crearCategoria.mutate(
                         {
-                          name: sugerida.name,
+                          name: t(sugerida.clave),
                           kind: sugerida.kind,
                           description: '',
                           sort_order: 0,
@@ -281,7 +281,7 @@ export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onC
                     }
                   >
                     <PiPlus className="h-3.5 w-3.5" />
-                    {sugerida.name}
+                    {t(sugerida.clave)}
                   </Button>
                 ))}
               </div>
