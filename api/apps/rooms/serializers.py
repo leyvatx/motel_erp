@@ -7,6 +7,7 @@ cuenta regresiva a partir de esos valores.
 
 from __future__ import annotations
 
+from django.utils.translation import gettext_lazy as _
 from decimal import Decimal
 
 from rest_framework import serializers
@@ -77,7 +78,7 @@ class TariffRuleSerializer(serializers.ModelSerializer):
         if start_date and end_date and start_date > end_date:
             raise serializers.ValidationError({"end_date": "Debe ser posterior a la fecha inicial."})
         if bool(start_time) != bool(end_time):
-            raise serializers.ValidationError("Captura ambas horas o deja ambas vacías.")
+            raise serializers.ValidationError(_("Captura ambas horas o deja ambas vacías."))
         return attrs
 
 
@@ -396,12 +397,10 @@ class ExtendStaySerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
         if not attrs.get("tariff_block_id") and not attrs.get("minutes"):
-            raise serializers.ValidationError(
-                "Indica un bloque tarifario o los minutos a extender."
+            raise serializers.ValidationError(_("Indica un bloque tarifario o los minutos a extender.")
             )
         if not attrs.get("tariff_block_id") and attrs.get("price") is None:
-            raise serializers.ValidationError(
-                "Una extensión por minutos requiere el importe a cobrar."
+            raise serializers.ValidationError(_("Una extensión por minutos requiere el importe a cobrar.")
             )
         return attrs
 

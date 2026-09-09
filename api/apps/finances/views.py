@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from django.db.models import Sum
+from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
@@ -79,8 +80,7 @@ class ShiftViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Ge
         cashier_id = payload.pop("cashier_id", None)
         if cashier_id and cashier_id != request.user.pk:
             if not request.user.is_management:
-                raise DomainError(
-                    "Solo gerencia puede abrir un turno a nombre de otro cajero.",
+                raise DomainError(_("Solo gerencia puede abrir un turno a nombre de otro cajero."),
                     code="forbidden_cashier",
                 )
             cashier = User.objects.get(pk=cashier_id, is_active=True)
@@ -117,7 +117,7 @@ class ShiftViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Ge
 
         shift = self.get_object()
         if shift.cashier_id != request.user.pk and not request.user.is_management:
-            raise DomainError("No puedes cerrar el turno de otro cajero.", code="forbidden_shift")
+            raise DomainError(_("No puedes cerrar el turno de otro cajero."), code="forbidden_shift")
 
         shift = services.close_shift(
             shift_id=int(pk), actor=request.user, **serializer.validated_data
@@ -169,7 +169,7 @@ class ShiftViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Ge
 
         shift = self.get_object()
         if shift.status == ShiftStatus.OPEN:
-            raise DomainError("El turno todavía no se cierra.", code="shift_not_closed")
+            raise DomainError(_("El turno todavía no se cierra."), code="shift_not_closed")
 
         receipt = emit_shift_receipt(shift=shift, actor=request.user, is_reprint=True)
         return Response({"receipt_id": receipt.pk, "preview": render(receipt)})

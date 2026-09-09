@@ -5,6 +5,7 @@ from __future__ import annotations
 from django.db import transaction
 from django.db.models import DecimalField, F, Sum, Value
 from django.db.models.functions import Coalesce
+from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
@@ -165,14 +166,14 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
     ordering_fields = ["order_date", "expected_date", "total", "created_at"]
 
     def perform_destroy(self, instance: PurchaseOrder) -> None:
-        raise DomainError("Las compras no se eliminan; cancela el documento.")
+        raise DomainError(_("Las compras no se eliminan; cancela el documento."))
 
     @action(detail=True, methods=["post"])
     def submit(self, request, pk=None) -> Response:
         with transaction.atomic():
             order = self.get_queryset().select_for_update().get(pk=pk)
             if order.status != PurchaseStatus.DRAFT:
-                raise DomainError("Solo se puede enviar una compra en borrador.")
+                raise DomainError(_("Solo se puede enviar una compra en borrador."))
             order.status = PurchaseStatus.ORDERED
             order.updated_by = request.user
             order.save(update_fields=["status", "updated_by", "updated_at"])
@@ -194,7 +195,7 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
         with transaction.atomic():
             order = self.get_queryset().select_for_update().get(pk=pk)
             if order.status not in {PurchaseStatus.DRAFT, PurchaseStatus.ORDERED}:
-                raise DomainError("Una compra recibida total o parcialmente no se puede cancelar.")
+                raise DomainError(_("Una compra recibida total o parcialmente no se puede cancelar."))
             order.status = PurchaseStatus.CANCELLED
             order.updated_by = request.user
             order.save(update_fields=["status", "updated_by", "updated_at"])

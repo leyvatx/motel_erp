@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
@@ -231,7 +232,7 @@ class UserViewSet(viewsets.ModelViewSet):
         if instance == self.request.user:
             from common.exceptions import DomainError
 
-            raise DomainError("No puedes darte de baja a ti mismo.", code="self_deactivation")
+            raise DomainError(_("No puedes darte de baja a ti mismo."), code="self_deactivation")
         instance.soft_delete(user=self.request.user, reason="Baja desde administración")
 
     @extend_schema(responses=UserSerializer)

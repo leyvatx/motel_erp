@@ -16,6 +16,7 @@ from typing import Iterable
 from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from common.exceptions import DomainError, InsufficientStock
 from common.utils import ZERO, quantity as q
@@ -73,7 +74,7 @@ def apply_movement(
     """
     qty = q(quantity)
     if qty <= ZERO:
-        raise DomainError("La cantidad del movimiento debe ser mayor a cero.", code="invalid_quantity")
+        raise DomainError(_("La cantidad del movimiento debe ser mayor a cero."), code="invalid_quantity")
 
     sign = MOVEMENT_SIGN[movement_type]
     stock = lock_stock(product, warehouse)
@@ -298,7 +299,7 @@ def transfer_stock(
 ) -> tuple[list[StockMovement], StockMovement]:
     """Traspaso entre almacenes: salida y entrada en la misma transacción."""
     if source_warehouse.pk == target_warehouse.pk:
-        raise DomainError("El almacén origen y el destino son el mismo.", code="same_warehouse")
+        raise DomainError(_("El almacén origen y el destino son el mismo."), code="same_warehouse")
 
     salidas = register_exit(
         product=product,
@@ -333,7 +334,7 @@ def register_waste(
 ) -> list[StockMovement]:
     """Merma o caducidad. Siempre exige motivo: nada sale del almacén sin razón."""
     if not reason:
-        raise DomainError("La merma requiere un motivo.", code="reason_required")
+        raise DomainError(_("La merma requiere un motivo."), code="reason_required")
 
     movement_type = MovementType.EXPIRED if expired else MovementType.WASTE
     if lot is not None:
@@ -370,7 +371,7 @@ def adjust_stock(
 ) -> StockMovement | None:
     """Ajusta por conteo físico y deja el diferencial asentado en el Kardex."""
     if not reason:
-        raise DomainError("El ajuste requiere un motivo.", code="reason_required")
+        raise DomainError(_("El ajuste requiere un motivo."), code="reason_required")
 
     stock = lock_stock(product, warehouse)
     contado = q(counted_quantity)
@@ -409,25 +410,24 @@ def receive_purchase(*, order: PurchaseOrder, receipts: list[dict], actor) -> Pu
     """Recibe partidas y genera una entrada trazable por cada una."""
     order = PurchaseOrder.objects.select_for_update().get(pk=order.pk)
     if order.status not in {PurchaseStatus.ORDERED, PurchaseStatus.PARTIAL}:
-        raise DomainError(
-            "Solo se puede recibir una compra enviada o parcialmente recibida.",
+        raise DomainError(_("Solo se puede recibir una compra enviada o parcialmente recibida."),
             code="purchase_not_receivable",
         )
     if not receipts:
-        raise DomainError("Indica al menos una partida para recibir.", code="empty_receipt")
+        raise DomainError(_("Indica al menos una partida para recibir."), code="empty_receipt")
 
     seen: set[int] = set()
     for receipt in receipts:
         item_id = receipt["item_id"]
         if item_id in seen:
-            raise DomainError("Una partida aparece más de una vez.", code="duplicate_receipt_item")
+            raise DomainError(_("Una partida aparece más de una vez."), code="duplicate_receipt_item")
         seen.add(item_id)
         try:
             item = PurchaseOrderItem.objects.select_for_update().select_related("product").get(
                 pk=item_id, order=order
             )
         except PurchaseOrderItem.DoesNotExist as exc:
-            raise DomainError("La partida no pertenece a esta compra.", code="invalid_purchase_item") from exc
+            raise DomainError(_("La partida no pertenece a esta compra."), code="invalid_purchase_item") from exc
 
         amount = q(receipt["quantity"])
         if amount <= ZERO or amount > item.pending_quantity:

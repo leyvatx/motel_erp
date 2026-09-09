@@ -13,6 +13,7 @@ from datetime import timedelta
 
 from celery import shared_task
 from django.db import transaction
+from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
 from apps.notifications.events import Event, broadcast, role_group, stay_payload
@@ -80,8 +81,9 @@ def _sweep_stay_timers() -> dict[str, int]:
             notify(
                 category=NotificationCategory.STAY_EXPIRING,
                 level=NotificationLevel.WARNING,
-                title=f"Habitacion {stay.room.number} por vencer",
-                body=f"Quedan {max(stay.remaining_seconds // 60, 0)} minutos de la renta {stay.code}.",
+                title=_("Habitación %(cuarto)s por vencer") % {"cuarto": stay.room.number},
+                body=_("Quedan %(minutos)s minutos de la renta %(folio)s.")
+                % {"minutos": max(stay.remaining_seconds // 60, 0), "folio": stay.code},
                 target_role=Role.RECEPTION,
                 payload=payload,
             )
@@ -109,8 +111,8 @@ def _sweep_stay_timers() -> dict[str, int]:
             notify(
                 category=NotificationCategory.STAY_EXPIRED,
                 level=NotificationLevel.CRITICAL,
-                title=f"Habitacion {stay.room.number} vencida",
-                body=f"La renta {stay.code} agoto su tiempo.",
+                title=_("Habitación %(cuarto)s vencida") % {"cuarto": stay.room.number},
+                body=_("La renta %(folio)s agotó su tiempo.") % {"folio": stay.code},
                 target_role=Role.RECEPTION,
                 payload=payload,
             )

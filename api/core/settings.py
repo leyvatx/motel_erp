@@ -278,6 +278,10 @@ LANGUAGES = [
     ("es", "Español"),
     ("en", "English"),
 ]
+
+# Dónde viven los catálogos propios. Los de Django y DRF vienen dentro de sus
+# paquetes; estos son los mensajes que escribe esta aplicación.
+LOCALE_PATHS = [BASE_DIR / "locale"]
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True

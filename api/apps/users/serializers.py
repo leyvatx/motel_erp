@@ -5,6 +5,7 @@ from __future__ import annotations
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Q
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import InvalidToken
 from rest_framework_simplejwt.serializers import (
@@ -100,7 +101,7 @@ class UserWriteSerializer(serializers.ModelSerializer):
         if self.instance is not None:
             repetido = repetido.exclude(pk=self.instance.pk)
         if repetido.exists():
-            raise serializers.ValidationError("Ese usuario ya existe en esta sucursal.")
+            raise serializers.ValidationError(_("Ese usuario ya existe en esta sucursal."))
         return username
 
     def validate(self, attrs: dict) -> dict:
@@ -194,8 +195,7 @@ class MotelTokenObtainPairSerializer(TokenObtainPairSerializer):
                 Motel.objects.filter(slug__iexact=slug).values_list("pk", flat=True).first()
             )
             if motel_id is None:
-                raise DomainError(
-                    "Esa sucursal no existe o está suspendida.", code="motel_desconocido"
+                raise DomainError(_("Esa sucursal no existe o está suspendida."), code="motel_desconocido"
                 )
             return motel_id
 
@@ -210,8 +210,7 @@ class MotelTokenObtainPairSerializer(TokenObtainPairSerializer):
             .distinct()[:2]
         )
         if len(candidatos) > 1:
-            raise DomainError(
-                "Ese dato se usa en varias sucursales. Indica cuál es la tuya.",
+            raise DomainError(_("Ese dato se usa en varias sucursales. Indica cuál es la tuya."),
                 code="motel_requerido",
             )
         return candidatos[0] if candidatos else None
@@ -236,12 +235,12 @@ class MotelTokenRefreshSerializer(TokenRefreshSerializer):
     def validate(self, attrs: dict) -> dict:
         sid = self._sid(attrs.get("refresh", ""))
         if sid is not None and sessions.esta_revocada(sid):
-            raise InvalidToken("Esta sesión se cerró desde otro equipo.")
+            raise InvalidToken(_("Esta sesión se cerró desde otro equipo."))
 
         try:
             data = super().validate(attrs)
         except User.DoesNotExist as exc:
-            raise InvalidToken("Tu cuenta ya no está activa. Pide que la reactiven.") from exc
+            raise InvalidToken(_("Tu cuenta ya no está activa. Pide que la reactiven.")) from exc
 
         if sid is not None:
             self._renovar(sid, data.get("refresh") or attrs["refresh"])
@@ -381,7 +380,7 @@ class ChangePasswordSerializer(serializers.Serializer):
 
     def validate_current_password(self, value: str) -> str:
         if not self.context["request"].user.check_password(value):
-            raise serializers.ValidationError("La contraseña actual no es correcta.")
+            raise serializers.ValidationError(_("La contraseña actual no es correcta."))
         return value
 
 

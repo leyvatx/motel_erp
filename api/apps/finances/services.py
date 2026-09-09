@@ -12,6 +12,7 @@ from decimal import Decimal
 from django.db import transaction
 from django.db.models import Count, Q, Sum
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from common.exceptions import DomainError, ShiftRequiredError
 from common.models import DocumentSequence
@@ -58,13 +59,12 @@ def _validate_breakdown(breakdown: dict, declared_total: Decimal) -> Decimal:
                 f"Denominacion no valida: {denominacion}.", code="invalid_denomination"
             )
         if int(cantidad) < 0:
-            raise DomainError("Las cantidades no pueden ser negativas.", code="invalid_quantity")
+            raise DomainError(_("Las cantidades no pueden ser negativas."), code="invalid_quantity")
         total += Decimal(str(denominacion)) * int(cantidad)
 
     total = money(total)
     if total != money(declared_total):
-        raise DomainError(
-            "El desglose de billetes no coincide con el total declarado.",
+        raise DomainError(_("El desglose de billetes no coincide con el total declarado."),
             code="breakdown_mismatch",
             breakdown_total=str(total),
             declared_total=str(money(declared_total)),
@@ -88,7 +88,7 @@ def open_shift(
             f"{cashier.get_short_name()} ya tiene un turno abierto.", code="shift_already_open"
         )
     if Decimal(opening_balance) < ZERO:
-        raise DomainError("El fondo inicial no puede ser negativo.", code="invalid_opening_balance")
+        raise DomainError(_("El fondo inicial no puede ser negativo."), code="invalid_opening_balance")
 
     actor = actor or cashier
     now = timezone.now()
@@ -198,20 +198,18 @@ def close_shift(
     """
     shift = Shift.objects.select_for_update().get(pk=shift_id, is_active=True)
     if shift.status != ShiftStatus.OPEN:
-        raise DomainError("El turno ya está cerrado.", code="shift_not_open")
+        raise DomainError(_("El turno ya está cerrado."), code="shift_not_open")
 
     pendientes = shift.expenses.filter(is_active=True, status=ExpenseStatus.PENDING)
     if pendientes.exists():
-        raise DomainError(
-            "Hay gastos pendientes de aprobación en el turno.",
+        raise DomainError(_("Hay gastos pendientes de aprobación en el turno."),
             code="pending_expenses",
             expenses=list(pendientes.values_list("folio", flat=True)),
         )
 
     abiertos = _open_folios_of_shift(shift)
     if abiertos:
-        raise DomainError(
-            "Hay cuentas abiertas cobradas en este turno.",
+        raise DomainError(_("Hay cuentas abiertas cobradas en este turno."),
             code="open_folios",
             folios=abiertos,
         )
@@ -266,8 +264,7 @@ def verify_shift(
     """Arqueo de gerencia sobre un turno ya cerrado."""
     shift = Shift.objects.select_for_update().get(pk=shift_id, is_active=True)
     if shift.status != ShiftStatus.CLOSED:
-        raise DomainError(
-            "Solo se puede verificar un turno cerrado.", code="shift_not_closed"
+        raise DomainError(_("Solo se puede verificar un turno cerrado."), code="shift_not_closed"
         )
 
     contado = money(counted_cash)
@@ -306,17 +303,16 @@ def register_cash_movement(
     """Entrada o salida de efectivo del cajon (retiro, reposición, gasto)."""
     shift = Shift.objects.select_for_update().get(pk=shift_id, is_active=True)
     if shift.status != ShiftStatus.OPEN:
-        raise DomainError("El turno no está abierto.", code="shift_not_open")
+        raise DomainError(_("El turno no está abierto."), code="shift_not_open")
 
     valor = money(amount)
     if valor <= ZERO:
-        raise DomainError("El importe debe ser mayor a cero.", code="invalid_amount")
+        raise DomainError(_("El importe debe ser mayor a cero."), code="invalid_amount")
 
     if direction == CashDirection.OUT:
         disponible = compute_shift_totals(shift)["expected_cash"]
         if valor > disponible:
-            raise DomainError(
-                "No hay suficiente efectivo en caja para esta salida.",
+            raise DomainError(_("No hay suficiente efectivo en caja para esta salida."),
                 code="insufficient_cash_in_drawer",
                 available=str(disponible),
                 requested=str(valor),
@@ -364,11 +360,11 @@ def register_expense(
         else require_open_shift(actor)
     )
     if shift.status != ShiftStatus.OPEN:
-        raise DomainError("El turno no está abierto.", code="shift_not_open")
+        raise DomainError(_("El turno no está abierto."), code="shift_not_open")
 
     valor = money(amount)
     if valor <= ZERO:
-        raise DomainError("El importe del gasto debe ser mayor a cero.", code="invalid_amount")
+        raise DomainError(_("El importe del gasto debe ser mayor a cero."), code="invalid_amount")
 
     requiere = valor > approval_threshold()
     expense = Expense.objects.create(
@@ -411,11 +407,10 @@ def review_expense(
         .get(pk=expense_id, is_active=True)
     )
     if expense.status != ExpenseStatus.PENDING:
-        raise DomainError(
-            "El gasto ya fue revisado.", code="expense_already_reviewed", status=expense.status
+        raise DomainError(_("El gasto ya fue revisado."), code="expense_already_reviewed", status=expense.status
         )
     if not approve and not notes:
-        raise DomainError("El rechazo requiere un motivo.", code="reason_required")
+        raise DomainError(_("El rechazo requiere un motivo."), code="reason_required")
 
     expense.status = ExpenseStatus.APPROVED if approve else ExpenseStatus.REJECTED
     expense.reviewed_by = actor

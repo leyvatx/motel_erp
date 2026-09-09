@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.db import transaction
 from django.db.models import Count, Q, Sum
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -159,7 +160,7 @@ class CorporateUserViewSet(CorporateScopeMixin, viewsets.ModelViewSet):
             target_ids = set(RegionMotel.objects.filter(region=region).values_list("motel_id", flat=True))
             if not target_ids or target_ids - self.accessible_ids():
                 from rest_framework.exceptions import PermissionDenied
-                raise PermissionDenied("No puedes crear usuarios fuera de tus regiones.")
+                raise PermissionDenied(_("No puedes crear usuarios fuera de tus regiones."))
         serializer.save()
 
     def perform_destroy(self, instance):
@@ -198,7 +199,7 @@ class AccessViewSet(CorporateScopeMixin, viewsets.ModelViewSet):
         )
         if not target_ids or target_ids - allowed:
             from rest_framework.exceptions import PermissionDenied
-            raise PermissionDenied("No puedes asignar accesos fuera de tus propiedades.")
+            raise PermissionDenied(_("No puedes asignar accesos fuera de tus propiedades."))
 
     def perform_destroy(self, instance):
         instance.soft_delete(user=self.request.user)

@@ -6,6 +6,7 @@ from decimal import Decimal
 
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from common.exceptions import DomainError, InvalidStateTransition
 from common.models import DocumentSequence
@@ -175,7 +176,7 @@ def verify_cleaning_task(*, task_id: int, actor) -> CleaningTask:
 @transaction.atomic
 def cancel_cleaning_task(*, task_id: int, reason: str, actor) -> CleaningTask:
     if not reason:
-        raise DomainError("La cancelación requiere un motivo.", code="reason_required")
+        raise DomainError(_("La cancelación requiere un motivo."), code="reason_required")
 
     task = CleaningTask.objects.select_for_update().get(pk=task_id, is_active=True)
     _validate_cleaning_transition(task.status, CleaningTaskStatus.CANCELLED)
@@ -208,8 +209,7 @@ def report_maintenance(
     if room_id:
         room = Room.objects.select_for_update().get(pk=room_id, is_active=True)
         if blocks_room and room.stays.filter(status=StayStatus.ACTIVE).exists():
-            raise DomainError(
-                "La habitación tiene una renta activa: no se puede bloquear todavía.",
+            raise DomainError(_("La habitación tiene una renta activa: no se puede bloquear todavía."),
                 code="room_occupied",
             )
 
@@ -321,7 +321,7 @@ def update_maintenance_status(
             target_status=new_status,
         )
     if new_status == MaintenanceStatus.CANCELLED and not note:
-        raise DomainError("La cancelación requiere un motivo.", code="reason_required")
+        raise DomainError(_("La cancelación requiere un motivo."), code="reason_required")
 
     report.status = new_status
     if assigned_to is not None:

@@ -7,6 +7,7 @@ from datetime import timedelta
 
 from celery import shared_task
 from django.db import transaction
+from django.utils.translation import gettext_lazy as _
 from django.db.models import F
 from django.utils import timezone
 
@@ -83,11 +84,13 @@ def _check_low_stock() -> int:
             notify(
                 category=NotificationCategory.LOW_STOCK,
                 level=NotificationLevel.WARNING,
-                title=f"Stock minimo: {stock.product.name}",
-                body=(
-                    f"Quedan {stock.quantity} en {stock.warehouse.name} "
-                    f"(minimo {stock.min_stock})."
-                ),
+                title=_("Stock mínimo: %(producto)s") % {"producto": stock.product.name},
+                body=_("Quedan %(cantidad)s en %(almacen)s (mínimo %(minimo)s).")
+                % {
+                    "cantidad": stock.quantity,
+                    "almacen": stock.warehouse.name,
+                    "minimo": stock.min_stock,
+                },
                 target_role=Role.MANAGER,
                 payload=payload,
             )
@@ -157,11 +160,14 @@ def _check_expiring_lots(days: int = EXPIRY_WARNING_DAYS) -> int:
             notify(
                 category=NotificationCategory.EXPIRING_LOT,
                 level=NotificationLevel.CRITICAL if vencido else NotificationLevel.WARNING,
-                title=("Producto caducado" if vencido else "Producto por caducar"),
-                body=(
-                    f"{lot.product.name} en {lot.warehouse.name}: "
-                    f"{lot.quantity} pza(s), vence {lot.expiration_date:%d/%m/%Y}."
-                ),
+                title=(_("Producto caducado") if vencido else _("Producto por caducar")),
+                body=_("%(producto)s en %(almacen)s: %(cantidad)s pza(s), vence %(fecha)s.")
+                % {
+                    "producto": lot.product.name,
+                    "almacen": lot.warehouse.name,
+                    "cantidad": lot.quantity,
+                    "fecha": f"{lot.expiration_date:%d/%m/%Y}",
+                },
                 target_role=Role.MANAGER,
                 payload=payload,
             )

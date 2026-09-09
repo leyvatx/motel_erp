@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from apps.users.constants import Role
 from common.models import AuthorStampedModel, SoftDeleteModel, TimeStampedModel
@@ -115,7 +116,7 @@ class CorporateAccess(CorporateModel):
 
     def clean(self):
         if self.user_id and self.user.motel_id is not None:
-            raise ValidationError("El usuario corporativo no debe pertenecer a un motel fijo.")
+            raise ValidationError(_("El usuario corporativo no debe pertenecer a un motel fijo."))
 
     def __str__(self):
         scope = self.region or self.motel

@@ -6,6 +6,7 @@ from decimal import Decimal
 from django.db.models import Avg, Count, DecimalField, ExpressionWrapper, F, Q, Sum
 from django.db.models.functions import Coalesce, TruncDate, TruncHour
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import ValidationError
 
 from apps.finances.constants import ExpenseStatus, ShiftStatus
@@ -28,11 +29,11 @@ def period(params) -> tuple[date, date, datetime, datetime]:
         start = date.fromisoformat(params.get("from")) if params.get("from") else today - timedelta(days=29)
         end = date.fromisoformat(params.get("to")) if params.get("to") else today
     except ValueError as exc:
-        raise ValidationError("Las fechas deben usar el formato YYYY-MM-DD.") from exc
+        raise ValidationError(_("Las fechas deben usar el formato YYYY-MM-DD.")) from exc
     if start > end:
-        raise ValidationError("La fecha inicial no puede ser posterior a la final.")
+        raise ValidationError(_("La fecha inicial no puede ser posterior a la final."))
     if (end - start).days > 366:
-        raise ValidationError("El periodo máximo de consulta es de 367 días.")
+        raise ValidationError(_("El periodo máximo de consulta es de 367 días."))
     tz = business_tz()
     lower = timezone.make_aware(datetime.combine(start, time.min), tz)
     upper = timezone.make_aware(datetime.combine(end + timedelta(days=1), time.min), tz)

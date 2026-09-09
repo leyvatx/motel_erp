@@ -20,6 +20,7 @@ from typing import Sequence
 
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from common.exceptions import DomainError, ResourceUnavailable
 from common.models import DocumentSequence
@@ -210,16 +211,15 @@ def create_reservation(
     notes: str = "",
 ) -> Reservation:
     if scheduled_end <= scheduled_start:
-        raise DomainError("El fin de la reservación debe ser posterior al inicio.", code="invalid_window")
+        raise DomainError(_("El fin de la reservación debe ser posterior al inicio."), code="invalid_window")
     if scheduled_start < timezone.now() - timedelta(minutes=5):
-        raise DomainError("No se puede reservar en el pasado.", code="reservation_in_past")
+        raise DomainError(_("No se puede reservar en el pasado."), code="reservation_in_past")
 
     room = None
     if room_id:
         room = Room.objects.select_for_update().get(pk=room_id, is_active=True)
         if room.room_type_id != room_type_id:
-            raise DomainError(
-                "La habitación no corresponde al tipo seleccionado.",
+            raise DomainError(_("La habitación no corresponde al tipo seleccionado."),
                 code="reservation_room_type_mismatch",
             )
         assert_no_reservation_conflict(room=room, start=scheduled_start, end=scheduled_end)
@@ -230,8 +230,7 @@ def create_reservation(
     if tariff_block_id:
         tariff_block = TariffBlock.objects.get(pk=tariff_block_id, is_active=True)
         if tariff_block.room_type_id != room_type_id:
-            raise DomainError(
-                "La tarifa no corresponde al tipo de habitación seleccionado.",
+            raise DomainError(_("La tarifa no corresponde al tipo de habitación seleccionado."),
                 code="reservation_tariff_mismatch",
             )
         quoted = resolve_tariff_price(tariff_block, scheduled_start)
@@ -272,12 +271,11 @@ def _assert_no_active_stay_overlap(*, room: Room, start: datetime, end: datetime
 @transaction.atomic
 def cancel_reservation(*, reservation_id: int, reason: str, actor) -> Reservation:
     if not reason:
-        raise DomainError("La cancelación requiere un motivo.", code="reason_required")
+        raise DomainError(_("La cancelación requiere un motivo."), code="reason_required")
 
     reservation = Reservation.objects.select_for_update().get(pk=reservation_id, is_active=True)
     if reservation.status not in BLOCKING_RESERVATION_STATUSES:
-        raise DomainError(
-            "La reservación no se puede cancelar en su estado actual.",
+        raise DomainError(_("La reservación no se puede cancelar en su estado actual."),
             code="invalid_reservation_status",
             status=reservation.status,
         )
@@ -302,8 +300,7 @@ def cancel_reservation(*, reservation_id: int, reason: str, actor) -> Reservatio
 def mark_reservation_no_show(*, reservation_id: int, actor) -> Reservation:
     reservation = Reservation.objects.select_for_update().get(pk=reservation_id, is_active=True)
     if reservation.status not in BLOCKING_RESERVATION_STATUSES:
-        raise DomainError(
-            "La reservación no se puede marcar como no-show.",
+        raise DomainError(_("La reservación no se puede marcar como no-show."),
             code="invalid_reservation_status",
         )
     reservation.status = ReservationStatus.NO_SHOW
@@ -340,8 +337,7 @@ def rent_room(
     )
 
     if tariff_block.room_type_id != room.room_type_id:
-        raise DomainError(
-            "El bloque tarifario no corresponde al tipo de esta habitación.",
+        raise DomainError(_("El bloque tarifario no corresponde al tipo de esta habitación."),
             code="tariff_room_type_mismatch",
         )
     if room.status not in {RoomStatus.AVAILABLE, RoomStatus.RESERVED}:
@@ -363,16 +359,13 @@ def rent_room(
     if reservation_id:
         reservation = Reservation.objects.select_for_update().get(pk=reservation_id, is_active=True)
         if reservation.status not in BLOCKING_RESERVATION_STATUSES:
-            raise DomainError(
-                "La reservación no está vigente.", code="invalid_reservation_status"
+            raise DomainError(_("La reservación no está vigente."), code="invalid_reservation_status"
             )
         if reservation.room_id and reservation.room_id != room.pk:
-            raise DomainError(
-                "La reservación corresponde a otra habitación.", code="reservation_room_mismatch"
+            raise DomainError(_("La reservación corresponde a otra habitación."), code="reservation_room_mismatch"
             )
         if reservation.room_type_id != room.room_type_id:
-            raise DomainError(
-                "La habitación no corresponde al tipo reservado.",
+            raise DomainError(_("La habitación no corresponde al tipo reservado."),
                 code="reservation_room_type_mismatch",
             )
 
@@ -470,23 +463,22 @@ def extend_stay(
         .get(pk=stay_id, is_active=True)
     )
     if stay.status != StayStatus.ACTIVE:
-        raise DomainError("Solo se pueden extender rentas activas.", code="stay_not_active")
+        raise DomainError(_("Solo se pueden extender rentas activas."), code="stay_not_active")
 
     tariff_block = None
     if tariff_block_id:
         tariff_block = TariffBlock.objects.get(pk=tariff_block_id, is_active=True)
         if tariff_block.room_type_id != stay.room_type_id:
-            raise DomainError(
-                "El bloque tarifario no corresponde al tipo de habitación.",
+            raise DomainError(_("El bloque tarifario no corresponde al tipo de habitación."),
                 code="tariff_room_type_mismatch",
             )
         minutes = tariff_block.duration_minutes
         price = resolve_tariff_price(tariff_block, timezone.now()) if price is None else price
 
     if not minutes or minutes <= 0:
-        raise DomainError("La extensión requiere minutos o un bloque tarifario.", code="invalid_extension")
+        raise DomainError(_("La extensión requiere minutos o un bloque tarifario."), code="invalid_extension")
     if price is None:
-        raise DomainError("La extensión requiere un importe.", code="price_required")
+        raise DomainError(_("La extensión requiere un importe."), code="price_required")
 
     now = timezone.now()
     base_moment = max(stay.expires_at, now)
@@ -539,8 +531,7 @@ def extend_stay(
 def _get_open_folio(stay: Stay):
     folio = getattr(stay, "folio", None)
     if folio is None or folio.status != FolioStatus.OPEN:
-        raise DomainError(
-            "La renta no tiene una cuenta abierta.", code="folio_not_open", stay_id=stay.pk
+        raise DomainError(_("La renta no tiene una cuenta abierta."), code="folio_not_open", stay_id=stay.pk
         )
     return sales_services.lock_folio(folio.pk)
 
@@ -645,7 +636,7 @@ def cancel_stay(*, stay_id: int, reason: str, actor) -> Stay:
     disponible. Nada se borra: todo queda marcado y auditado.
     """
     if not reason:
-        raise DomainError("La cancelación requiere un motivo.", code="reason_required")
+        raise DomainError(_("La cancelación requiere un motivo."), code="reason_required")
 
     stay = (
         Stay.objects.select_for_update(of=("self",))
@@ -730,7 +721,7 @@ def finish_cleaning(*, room_id: int, actor, reason: str = "") -> Room:
 def set_room_out_of_service(*, room_id: int, actor, reason: str, blocked: bool = False) -> Room:
     """Manda el cuarto a mantenimiento o lo bloquea."""
     if not reason:
-        raise DomainError("Se requiere el motivo.", code="reason_required")
+        raise DomainError(_("Se requiere el motivo."), code="reason_required")
 
     room = Room.objects.select_for_update().get(pk=room_id, is_active=True)
     if room.stays.filter(status=StayStatus.ACTIVE).exists():

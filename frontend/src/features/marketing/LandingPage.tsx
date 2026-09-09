@@ -98,7 +98,7 @@ interface Habitacion {
 const HABITACIONES: Habitacion[] = [
   {
     numero: '101',
-    tipo: 'Sencilla',
+    tipo: 'maqueta.tipoSencilla',
     huespedes: 0,
     avance: 0,
     salida: '',
@@ -106,7 +106,7 @@ const HABITACIONES: Habitacion[] = [
   },
   {
     numero: '102',
-    tipo: 'Doble',
+    tipo: 'maqueta.tipoDoble',
     huespedes: 2,
     avance: 92,
     salida: '14:30',
@@ -114,7 +114,7 @@ const HABITACIONES: Habitacion[] = [
   },
   {
     numero: '103',
-    tipo: 'Sencilla',
+    tipo: 'maqueta.tipoSencilla',
     huespedes: 0,
     avance: 0,
     salida: '',
@@ -122,7 +122,7 @@ const HABITACIONES: Habitacion[] = [
   },
   {
     numero: '104',
-    tipo: 'Jacuzzi',
+    tipo: 'maqueta.tipoJacuzzi',
     huespedes: 0,
     avance: 0,
     salida: '',
@@ -130,7 +130,7 @@ const HABITACIONES: Habitacion[] = [
   },
   {
     numero: '201',
-    tipo: 'Doble',
+    tipo: 'maqueta.tipoDoble',
     huespedes: 2,
     avance: 41,
     salida: '17:00',
@@ -138,7 +138,7 @@ const HABITACIONES: Habitacion[] = [
   },
   {
     numero: '202',
-    tipo: 'Sencilla',
+    tipo: 'maqueta.tipoSencilla',
     huespedes: 0,
     avance: 0,
     salida: '',
@@ -146,7 +146,7 @@ const HABITACIONES: Habitacion[] = [
   },
   {
     numero: '203',
-    tipo: 'Jacuzzi',
+    tipo: 'maqueta.tipoJacuzzi',
     huespedes: 0,
     avance: 0,
     salida: '',
@@ -154,7 +154,7 @@ const HABITACIONES: Habitacion[] = [
   },
   {
     numero: '204',
-    tipo: 'Doble',
+    tipo: 'maqueta.tipoDoble',
     huespedes: 1,
     avance: 67,
     salida: '19:15',
@@ -170,39 +170,17 @@ function estadoEn(habitacion: Habitacion, paso: number): Estado {
   return habitacion.linea[Math.min(paso, 3)] ?? 'libre'
 }
 
+/* Los pasos guardan su clave, no su texto.
+ *
+ *  El contenido vive en los catálogos de idioma; aquí solo queda lo que no se
+ *  traduce -- el icono y el orden. Traer la cadena en el momento de pintar es
+ *  lo que hace que el recorrido cambie de idioma con el selector, sin recargar
+ *  y sin quedarse a medias entre dos idiomas. */
 const PASOS = [
-  {
-    corto: 'Alta',
-    titulo: 'Configuración relámpago',
-    resumen: 'Tipos, tarifas y lote de habitaciones en un asistente de cuatro pasos.',
-    detalle:
-      'Se declara una vez cuánto dura y cuánto cuesta cada estancia. El tablero queda armado antes de que llegue el primer huésped, sin capturar cuarto por cuarto.',
-    icono: LuLayoutGrid,
-  },
-  {
-    corto: 'Ocupación',
-    titulo: 'Ocupación y tiempos en vivo',
-    resumen: 'Quién entró, cuántos son y cuánto les queda, sin abrir nada.',
-    detalle:
-      'Cada tarjeta lleva su cronómetro y su barra de avance. Recepción ve de un vistazo cuál está por vencerse en lugar de revisar una lista de horas de salida.',
-    icono: LuClock,
-  },
-  {
-    corto: 'Consumo',
-    titulo: 'Comandas y folios de consumo',
-    resumen: 'Lo que se consume se carga a la cuenta del cuarto y descuenta inventario.',
-    detalle:
-      'El folio vive junto a la estancia. Cargar una comanda mueve el Kardex en el mismo movimiento, así que el corte de caja cuadra con el almacén sin conciliar a mano.',
-    icono: LuReceipt,
-  },
-  {
-    corto: 'Rotación',
-    titulo: 'Rotación y control de limpieza',
-    resumen: 'Al cobrar, el cuarto entra solo al tablero de ama de llaves.',
-    detalle:
-      'La salida dispara la tarea, la tarea libera el cuarto y las métricas de arriba se mueven en el momento. Nadie tiene que avisarle a nadie para que la rotación siga.',
-    icono: LuSparkles,
-  },
+  { clave: 'alta', icono: LuLayoutGrid },
+  { clave: 'ocupacion', icono: LuClock },
+  { clave: 'consumo', icono: LuReceipt },
+  { clave: 'rotacion', icono: LuSparkles },
 ] as const
 
 const TARJETA: Record<Estado, string> = {
@@ -226,11 +204,12 @@ const ETIQUETA_ESTADO: Record<Estado, string> = {
   limpieza: 'text-status-cleaning',
 }
 
-const NOMBRE: Record<Estado, string> = {
-  apagada: '—',
-  libre: 'Libre',
-  ocupada: 'Ocupada',
-  limpieza: 'Limpieza',
+/** Los estados de la maqueta, por clave. El guion largo no se traduce. */
+const NOMBRE: Record<Estado, string | null> = {
+  apagada: null,
+  libre: 'maqueta.estadoLibre',
+  ocupada: 'maqueta.estadoOcupada',
+  limpieza: 'maqueta.estadoLimpieza',
 }
 
 /* --------------------------------------------------------------- la maqueta */
@@ -281,6 +260,7 @@ function Metrica({
 const AVISO_DESDE = 85
 
 function TarjetaHabitacion({ habitacion, paso }: { habitacion: Habitacion; paso: number }) {
+  const { t } = useTranslation()
   const estado = estadoEn(habitacion, paso)
   const ocupada = estado === 'ocupada'
   const visibles = Math.min(habitacion.huespedes, MAX_AVATARES)
@@ -306,7 +286,7 @@ function TarjetaHabitacion({ habitacion, paso }: { habitacion: Habitacion; paso:
             {habitacion.numero}
           </p>
           <p className={cn('mt-1 truncate text-[0.625rem] leading-none', SUAVE)}>
-            {habitacion.tipo}
+            {t(habitacion.tipo)}
           </p>
         </div>
 
@@ -344,7 +324,7 @@ function TarjetaHabitacion({ habitacion, paso }: { habitacion: Habitacion; paso:
               )}
               aria-hidden
             />
-            {porVencer ? 'Por vencer' : NOMBRE[estado]}
+            {porVencer ? t('maqueta.estadoPorVencer') : NOMBRE[estado] ? t(NOMBRE[estado]) : '—'}
           </span>
 
           <span
@@ -379,10 +359,11 @@ function TarjetaHabitacion({ habitacion, paso }: { habitacion: Habitacion; paso:
 }
 
 function PanelFolio({ visible }: { visible: boolean }) {
+  const { t } = useTranslation()
   const cargos = [
-    { concepto: 'Cerveza 355 ml', cantidad: 2, importe: '90.00' },
-    { concepto: 'Botana mixta', cantidad: 1, importe: '65.00' },
-    { concepto: 'Estancia 4 h', cantidad: 1, importe: '350.00' },
+    { concepto: 'maqueta.cargoCerveza', cantidad: 2, importe: '90.00' },
+    { concepto: 'maqueta.cargoBotana', cantidad: 1, importe: '65.00' },
+    { concepto: 'maqueta.cargoEstancia', cantidad: 1, importe: '350.00' },
   ]
 
   return (
@@ -398,7 +379,9 @@ function PanelFolio({ visible }: { visible: boolean }) {
       )}
     >
       <div className={cn('flex items-baseline justify-between border-b pb-2', BORDE)}>
-        <span className="text-xs font-medium tracking-tight text-foreground">Folio · Hab. 201</span>
+        <span className="text-xs font-medium tracking-tight text-foreground">
+          {t('maqueta.folio')}
+        </span>
         <span className={cn('font-mono text-[0.625rem] tabular', SUAVE)}>F-00218</span>
       </div>
 
@@ -407,7 +390,7 @@ function PanelFolio({ visible }: { visible: boolean }) {
           <li key={cargo.concepto} className="flex items-baseline justify-between gap-2">
             <span className="truncate text-[0.6875rem] text-muted-foreground">
               <span className={cn('font-mono tabular', SUAVE)}>{cargo.cantidad}×</span>{' '}
-              {cargo.concepto}
+              {t(cargo.concepto)}
             </span>
             <span className="shrink-0 font-mono text-[0.6875rem] tabular text-foreground">
               {cargo.importe}
@@ -417,20 +400,23 @@ function PanelFolio({ visible }: { visible: boolean }) {
       </ul>
 
       <div className={cn('mt-2 flex items-baseline justify-between border-t pt-2', BORDE)}>
-        <span className="text-[0.6875rem] font-medium text-foreground">Total</span>
+        <span className="text-[0.6875rem] font-medium text-foreground">
+          {t('maqueta.folioTotal')}
+        </span>
         <span className="font-mono text-sm font-semibold tabular tracking-tight text-foreground">
           505.00
         </span>
       </div>
 
       <div className="mt-2.5 flex h-7 items-center justify-center rounded-lg bg-primary text-[0.6875rem] font-medium text-primary-foreground">
-        Cobrar y cerrar
+        {t('maqueta.cobrar')}
       </div>
     </div>
   )
 }
 
 function Tablero({ paso }: { paso: number }) {
+  const { t } = useTranslation()
   const encendido = paso >= 0
   const estados = HABITACIONES.map((habitacion) => estadoEn(habitacion, paso))
   const total = HABITACIONES.length
@@ -446,29 +432,32 @@ function Tablero({ paso }: { paso: number }) {
             <span key={indice} className={cn('h-2 w-2 rounded-full', tono)} />
           ))}
         </span>
-        <span className={cn(ETIQUETA_SECCION, 'text-[0.625rem]')}>
-          Control operativo · Turno vespertino
-        </span>
+        <span className={cn(ETIQUETA_SECCION, 'text-[0.625rem]')}>{t('maqueta.cabecera')}</span>
       </div>
 
       <div className={cn('flex items-start gap-3 border-b px-4 py-3', BORDE)}>
-        <Metrica etiqueta="Total" valor={total} porcentaje={null} encendido={encendido} />
         <Metrica
-          etiqueta="Ocupadas"
+          etiqueta={t('maqueta.total')}
+          valor={total}
+          porcentaje={null}
+          encendido={encendido}
+        />
+        <Metrica
+          etiqueta={t('maqueta.ocupadas')}
           valor={contar('ocupada')}
           porcentaje={porcentaje(contar('ocupada'))}
           punto="bg-brand-accent"
           encendido={encendido}
         />
         <Metrica
-          etiqueta="Libres"
+          etiqueta={t('maqueta.libres')}
           valor={contar('libre')}
           porcentaje={porcentaje(contar('libre'))}
           punto="bg-status-available"
           encendido={encendido}
         />
         <Metrica
-          etiqueta="Por limpiar"
+          etiqueta={t('maqueta.porLimpiar')}
           valor={contar('limpieza')}
           porcentaje={porcentaje(contar('limpieza'))}
           punto="bg-amber-500"
@@ -492,6 +481,7 @@ function Tablero({ paso }: { paso: number }) {
 /* --------------------------------------------------------- pasos explicados */
 
 function TextoPaso({ indice, activo }: { indice: number; activo: boolean }) {
+  const { t } = useTranslation()
   const item = PASOS[indice]
   if (!item) return null
   const Icono = item.icono
@@ -529,7 +519,7 @@ function TextoPaso({ indice, activo }: { indice: number; activo: boolean }) {
           activo ? 'text-foreground' : 'text-muted-foreground/50',
         )}
       >
-        {item.titulo}
+        {t(`pasos.${item.clave}Titulo`)}
       </h3>
 
       <p
@@ -538,7 +528,7 @@ function TextoPaso({ indice, activo }: { indice: number; activo: boolean }) {
           activo ? 'text-muted-foreground' : 'text-muted-foreground/50',
         )}
       >
-        {item.resumen}
+        {t(`pasos.${item.clave}Resumen`)}
       </p>
 
       <p
@@ -547,7 +537,7 @@ function TextoPaso({ indice, activo }: { indice: number; activo: boolean }) {
           activo ? SUAVE : 'text-muted-foreground/40',
         )}
       >
-        {item.detalle}
+        {t(`pasos.${item.clave}Detalle`)}
       </p>
     </div>
   )
@@ -566,6 +556,7 @@ function TextoPaso({ indice, activo }: { indice: number; activo: boolean }) {
  *  deslizar en horizontal; las pestañas de Radix además ya traen navegación con
  *  flechas, `aria-selected` y foco visible. */
 function EscaparateTactil({ paso, onPaso }: { paso: number; onPaso: (paso: number) => void }) {
+  const { t } = useTranslation()
   const actual = Math.max(paso, 0)
 
   return (
@@ -579,7 +570,7 @@ function EscaparateTactil({ paso, onPaso }: { paso: number; onPaso: (paso: numbe
       <TabsList className="grid h-auto w-full grid-cols-4 gap-1 rounded-xl bg-muted p-1">
         {PASOS.map((item, indice) => (
           <TabsTrigger
-            key={item.titulo}
+            key={item.clave}
             value={String(indice)}
             className={cn(
               'h-11 flex-col gap-0.5 rounded-lg px-1',
@@ -589,13 +580,13 @@ function EscaparateTactil({ paso, onPaso }: { paso: number; onPaso: (paso: numbe
             <span className="font-mono text-[0.625rem] leading-none tabular tracking-[0.1em]">
               0{indice + 1}
             </span>
-            <span className="text-[0.6875rem] leading-none">{item.corto}</span>
+            <span className="text-[0.6875rem] leading-none">{t(`pasos.${item.clave}Corto`)}</span>
           </TabsTrigger>
         ))}
       </TabsList>
 
       {PASOS.map((item, indice) => (
-        <TabsContent key={item.titulo} value={String(indice)} className="mt-4">
+        <TabsContent key={item.clave} value={String(indice)} className="mt-4">
           <TextoPaso indice={indice} activo />
         </TabsContent>
       ))}
@@ -658,7 +649,7 @@ function EscaparateDeEscritorio({
           <ol className="mt-4 flex gap-1.5" aria-hidden>
             {PASOS.map((item, indice) => (
               <li
-                key={item.titulo}
+                key={item.clave}
                 className={cn(
                   'h-0.5 flex-1 rounded-full transition-colors duration-500 motion-reduce:transition-none',
                   indice <= paso ? 'bg-primary' : 'bg-border',
@@ -672,7 +663,7 @@ function EscaparateDeEscritorio({
       <div className="pb-[30vh] pt-[10vh]">
         {PASOS.map((item, indice) => (
           <section
-            key={item.titulo}
+            key={item.clave}
             ref={(nodo) => {
               pasosRef.current[indice] = nodo
             }}
@@ -691,42 +682,37 @@ function EscaparateDeEscritorio({
 const BENTO = [
   {
     id: 'aislamiento',
-    titulo: 'Aislamiento por sucursal',
+    clave: 'aislamiento',
     icono: LuNetwork,
-    texto:
-      'El filtro por sucursal vive en la capa de datos, no en cada pantalla: una consulta que lo olvide no devuelve de más, devuelve vacío.',
     span: 'md:col-span-2 md:row-span-2',
   },
   {
     id: 'roles',
-    titulo: 'Roles jerárquicos',
+    clave: 'roles',
     icono: LuLock,
-    texto:
-      'Cada acción sensible declara qué permiso exige. Recepción cobra pero no ve costos ni márgenes; ama de llaves opera su tablero y nada más.',
     span: 'md:col-span-2',
   },
   {
     id: 'caja',
-    titulo: 'Cortes de caja ciegos',
+    clave: 'caja',
     icono: LuVault,
-    texto: 'Quien cierra el turno captura el efectivo sin ver lo que el sistema esperaba.',
     span: 'md:col-span-1',
   },
   {
     id: 'bitacora',
-    titulo: 'Bitácora inmutable',
+    clave: 'bitacora',
     icono: LuScrollText,
-    texto: 'Un movimiento equivocado se corrige con otro en sentido contrario, nunca borrando.',
     span: 'md:col-span-1',
   },
 ] as const
 
 const SUCURSALES = [
-  { nombre: 'Sucursal A', cuartos: ['101', '102', '103'], tono: 'emerald' as const },
-  { nombre: 'Sucursal B', cuartos: ['201', '202'], tono: 'marca' as const },
+  { nombre: 'confianza.sucursalA', cuartos: ['101', '102', '103'], tono: 'emerald' as const },
+  { nombre: 'confianza.sucursalB', cuartos: ['201', '202'], tono: 'marca' as const },
 ]
 
 function TarjetaBento({ item }: { item: (typeof BENTO)[number] }) {
+  const { t } = useTranslation()
   const Icono = item.icono
   const esAncla = item.id === 'aislamiento'
 
@@ -757,9 +743,11 @@ function TarjetaBento({ item }: { item: (typeof BENTO)[number] }) {
       </span>
 
       <h3 className="mt-5 text-[1.25rem] font-semibold leading-tight tracking-[-0.02em]">
-        {item.titulo}
+        {t(`confianza.${item.clave}Titulo`)}
       </h3>
-      <p className={cn('mt-2 text-pretty text-[0.9375rem] leading-[1.6]', SUAVE)}>{item.texto}</p>
+      <p className={cn('mt-2 text-pretty text-[0.9375rem] leading-[1.6]', SUAVE)}>
+        {t(`confianza.${item.clave}Texto`)}
+      </p>
 
       {esAncla ? (
         // La tarjeta ancla del bento gana una prueba visual: dos sucursales y lo
@@ -768,7 +756,7 @@ function TarjetaBento({ item }: { item: (typeof BENTO)[number] }) {
         <div className="mt-6 grid flex-1 grid-cols-2 items-end gap-3">
           {SUCURSALES.map((sucursal) => (
             <div key={sucursal.nombre} className={cn('rounded-xl p-3', CANTO, 'bg-muted/60')}>
-              <p className={cn(ETIQUETA_SECCION, 'text-[0.625rem]')}>{sucursal.nombre}</p>
+              <p className={cn(ETIQUETA_SECCION, 'text-[0.625rem]')}>{t(sucursal.nombre)}</p>
               <div className="mt-2 flex flex-wrap gap-1">
                 {sucursal.cuartos.map((cuarto) => (
                   <span
@@ -789,7 +777,7 @@ function TarjetaBento({ item }: { item: (typeof BENTO)[number] }) {
                     SUAVE,
                   )}
                 >
-                  vacío
+                  {t('confianza.vacio')}
                 </span>
               </div>
             </div>
@@ -850,29 +838,17 @@ const DESVANECIDO_INFERIOR = {
  *  en un turno, escritos como los diría recepción. Sirven para que la página
  *  respire, no para informar. */
 const PULSO = [
-  { texto: '204 · renta iniciada · 4 h', punto: 'bg-brand-accent' },
-  { texto: '112 · limpieza terminada', punto: 'bg-status-available' },
-  { texto: 'Turno T-0042 · corte ciego', punto: 'bg-muted-foreground/60' },
-  { texto: '201 · consumo cargado · $180', punto: 'bg-brand-accent' },
-  { texto: '108 · vence en 15 min', punto: 'bg-status-cleaning' },
-  { texto: '305 · salida cobrada', punto: 'bg-status-available' },
-  { texto: 'Frigobar · 2 piezas descontadas', punto: 'bg-muted-foreground/60' },
+  { texto: 'pulso.renta', punto: 'bg-brand-accent' },
+  { texto: 'pulso.limpieza', punto: 'bg-status-available' },
+  { texto: 'pulso.corte', punto: 'bg-muted-foreground/60' },
+  { texto: 'pulso.consumo', punto: 'bg-brand-accent' },
+  { texto: 'pulso.vence', punto: 'bg-status-cleaning' },
+  { texto: 'pulso.salida', punto: 'bg-status-available' },
+  { texto: 'pulso.frigobar', punto: 'bg-muted-foreground/60' },
 ] as const
 
 /** Hechos comprobables del sistema, a tamaño de titular. */
-const HECHOS = [
-  { cifra: '4', unidad: 'pasos', pie: 'de configuración y queda operando. Sin instalar nada.' },
-  {
-    cifra: '0',
-    unidad: 'relojes',
-    pie: 'que discutir: el tiempo se cobra con la hora del servidor, no con la del equipo.',
-  },
-  {
-    cifra: '1',
-    unidad: 'pantalla',
-    pie: 'para recepción, caja y limpieza. Nadie cambia de sistema a media noche.',
-  },
-] as const
+const HECHOS = ['pasos', 'relojes', 'pantalla'] as const
 
 const BOTON_PRINCIPAL = cn(
   'group inline-flex h-12 items-center justify-center gap-2 rounded-xl px-6',
@@ -1099,7 +1075,7 @@ export default function LandingPage() {
                         className={cn('h-1.5 w-1.5 shrink-0 rounded-full', evento.punto)}
                         aria-hidden
                       />
-                      {evento.texto}
+                      {t(evento.texto)}
                     </li>
                   ))}
                 </ul>
@@ -1116,18 +1092,20 @@ export default function LandingPage() {
          */}
         <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
           <dl className="grid gap-12 sm:grid-cols-3 sm:gap-8">
-            {HECHOS.map(({ cifra, unidad, pie }) => (
-              <div key={unidad}>
+            {HECHOS.map((clave) => (
+              <div key={clave}>
                 <dt className="flex items-baseline gap-2">
                   <span className="text-[clamp(3.5rem,7vw,5.5rem)] font-semibold leading-[0.85] tracking-[-0.05em] text-brand-accent">
-                    {cifra}
+                    {t(`hechos.${clave}Cifra`)}
                   </span>
-                  <span className="text-[1.375rem] font-semibold tracking-tight">{unidad}</span>
+                  <span className="text-[1.375rem] font-semibold tracking-tight">
+                    {t(`hechos.${clave}Unidad`)}
+                  </span>
                 </dt>
                 <dd
                   className={cn('mt-4 max-w-xs text-pretty text-[0.9375rem] leading-[1.6]', SUAVE)}
                 >
-                  {pie}
+                  {t(`hechos.${clave}Pie`)}
                 </dd>
               </div>
             ))}
@@ -1138,15 +1116,15 @@ export default function LandingPage() {
         <section id="como-funciona" className={cn('border-t bg-muted/40', BORDE)}>
           <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
             <div className="max-w-xl">
-              <p className={ETIQUETA_SECCION}>El recorrido</p>
+              <p className={ETIQUETA_SECCION}>{t('portada.recorridoEtiqueta')}</p>
               {/* typography.csv #61: H2 de sección 28-32px. */}
               <h2 className="mt-4 text-[clamp(2rem,4.5vw,3.25rem)] font-semibold leading-[1.02] tracking-[-0.035em]">
-                Del alta al primer corte de caja
+                {t('portada.recorridoTitulo')}
               </h2>
               <p className={cn('mt-4 text-pretty text-[1.0625rem] leading-[1.6]', SUAVE)}>
-                El tablero es el mismo que ve el personal.{' '}
-                <span className="lg:hidden">Elige un paso y míralo encenderse.</span>
-                <span className="hidden lg:inline">Se va encendiendo conforme bajas.</span>
+                {t('portada.recorridoTexto')}{' '}
+                <span className="lg:hidden">{t('portada.recorridoTactil')}</span>
+                <span className="hidden lg:inline">{t('portada.recorridoScroll')}</span>
               </p>
             </div>
 
@@ -1164,12 +1142,12 @@ export default function LandingPage() {
         <section className={cn('border-t', BORDE)}>
           <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
             <div className="max-w-xl">
-              <p className={ETIQUETA_SECCION}>Lo que no se apaga</p>
+              <p className={ETIQUETA_SECCION}>{t('portada.confianzaEtiqueta')}</p>
               <h2 className="mt-4 text-[clamp(2rem,4.5vw,3.25rem)] font-semibold leading-[1.02] tracking-[-0.035em]">
-                Lo que separa un sistema de una hoja de cálculo
+                {t('portada.confianzaTitulo')}
               </h2>
               <p className={cn('mt-4 text-pretty text-[1.0625rem] leading-[1.6]', SUAVE)}>
-                Cuatro reglas que no se pueden desactivar desde la interfaz.
+                {t('portada.confianzaTexto')}
               </p>
             </div>
 
@@ -1209,17 +1187,16 @@ export default function LandingPage() {
           />
 
           <div className="relative mx-auto max-w-4xl px-4 py-28 text-center sm:px-6 sm:py-36">
-            <p className={cn(ETIQUETA_SECCION, 'text-zinc-400')}>Empieza hoy</p>
+            <p className={cn(ETIQUETA_SECCION, 'text-zinc-400')}>{t('portada.cierreEtiqueta')}</p>
 
             <h2 className="mt-6 text-balance text-[clamp(2.25rem,6.5vw,4.75rem)] font-semibold leading-[0.95] tracking-[-0.04em]">
-              Tu tablero puede estar
+              {t('portada.cierreTituloA')}
               <br />
-              <span className="text-brand-accent">operando esta noche.</span>
+              <span className="text-brand-accent">{t('portada.cierreTituloB')}</span>
             </h2>
 
             <p className="mx-auto mt-7 max-w-lg text-pretty text-[1.0625rem] leading-[1.6] text-zinc-400 sm:text-[1.125rem]">
-              Das de alta el negocio, defines tipos y tarifas, cargas las habitaciones y recepción
-              empieza a rentar. Cuatro pasos.
+              {t('portada.cierreTexto')}
             </p>
 
             <div className="mt-11 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -1232,7 +1209,7 @@ export default function LandingPage() {
                   'motion-reduce:transition-none motion-reduce:hover:translate-y-0',
                 )}
               >
-                Crear cuenta y configurar
+                {t('portada.cierrePrincipal')}
                 <LuArrowRight
                   className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none"
                   aria-hidden
@@ -1246,13 +1223,11 @@ export default function LandingPage() {
                   'transition-colors duration-200 hover:bg-zinc-900',
                 )}
               >
-                Ya tengo cuenta
+                {t('portada.cierreSecundario')}
               </Link>
             </div>
 
-            <p className={cn(ETIQUETA_SECCION, 'mt-8 text-zinc-500')}>
-              Sin instalar nada · Funciona en el navegador del mostrador
-            </p>
+            <p className={cn(ETIQUETA_SECCION, 'mt-8 text-zinc-500')}>{t('portada.cierrePie')}</p>
           </div>
         </section>
       </main>
@@ -1262,14 +1237,14 @@ export default function LandingPage() {
           <Marca />
           <div className={cn('flex items-center gap-4 text-sm sm:ml-auto', SUAVE)}>
             <Link to="/login" className="transition-colors duration-200 hover:text-foreground">
-              Entrar
+              {t('portada.entrar')}
             </Link>
             <Link to="/registro" className="transition-colors duration-200 hover:text-foreground">
-              Crear cuenta
+              {t('portada.crearCuenta')}
             </Link>
             <span className="inline-flex items-center gap-1.5">
               <LuDoorOpen className="h-3.5 w-3.5" aria-hidden />
-              Hospedaje por turnos
+              {t('portada.pieRubro')}
             </span>
           </div>
         </div>

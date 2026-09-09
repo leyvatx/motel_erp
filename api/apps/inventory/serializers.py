@@ -7,6 +7,7 @@ from decimal import Decimal
 from django.core.validators import FileExtensionValidator
 from rest_framework import serializers
 from django.db import transaction
+from django.utils.translation import gettext_lazy as _
 
 from apps.inventory.constants import (
     PRODUCT_IMAGE_EXTENSIONS,
@@ -183,10 +184,10 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
     def validate_items(self, items):
         if not items:
-            raise serializers.ValidationError("Agrega al menos un producto.")
+            raise serializers.ValidationError(_("Agrega al menos un producto."))
         products = [item["product"].pk for item in items]
         if len(products) != len(set(products)):
-            raise serializers.ValidationError("No repitas productos en la misma compra.")
+            raise serializers.ValidationError(_("No repitas productos en la misma compra."))
         return items
 
     @staticmethod
@@ -221,7 +222,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance = PurchaseOrder.objects.select_for_update().get(pk=instance.pk)
         if instance.status != PurchaseStatus.DRAFT:
-            raise serializers.ValidationError("Solo se puede editar una compra en borrador.")
+            raise serializers.ValidationError(_("Solo se puede editar una compra en borrador."))
         items = validated_data.pop("items", None)
         if items is not None:
             instance.items.all().delete()

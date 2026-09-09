@@ -6,6 +6,7 @@ import zoneinfo
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import FileExtensionValidator
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
 from apps.settings.constants import LOGO_EXTENSIONS, LOGO_MAX_BYTES, OperationSize
@@ -135,14 +136,13 @@ class MotelSerializer(serializers.ModelSerializer):
     def validate_name(self, value: str) -> str:
         nombre = value.strip()
         if not nombre:
-            raise serializers.ValidationError("El nombre del negocio no puede quedar vacio.")
+            raise serializers.ValidationError(_("El nombre del negocio no puede quedar vacio."))
         return nombre
 
     def validate_currency(self, value: str) -> str:
         codigo = value.strip().upper()
         if len(codigo) != 3 or not codigo.isalpha():
-            raise serializers.ValidationError(
-                "Usa el código ISO de tres letras, por ejemplo MXN o USD."
+            raise serializers.ValidationError(_("Usa el código ISO de tres letras, por ejemplo MXN o USD.")
             )
         return codigo
 
@@ -150,8 +150,7 @@ class MotelSerializer(serializers.ModelSerializer):
         try:
             zoneinfo.ZoneInfo(value)
         except Exception as exc:
-            raise serializers.ValidationError(
-                "Zona horaria desconocida. Usa el formato «America/Mexico_City»."
+            raise serializers.ValidationError(_("Zona horaria desconocida. Usa el formato «America/Mexico_City».")
             ) from exc
         return value
 
@@ -249,7 +248,7 @@ class MotelCreateSerializer(serializers.ModelSerializer):
         try:
             zoneinfo.ZoneInfo(value)
         except Exception as exc:
-            raise serializers.ValidationError("Zona horaria desconocida.") from exc
+            raise serializers.ValidationError(_("Zona horaria desconocida.")) from exc
         return value
 
 
@@ -290,7 +289,7 @@ class RegistroPublicoSerializer(serializers.Serializer):
     def validate_business_name(self, value: str) -> str:
         nombre = value.strip()
         if not nombre:
-            raise serializers.ValidationError("Escribe el nombre del negocio.")
+            raise serializers.ValidationError(_("Escribe el nombre del negocio."))
         return nombre
 
     def validate_email(self, value: str) -> str:
@@ -307,7 +306,7 @@ class RegistroPublicoSerializer(serializers.Serializer):
 
         clave = value.strip().lower()
         if not clave:
-            raise serializers.ValidationError("Escribe un nombre de usuario.")
+            raise serializers.ValidationError(_("Escribe un nombre de usuario."))
 
         try:
             username_validator(clave)
@@ -325,8 +324,7 @@ class RegistroPublicoSerializer(serializers.Serializer):
         telefono = " ".join(value.split())
         digitos = sum(caracter.isdigit() for caracter in telefono)
         if digitos < 8:
-            raise serializers.ValidationError(
-                "Escribe un teléfono completo, con lada."
+            raise serializers.ValidationError(_("Escribe un teléfono completo, con lada.")
             )
         return telefono
 

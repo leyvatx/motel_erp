@@ -17,6 +17,7 @@ from typing import Sequence, TypedDict
 from django.db import IntegrityError, transaction
 from django.db.models import Sum
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from common.exceptions import DomainError
 from common.models import DocumentSequence
@@ -78,7 +79,7 @@ def open_folio(
 ) -> Folio:
     """Abre la cuenta. Una renta solo puede tener un folio (OneToOne)."""
     if stay is not None and Folio.all_objects.filter(stay=stay).exists():
-        raise DomainError("La renta ya tiene un folio abierto.", code="folio_already_exists")
+        raise DomainError(_("La renta ya tiene un folio abierto."), code="folio_already_exists")
 
     return Folio.objects.create(
         code=_next_folio_code(),
@@ -140,8 +141,7 @@ def add_charge(
 ) -> FolioCharge:
     """Agrega un renglón a la cuenta abierta y refresca los totales."""
     if folio.status != FolioStatus.OPEN:
-        raise DomainError(
-            "No se pueden agregar cargos a un folio que no está abierto.",
+        raise DomainError(_("No se pueden agregar cargos a un folio que no está abierto."),
             code="folio_not_open",
             folio_status=folio.status,
         )
@@ -177,11 +177,11 @@ def cancel_charge(*, charge_id: int, reason: str, actor) -> FolioCharge:
     folio = lock_folio(charge.folio_id)
 
     if folio.status != FolioStatus.OPEN:
-        raise DomainError("El folio ya está cerrado.", code="folio_not_open")
+        raise DomainError(_("El folio ya está cerrado."), code="folio_not_open")
     if charge.cancelled_at is not None:
-        raise DomainError("El cargo ya estaba cancelado.", code="charge_already_cancelled")
+        raise DomainError(_("El cargo ya estaba cancelado."), code="charge_already_cancelled")
     if not reason:
-        raise DomainError("La cancelación requiere un motivo.", code="reason_required")
+        raise DomainError(_("La cancelación requiere un motivo."), code="reason_required")
 
     if charge.order_id:
         cancel_order(order_id=charge.order_id, reason=reason, actor=actor, _skip_charge=True)
@@ -213,10 +213,9 @@ def cancel_charge(*, charge_id: int, reason: str, actor) -> FolioCharge:
 def apply_discount(*, folio_id: int, amount: Decimal, reason: str, actor) -> FolioCharge:
     folio = lock_folio(folio_id)
     if Decimal(amount) <= ZERO:
-        raise DomainError("El descuento debe ser mayor a cero.", code="invalid_discount")
+        raise DomainError(_("El descuento debe ser mayor a cero."), code="invalid_discount")
     if money(amount) > folio.total:
-        raise DomainError(
-            "El descuento no puede exceder el total de la cuenta.", code="discount_too_large"
+        raise DomainError(_("El descuento no puede exceder el total de la cuenta."), code="discount_too_large"
         )
     return add_charge(
         folio=folio,
@@ -259,11 +258,11 @@ def create_order(
     entregar y se marca cuando sale del fogón.
     """
     if not items:
-        raise DomainError("La orden necesita al menos un producto.", code="empty_order")
+        raise DomainError(_("La orden necesita al menos un producto."), code="empty_order")
 
     folio = lock_folio(folio_id)
     if folio.status != FolioStatus.OPEN:
-        raise DomainError("El folio no admite consumos.", code="folio_not_open")
+        raise DomainError(_("El folio no admite consumos."), code="folio_not_open")
 
     warehouse = Warehouse.objects.get(pk=warehouse_id, is_active=True)
 
@@ -288,8 +287,7 @@ def create_order(
     }
     missing = set(product_ids) - set(products)
     if missing:
-        raise DomainError(
-            "Hay productos inexistentes o dados de baja en la orden.",
+        raise DomainError(_("Hay productos inexistentes o dados de baja en la orden."),
             code="invalid_product",
             product_ids=sorted(missing),
         )
@@ -306,13 +304,13 @@ def create_order(
 
         qty = q(item["quantity"])
         if qty <= ZERO:
-            raise DomainError("La cantidad debe ser mayor a cero.", code="invalid_quantity")
+            raise DomainError(_("La cantidad debe ser mayor a cero."), code="invalid_quantity")
 
         unit_price = money(item.get("unit_price") or product.sale_price)
         discount = money(item.get("discount_amount") or ZERO)
         line_total = money((unit_price * qty) - discount)
         if line_total < ZERO:
-            raise DomainError("El descuento supera el importe del renglón.", code="invalid_discount")
+            raise DomainError(_("El descuento supera el importe del renglón."), code="invalid_discount")
 
         tax_rate = product.tax_rate or ZERO
         tax_amount = money(line_total - (line_total / (Decimal(1) + tax_rate))) if tax_rate else ZERO
@@ -367,7 +365,7 @@ def create_order(
 def cancel_order_item(*, item_id: int, reason: str, actor) -> OrderItem:
     """Cancela un renglón, devuelve su inventario y ajusta el cargo del folio."""
     if not reason:
-        raise DomainError("La cancelación requiere un motivo.", code="reason_required")
+        raise DomainError(_("La cancelación requiere un motivo."), code="reason_required")
 
     item = (
         OrderItem.objects.select_for_update()
@@ -378,9 +376,9 @@ def cancel_order_item(*, item_id: int, reason: str, actor) -> OrderItem:
     folio = lock_folio(order.folio_id)
 
     if folio.status != FolioStatus.OPEN:
-        raise DomainError("El folio ya está cerrado.", code="folio_not_open")
+        raise DomainError(_("El folio ya está cerrado."), code="folio_not_open")
     if order.status == OrderStatus.CANCELLED:
-        raise DomainError("La orden ya estaba cancelada.", code="order_already_cancelled")
+        raise DomainError(_("La orden ya estaba cancelada."), code="order_already_cancelled")
 
     reverse_movements(
         movements_for(item),
@@ -415,17 +413,17 @@ def cancel_order_item(*, item_id: int, reason: str, actor) -> OrderItem:
 def cancel_order(*, order_id: int, reason: str, actor, _skip_charge: bool = False) -> Order:
     """Cancela la orden completa: revierte inventario y anula el cargo."""
     if not reason:
-        raise DomainError("La cancelación requiere un motivo.", code="reason_required")
+        raise DomainError(_("La cancelación requiere un motivo."), code="reason_required")
 
     order = (
         Order.objects.select_for_update().select_related("folio").get(pk=order_id, is_active=True)
     )
     if order.status == OrderStatus.CANCELLED:
-        raise DomainError("La orden ya estaba cancelada.", code="order_already_cancelled")
+        raise DomainError(_("La orden ya estaba cancelada."), code="order_already_cancelled")
 
     folio = lock_folio(order.folio_id)
     if folio.status != FolioStatus.OPEN:
-        raise DomainError("El folio ya está cerrado.", code="folio_not_open")
+        raise DomainError(_("El folio ya está cerrado."), code="folio_not_open")
 
     for item in order.items.select_related("product").filter(is_active=True):
         reverse_movements(
@@ -525,7 +523,7 @@ def _refresh_order_totals(order: Order, *, actor) -> Order:
 def mark_order_delivered(*, order_id: int, actor) -> Order:
     order = Order.objects.select_for_update().get(pk=order_id, is_active=True)
     if order.status == OrderStatus.CANCELLED:
-        raise DomainError("La orden esta cancelada.", code="order_cancelled")
+        raise DomainError(_("La orden esta cancelada."), code="order_cancelled")
     order.status = OrderStatus.DELIVERED
     order.delivered_at = timezone.now()
     order.delivered_by = actor
@@ -554,16 +552,15 @@ def register_payment(
     shift = require_open_shift(actor)
     folio = lock_folio(folio_id)
     if folio.status != FolioStatus.OPEN:
-        raise DomainError("El folio no está abierto.", code="folio_not_open")
+        raise DomainError(_("El folio no está abierto."), code="folio_not_open")
 
     value = money(amount)
     if value <= ZERO:
-        raise DomainError("El importe del pago debe ser mayor a cero.", code="invalid_amount")
+        raise DomainError(_("El importe del pago debe ser mayor a cero."), code="invalid_amount")
 
     recalculate_folio(folio)
     if value > folio.balance:
-        raise DomainError(
-            "El pago excede el saldo de la cuenta.",
+        raise DomainError(_("El pago excede el saldo de la cuenta."),
             code="payment_exceeds_balance",
             balance=str(folio.balance),
             amount=str(value),
@@ -573,8 +570,7 @@ def register_payment(
     change = ZERO
     if method == PaymentMethod.CASH:
         if tendered < value:
-            raise DomainError(
-                "El efectivo recibido es menor al importe del pago.", code="insufficient_cash"
+            raise DomainError(_("El efectivo recibido es menor al importe del pago."), code="insufficient_cash"
             )
         change = money(tendered - value)
     else:
@@ -602,16 +598,15 @@ def register_payment(
 @transaction.atomic
 def void_payment(*, payment_id: int, reason: str, actor) -> Payment:
     if not reason:
-        raise DomainError("La cancelación requiere un motivo.", code="reason_required")
+        raise DomainError(_("La cancelación requiere un motivo."), code="reason_required")
 
     payment = Payment.objects.select_for_update().select_related("folio").get(pk=payment_id)
     folio = lock_folio(payment.folio_id)
 
     if payment.status == PaymentStatus.VOIDED:
-        raise DomainError("El pago ya estaba cancelado.", code="payment_already_voided")
+        raise DomainError(_("El pago ya estaba cancelado."), code="payment_already_voided")
     if folio.status == FolioStatus.CLOSED:
-        raise DomainError(
-            "No se puede cancelar un pago de un folio cerrado.", code="folio_closed"
+        raise DomainError(_("No se puede cancelar un pago de un folio cerrado."), code="folio_closed"
         )
 
     payment.status = PaymentStatus.VOIDED
@@ -629,18 +624,16 @@ def close_folio(*, folio_id: int, actor) -> Folio:
     """Cierra la cuenta. Exige saldo cero: no se cierra nada a crédito."""
     folio = lock_folio(folio_id)
     if folio.status != FolioStatus.OPEN:
-        raise DomainError("El folio ya no está abierto.", code="folio_not_open")
+        raise DomainError(_("El folio ya no está abierto."), code="folio_not_open")
 
     recalculate_folio(folio)
     if folio.balance > ZERO:
-        raise DomainError(
-            "La cuenta tiene saldo pendiente.",
+        raise DomainError(_("La cuenta tiene saldo pendiente."),
             code="folio_has_balance",
             balance=str(folio.balance),
         )
     if folio.balance < ZERO:
-        raise DomainError(
-            "Los pagos superan el total de la cuenta.",
+        raise DomainError(_("Los pagos superan el total de la cuenta."),
             code="folio_overpaid",
             balance=str(folio.balance),
         )
@@ -649,8 +642,7 @@ def close_folio(*, folio_id: int, actor) -> Folio:
         is_active=True, status__in=[OrderStatus.DRAFT, OrderStatus.PLACED, OrderStatus.PREPARING]
     )
     if open_orders.exists():
-        raise DomainError(
-            "Hay ordenes sin entregar en la cuenta.",
+        raise DomainError(_("Hay ordenes sin entregar en la cuenta."),
             code="pending_orders",
             orders=list(open_orders.values_list("code", flat=True)),
         )
@@ -667,11 +659,11 @@ def close_folio(*, folio_id: int, actor) -> Folio:
 def cancel_folio(*, folio_id: int, reason: str, actor) -> Folio:
     """Cancela la cuenta completa revirtiendo consumos y pagos."""
     if not reason:
-        raise DomainError("La cancelación requiere un motivo.", code="reason_required")
+        raise DomainError(_("La cancelación requiere un motivo."), code="reason_required")
 
     folio = lock_folio(folio_id)
     if folio.status == FolioStatus.CLOSED:
-        raise DomainError("No se puede cancelar un folio cerrado.", code="folio_closed")
+        raise DomainError(_("No se puede cancelar un folio cerrado."), code="folio_closed")
 
     for order in folio.orders.filter(is_active=True).exclude(status=OrderStatus.CANCELLED):
         cancel_order(order_id=order.pk, reason=reason, actor=actor)

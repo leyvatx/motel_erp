@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
 from apps.corporate.models import CorporateAccess, MotelGroup, MotelRegion, RegionMotel
@@ -67,7 +68,7 @@ class CorporateUserSerializer(serializers.ModelSerializer):
 
     def validate_role(self, value):
         if value not in {Role.MANAGER, Role.RECEPTION, Role.HOUSEKEEPING}:
-            raise serializers.ValidationError("Selecciona un rol corporativo válido.")
+            raise serializers.ValidationError(_("Selecciona un rol corporativo válido."))
         return value
 
     def validate_username(self, value):
@@ -76,7 +77,7 @@ class CorporateUserSerializer(serializers.ModelSerializer):
         if self.instance:
             queryset = queryset.exclude(pk=self.instance.pk)
         if queryset.exists():
-            raise serializers.ValidationError("Ese usuario ya existe.")
+            raise serializers.ValidationError(_("Ese usuario ya existe."))
         return username
 
     def validate(self, attrs):
@@ -121,14 +122,14 @@ class CorporateAccessSerializer(serializers.ModelSerializer):
 
     def validate_user(self, value):
         if value.motel_id is not None or value.is_platform_admin:
-            raise serializers.ValidationError("Selecciona un usuario corporativo.")
+            raise serializers.ValidationError(_("Selecciona un usuario corporativo."))
         return value
 
     def validate(self, attrs):
         region = attrs.get("region", getattr(self.instance, "region", None))
         motel = attrs.get("motel", getattr(self.instance, "motel", None))
         if (region is None) == (motel is None):
-            raise serializers.ValidationError("Selecciona una región o una sucursal, no ambas.")
+            raise serializers.ValidationError(_("Selecciona una región o una sucursal, no ambas."))
         return attrs
 
     @transaction.atomic
@@ -169,7 +170,7 @@ class BulkConfigSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if bool(attrs.get("motel_ids")) == bool(attrs.get("region_id")):
-            raise serializers.ValidationError("Selecciona una región o una lista de sucursales.")
+            raise serializers.ValidationError(_("Selecciona una región o una lista de sucursales."))
         unknown = set(attrs["changes"]) - set(BULK_CONFIG_FIELDS)
         if unknown:
             raise serializers.ValidationError(
