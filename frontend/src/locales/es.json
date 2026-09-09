@@ -555,7 +555,16 @@
     "revisaComoSeEscribe": "Revisa cómo se escribe, o dalo de alta ahora mismo y agrégalo a la venta.",
     "siLoDejasEnCero": "Si lo dejas en cero, el producto queda dado de alta pero la venta no podrá cobrarse hasta que registres existencia.",
     "altaDesdePuntoDeVenta": "Alta desde el punto de venta",
-    "almacenDeVenta": "almacén de venta"
+    "almacenDeVenta": "almacén de venta",
+    "anadirProducto": "Añadir producto",
+    "quitarUnoDe": "Quitar uno de {{producto}}",
+    "agregarUnoDe": "Agregar uno de {{producto}}",
+    "quitarDeLaCuenta": "Quitar {{producto}} de la cuenta",
+    "noHayNingun": "No hay ningún \"{{nombre}}\"",
+    "crearNombre": "Crear \"{{nombre}}\"",
+    "todo": "Todo",
+    "frecuentes": "Frecuentes",
+    "entranAlAlmacen": "Entran al {{almacen}}. Puedes ajustarlas luego en Inventarios."
   },
   "config": {
     "titulo": "Configuración",
@@ -921,7 +930,8 @@
     "enElMinimo": "en el mínimo",
     "proximos15Dias": "próximos 15 días",
     "todoPorEncimaDelMinimo": "todo por encima del mínimo",
-    "todosLosAlmacenesMin": "todos los almacenes"
+    "todosLosAlmacenesMin": "todos los almacenes",
+    "cajaUnidad": "Caja"
   },
   "comun": {
     "abrirMenu": "Abrir menú",

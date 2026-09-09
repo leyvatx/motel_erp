@@ -20,11 +20,25 @@ describe('catálogos de traducción', () => {
     expect(claves(en).sort()).toEqual(claves(es).sort())
   })
 
+  // Se recorren los valores en vez de buscar `""` dentro del JSON serializado:
+  // una cadena que rodea su hueco con comillas -- `Crear "{{nombre}}"` -- deja
+  // una comilla escapada pegada a la de cierre, y el atajo la leía como valor
+  // vacío. La prueba fallaba por su propia heurística, no por el catálogo.
   it('ninguna traducción quedó vacía', () => {
-    for (const catalogo of [es, en]) {
-      const plano = JSON.stringify(catalogo)
-      expect(plano).not.toContain('""')
+    const vacias: string[] = []
+    for (const [idioma, catalogo] of [
+      ['es', es],
+      ['en', en],
+    ] as const) {
+      for (const [grupo, entradas] of Object.entries(catalogo)) {
+        for (const [clave, texto] of Object.entries(entradas as Record<string, string>)) {
+          if (typeof texto !== 'string' || texto.trim() === '') {
+            vacias.push(`${idioma}.${grupo}.${clave}`)
+          }
+        }
+      }
     }
+    expect(vacias).toEqual([])
   })
 
   // Marca blanca: el producto se vende a hospedaje en general y la portada

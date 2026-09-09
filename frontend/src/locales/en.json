@@ -555,7 +555,16 @@
     "revisaComoSeEscribe": "Check the spelling, or add it right now and put it on the sale.",
     "siLoDejasEnCero": "If you leave it at zero, the product is created but the sale cannot be charged until you record stock.",
     "altaDesdePuntoDeVenta": "Added from the point of sale",
-    "almacenDeVenta": "sales store"
+    "almacenDeVenta": "sales store",
+    "anadirProducto": "Add product",
+    "quitarUnoDe": "Remove one {{producto}}",
+    "agregarUnoDe": "Add one {{producto}}",
+    "quitarDeLaCuenta": "Remove {{producto}} from the ticket",
+    "noHayNingun": "No \"{{nombre}}\" here",
+    "crearNombre": "Create \"{{nombre}}\"",
+    "todo": "All",
+    "frecuentes": "Frequent",
+    "entranAlAlmacen": "They go into {{almacen}}. You can adjust them later in Inventory."
   },
   "config": {
     "titulo": "Settings",
@@ -921,7 +930,8 @@
     "enElMinimo": "at the minimum",
     "proximos15Dias": "next 15 days",
     "todoPorEncimaDelMinimo": "all above the minimum",
-    "todosLosAlmacenesMin": "all stores"
+    "todosLosAlmacenesMin": "all stores",
+    "cajaUnidad": "Box"
   },
   "comun": {
     "abrirMenu": "Open menu",

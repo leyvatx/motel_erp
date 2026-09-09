@@ -33,12 +33,12 @@ const SUGERIDAS = [
 ] as const
 
 const UNIDADES = [
-  { value: 'PIECE', label: 'Pieza' },
-  { value: 'PACK', label: 'Paquete' },
-  { value: 'BOX', label: 'Caja' },
-  { value: 'LITER', label: 'Litro' },
-  { value: 'KILOGRAM', label: 'Kilogramo' },
-  { value: 'SERVICE', label: 'Servicio' },
+  { value: 'PIECE', label: 'inventario.pieza' },
+  { value: 'PACK', label: 'inventario.paquete' },
+  { value: 'BOX', label: 'inventario.cajaUnidad' },
+  { value: 'LITER', label: 'inventario.litro' },
+  { value: 'KILOGRAM', label: 'inventario.kilogramo' },
+  { value: 'SERVICE', label: 'inventario.servicio' },
 ] as const
 
 /** SKU a partir del nombre.
@@ -165,6 +165,10 @@ export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onC
     <ResponsiveDialog
       open={open}
       onOpenChange={onOpenChange}
+      // Panel lateral y no diálogo centrado: se está dando de alta un
+      // producto *para* la venta que está a medio armar, y taparla obliga a
+      // recordar de memoria lo que ya se llevaba.
+      variante="panel"
       title={t('venta.nuevoProducto')}
       description={t('venta.nuevoProductoDetalle')}
       className="sm:max-w-md"
@@ -221,7 +225,7 @@ export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onC
               <SelectContent>
                 {UNIDADES.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                    {t(option.label)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -332,7 +336,9 @@ export function QuickProductDialog({ open, onOpenChange, nombreInicial = '', onC
             />
             <p className="text-xs leading-relaxed text-muted-foreground">
               {Number(existencias) > 0
-                ? `Entran al ${almacen?.name ?? t('venta.almacenDeVenta')}. Puedes ajustarlas luego en Inventarios.`
+                ? t('venta.entranAlAlmacen', {
+                    almacen: almacen?.name ?? t('venta.almacenDeVenta'),
+                  })
                 : t('venta.siLoDejasEnCero')}
             </p>
           </div>

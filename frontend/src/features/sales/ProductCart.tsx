@@ -115,7 +115,7 @@ export function ProductPicker({
   isLoading,
   cart,
   autoFocus = true,
-  gridClassName = 'grid-cols-2 sm:grid-cols-3 xl:grid-cols-4',
+  gridClassName = 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5',
   listClassName,
   allowCreate = false,
 }: PickerProps) {
@@ -176,8 +176,8 @@ export function ProductPicker({
   const hayRecientes = recientes.some((id) => catalog.some((product) => product.id === id))
 
   const filtros = [
-    { valor: TODOS, etiqueta: 'Todo' },
-    ...(hayRecientes ? [{ valor: RECIENTES, etiqueta: 'Frecuentes' }] : []),
+    { valor: TODOS, etiqueta: t('venta.todo') },
+    ...(hayRecientes ? [{ valor: RECIENTES, etiqueta: t('venta.frecuentes') }] : []),
     ...categorias.map((nombre) => ({ valor: nombre, etiqueta: nombre })),
   ]
 
@@ -201,17 +201,6 @@ export function ProductPicker({
           />
         </div>
 
-        {allowCreate ? (
-          <Button
-            variant="outline"
-            className="h-11 shrink-0 px-3"
-            onClick={() => setCreando(true)}
-            title={t('venta.altaSinSalir')}
-          >
-            <PiPlus />
-            <span className="hidden sm:inline">{t('venta.nuevoProducto')}</span>
-          </Button>
-        ) : null}
       </div>
 
       {/* Categorías como fichas deslizables: en una tableta de mostrador un
@@ -246,22 +235,49 @@ export function ProductPicker({
         </div>
       ) : filtered.length === 0 ? (
         <EmptyState
-          title={search ? `No hay ningún "${search.trim()}"` : t('venta.estaCategoriaVacia')}
+          title={
+            search
+              ? t('venta.noHayNingun', { nombre: search.trim() })
+              : t('venta.estaCategoriaVacia')
+          }
           description={search ? t('venta.revisaComoSeEscribe') : t('venta.productosSeDanDeAlta')}
           icon={<PiPackage className="h-8 w-8" aria-hidden />}
           action={
             allowCreate && search ? (
               <Button onClick={() => setCreando(true)}>
                 <PiPlus />
-                Crear &quot;{search.trim()}&quot;
+                {t('venta.crearNombre', { nombre: search.trim() })}
               </Button>
             ) : null
           }
         />
       ) : (
         <div
-          className={cn('grid gap-2 overflow-y-auto scrollbar-thin', gridClassName, listClassName)}
+          className={cn('grid gap-4 overflow-y-auto scrollbar-thin', gridClassName, listClassName)}
         >
+          {/* Dar de alta un producto sin salir de la venta, desde el mismo
+              lugar donde se elige. Va primera y no al final: al final se
+              esconde detrás del scroll justo cuando hace falta, que es cuando
+              el producto que se busca no está. */}
+          {allowCreate ? (
+            <button
+              type="button"
+              onClick={() => setCreando(true)}
+              className={cn(
+                'flex min-h-[9rem] flex-col items-center justify-center gap-2 rounded-xl p-3',
+                'border-2 border-dashed border-border text-muted-foreground',
+                'transition-[transform,border-color,color] duration-150',
+                'hover:border-brand-accent/50 hover:text-foreground active:scale-[0.98]',
+                'focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40',
+              )}
+            >
+              <PiPlus className="h-6 w-6" aria-hidden />
+              <span className="text-center text-xs font-medium leading-snug">
+                {t('venta.anadirProducto')}
+              </span>
+            </button>
+          ) : null}
+
           {filtered.map((product) => {
             const inCart = cart.lines.find((line) => line.product.id === product.id)
             // `total_stock` llega nulo cuando el producto no tiene ni un
@@ -279,64 +295,63 @@ export function ProductPicker({
                 disabled={agotado}
                 onClick={() => agregar(product)}
                 className={cn(
-                  // 6.5 rem de alto: cabe el ícono, dos renglones de nombre y el
-                  // precio sin que el dedo tenga que apuntar.
-                  'relative flex min-h-[6.5rem] flex-col justify-between rounded-lg border bg-card p-3 text-left',
-                  'transition-all duration-150 hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-md',
+                  'group relative flex flex-col overflow-hidden rounded-xl border bg-card text-left',
+                  'transition-[transform,box-shadow,border-color] duration-150',
+                  'hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-md',
                   'active:translate-y-0 active:scale-[0.98]',
                   'focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40',
-                  'disabled:pointer-events-none disabled:opacity-45',
+                  // Agotado se ve agotado: apagado y sin color. Antes solo
+                  // bajaba la opacidad y a media luz seguía pareciendo vendible.
+                  'disabled:pointer-events-none disabled:opacity-50 disabled:grayscale',
                   inCart && 'border-brand-accent/50 ring-1 ring-brand-accent/20',
                 )}
               >
-                {inCart ? (
-                  <Badge className="absolute right-2 top-2 h-5 min-w-5 justify-center px-1 tabular">
-                    {inCart.quantity}
-                  </Badge>
-                ) : null}
-
-                {/* El ícono va en su propio renglón, no al lado del nombre:
-                    con cuatro columnas la tarjeta mide unos 150 px y quitarle
-                    40 al texto deja "Agua embo...". El nombre completo es lo
-                    que se lee de reojo; el ícono solo acompaña. */}
-                <div>
-                  {/* La foto cuando existe, y el ícono de la familia cuando no
-                      -- o cuando la foto no carga. Los dos ocupan el mismo hueco
-                      para que la cuadrícula no se desalinee mientras el catálogo
-                      se va llenando de fotos. */}
+                {/* La foto manda, y ocupa el ancho entero de la tarjeta.
+                    Antes era un ícono de 28 px arriba del nombre: para elegir
+                    había que leer, y leer con el cliente enfrente es lento.
+                    Con la imagen a este tamaño el producto se reconoce de un
+                    vistazo, que es de lo que trata un catálogo visual. */}
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
                   <ProductThumb
                     src={product.image_url}
                     categoria={product.category_name}
-                    className="h-7 w-7 rounded-md bg-muted"
-                    iconClassName="h-4 w-4 text-muted-foreground"
+                    className="h-full w-full"
+                    iconClassName="h-8 w-8 text-muted-foreground/60"
                   />
-                  <p className="mt-2 line-clamp-2 text-sm font-medium leading-snug">
-                    {product.name}
-                  </p>
+
+                  {/* Micro-insignia de existencia, flotando sobre la foto: en
+                      la esquina no le quita renglón al nombre ni al precio, y
+                      es lo que se mira antes de tocar. */}
+                  {existencia !== null ? (
+                    <span
+                      className={cn(
+                        'absolute left-1.5 top-1.5 rounded-full px-1.5 py-0.5 text-2xs font-medium tabular',
+                        'backdrop-blur-[2px]',
+                        agotado
+                          ? 'bg-status-occupied/90 text-white'
+                          : existencia <= 5
+                            ? 'bg-status-cleaning/90 text-white'
+                            : 'bg-background/85 text-muted-foreground',
+                      )}
+                    >
+                      {agotado ? t('venta.sinExistencia') : existencia}
+                    </span>
+                  ) : null}
+
+                  {inCart ? (
+                    <Badge className="absolute right-1.5 top-1.5 h-5 min-w-5 justify-center px-1 tabular">
+                      {inCart.quantity}
+                    </Badge>
+                  ) : null}
                 </div>
 
-                {/* El aviso de existencia va debajo del precio, no al lado:
-                    con cuatro columnas la tarjeta mide ~150 px y "quedan 3"
-                    se partía en dos renglones encima del importe. */}
-                <div className="mt-2">
-                  <p className="text-base font-semibold leading-none tabular">
+                <div className="flex flex-1 flex-col justify-between gap-1 p-2.5">
+                  <p className="line-clamp-2 text-sm font-medium leading-snug">{product.name}</p>
+                  {/* Monoespaciada: en una columna de precios, las cifras se
+                      comparan por su posición y no hay que leerlas una a una. */}
+                  <p className="font-mono text-base font-semibold leading-none tabular">
                     {formatMoney(product.sale_price)}
                   </p>
-                  {agotado ? (
-                    <p className="mt-1 text-2xs font-medium text-status-occupied">
-                      {t('venta.sinExistencia')}
-                    </p>
-                  ) : existencia !== null && existencia <= 5 ? (
-                    <p className="mt-1 text-2xs tabular text-status-cleaning">
-                      quedan {existencia}
-                    </p>
-                  ) : (
-                    // Reserva el renglón para que las tarjetas de una misma
-                    // fila terminen a la misma altura.
-                    <p className="mt-1 text-2xs" aria-hidden>
-                      &nbsp;
-                    </p>
-                  )}
                 </div>
               </button>
             )
@@ -387,32 +402,35 @@ export function CartLines({ cart, className }: { cart: Cart; className?: string 
             {formatMoney(toNumber(line.product.sale_price) * line.quantity)}
           </span>
           <div className="flex shrink-0 items-center">
+            {/* 44x44 en el teléfono, que es el mínimo con el que un pulgar
+                acierta. Estos tres botones están pegados y se tocan con el
+                cliente enfrente: 36 px dejaba que restar cayera en sumar. */}
             <Button
               variant="ghost"
               size="icon-sm"
-              className="h-9 w-9 lg:h-7 lg:w-7"
+              className="h-11 w-11 lg:h-8 lg:w-8"
               onClick={() => cart.changeQuantity(line.product.id, -1)}
-              aria-label={`Quitar uno de ${line.product.name}`}
+              aria-label={t('venta.quitarUnoDe', { producto: line.product.name })}
             >
-              <PiMinus className="h-3 w-3" />
+              <PiMinus className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant="ghost"
               size="icon-sm"
-              className="h-9 w-9 lg:h-7 lg:w-7"
+              className="h-11 w-11 lg:h-8 lg:w-8"
               onClick={() => cart.changeQuantity(line.product.id, 1)}
-              aria-label={`Agregar uno de ${line.product.name}`}
+              aria-label={t('venta.agregarUnoDe', { producto: line.product.name })}
             >
-              <PiPlus className="h-3 w-3" />
+              <PiPlus className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant="ghost"
               size="icon-sm"
-              className="h-9 w-9 text-destructive lg:h-7 lg:w-7"
+              className="h-11 w-11 text-destructive lg:h-8 lg:w-8"
               onClick={() => cart.changeQuantity(line.product.id, -line.quantity)}
-              aria-label={`Quitar ${line.product.name} de la cuenta`}
+              aria-label={t('venta.quitarDeLaCuenta', { producto: line.product.name })}
             >
-              <PiTrash className="h-3 w-3" />
+              <PiTrash className="h-3.5 w-3.5" />
             </Button>
           </div>
         </li>

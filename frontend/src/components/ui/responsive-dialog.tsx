@@ -40,6 +40,14 @@ interface Props {
   footer?: ReactNode
   /** Ancho del diálogo en escritorio. En el teléfono no aplica: ocupa el ancho. */
   className?: string
+  /** Cómo entra en escritorio.
+   *
+   *  `dialogo` es el centro de la pantalla, y es lo correcto cuando lo que se
+   *  pide interrumpe: confirmar, decidir, cobrar. `panel` entra por el costado
+   *  y deja ver lo que hay detrás, que es lo que hace falta cuando se está
+   *  capturando algo *sobre* la pantalla de atrás -- dar de alta un producto
+   *  sin perder de vista el catálogo y la cuenta a medio armar. */
+  variante?: 'dialogo' | 'panel'
 }
 
 export function ResponsiveDialog({
@@ -50,6 +58,7 @@ export function ResponsiveDialog({
   children,
   footer,
   className,
+  variante = 'dialogo',
 }: Props) {
   const movil = useEsMovil()
 
@@ -67,6 +76,23 @@ export function ResponsiveDialog({
             aria-hidden
           />
           <SheetHeader className="pr-12 text-left">
+            <SheetTitle>{title}</SheetTitle>
+            {description ? <SheetDescription>{description}</SheetDescription> : null}
+          </SheetHeader>
+
+          <div className="min-h-0 flex-1 overflow-y-auto scrollbar-thin">{children}</div>
+
+          {footer ? <SheetFooter>{footer}</SheetFooter> : null}
+        </SheetContent>
+      </Sheet>
+    )
+  }
+
+  if (variante === 'panel') {
+    return (
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent side="right" className={cn('w-full gap-4 p-5 sm:max-w-md', className)}>
+          <SheetHeader className="pr-10 text-left">
             <SheetTitle>{title}</SheetTitle>
             {description ? <SheetDescription>{description}</SheetDescription> : null}
           </SheetHeader>

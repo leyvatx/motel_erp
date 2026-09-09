@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
@@ -34,6 +35,18 @@ function Catalogo({ catalog }: { catalog: Product[] }) {
   return <ProductPicker catalog={catalog} isLoading={false} cart={cart} autoFocus={false} />
 }
 
+/** Con el alta habilitada monta el panel de producto nuevo, y ese consulta
+ *  categorías: necesita su propio cliente de react-query. */
+function ProductPickerConAlta({ catalog }: { catalog: Product[] }) {
+  const cart = useCart()
+  const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  return (
+    <QueryClientProvider client={cliente}>
+      <ProductPicker catalog={catalog} isLoading={false} cart={cart} autoFocus={false} allowCreate />
+    </QueryClientProvider>
+  )
+}
+
 function tarjeta(nombre: string): HTMLButtonElement {
   return screen.getByRole('button', { name: new RegExp(nombre) }) as HTMLButtonElement
 }
@@ -66,5 +79,40 @@ describe('catálogo del punto de venta', () => {
 
     expect(tarjeta('Lavandería').disabled).toBe(false)
     expect(screen.queryByText('Sin existencia')).toBeNull()
+  })
+})
+
+describe('catálogo visual de alta velocidad', () => {
+  it('la insignia de existencia flota sobre la foto, sin robarle renglón al nombre', () => {
+    render(<Catalogo catalog={[producto({ total_stock: '3.000' })]} />)
+
+    // Tres o menos se avisa en la esquina; el nombre y el precio conservan su
+    // espacio, que es lo que se lee para elegir.
+    expect(screen.getByText('3')).toBeTruthy()
+    expect(tarjeta('Cerveza clara').disabled).toBe(false)
+  })
+
+  it('agotado se apaga y no se puede tocar', () => {
+    render(<Catalogo catalog={[producto({ total_stock: '0' })]} />)
+
+    const boton = tarjeta('Cerveza clara')
+    expect(boton.disabled).toBe(true)
+    // `grayscale` además de la opacidad: a media luz, apagado a secas seguía
+    // pareciendo vendible.
+    expect(boton.className).toContain('grayscale')
+  })
+
+  it('ofrece dar de alta un producto desde la cuadrícula, no desde otro menú', () => {
+    render(
+      <ProductPickerConAlta catalog={[producto()]} />,
+    )
+
+    expect(screen.getByRole('button', { name: /Añadir producto/ })).toBeTruthy()
+  })
+
+  it('sin permiso de catálogo no aparece el atajo de alta', () => {
+    render(<Catalogo catalog={[producto()]} />)
+
+    expect(screen.queryByRole('button', { name: /Añadir producto/ })).toBeNull()
   })
 })

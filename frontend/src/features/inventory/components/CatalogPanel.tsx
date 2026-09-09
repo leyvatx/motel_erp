@@ -250,7 +250,7 @@ function ProductForm({ close }: { close: () => void }) {
               <SelectContent>
                 <SelectItem value="PIECE">{t('inventario.pieza')}</SelectItem>
                 <SelectItem value="PACK">{t('inventario.paquete')}</SelectItem>
-                <SelectItem value="BOX">Caja</SelectItem>
+                <SelectItem value="BOX">{t('inventario.cajaUnidad')}</SelectItem>
                 <SelectItem value="LITER">{t('inventario.litro')}</SelectItem>
                 <SelectItem value="KILOGRAM">{t('inventario.kilogramo')}</SelectItem>
               </SelectContent>
