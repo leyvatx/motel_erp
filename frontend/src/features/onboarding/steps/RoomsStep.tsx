@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 
 import { Input } from '@/components/ui/input'
@@ -12,21 +12,53 @@ import {
 import { toast } from '@/components/ui/toast'
 import { StepField, StepShell } from '@/features/onboarding/steps/StepShell'
 import { configApi } from '@/features/config/api'
+import { useBusinessProfile } from '@/features/config/hooks'
 import { useRoomTypes } from '@/features/frontdesk/hooks'
 import { apiErrorMessage } from '@/lib/axios'
 
 const MAXIMO = 200
+
+/** Cuántas habitaciones proponer para cada franja declarada en el registro.
+ *
+ *  Es la misma tabla del servidor. No es un límite ni una promesa: es el número
+ *  con el que la mayoría de esa franja termina, para que el campo llegue con
+ *  algo razonable en vez de con un 10 fijo que no le queda a casi nadie. */
+const CUARTOS_SUGERIDOS: Record<string, number> = {
+  '1-10': 10,
+  '11-30': 20,
+  '31-50': 40,
+  '50+': 60,
+}
 
 export function RoomsStep({ onDone }: { onDone: () => void }) {
   const queryClient = useQueryClient()
   const { data: types } = useRoomTypes()
   const opciones = types?.results ?? []
 
+  /* Lo que ya contestó al registrarse no se vuelve a preguntar.
+   *
+   *  El alta pide el tamaño de la operación; llegar aquí a una casilla vacía
+   *  -- o peor, a un 10 fijo que no le queda -- es preguntar dos veces lo
+   *  mismo. Se propone su cifra y se dice de dónde salió, para que corregirla
+   *  sea evidente y no parezca un dato inventado. */
+  const negocio = useBusinessProfile()
+  const franja = negocio.data?.operation_size ?? ''
+  const sugerido = CUARTOS_SUGERIDOS[franja]
+
   const [roomType, setRoomType] = useState('')
   const [cantidad, setCantidad] = useState('10')
   const [inicio, setInicio] = useState('101')
   const [floor, setFloor] = useState('1')
   const [progreso, setProgreso] = useState<{ hechas: number; total: number } | null>(null)
+
+  /* El perfil llega después del primer render, así que el valor no puede salir
+   *  de `useState`: ahí se evalúa una vez, cuando la consulta todavía no
+   *  respondió, y no se vuelve a mirar. Solo se copia mientras nadie lo haya
+   *  tocado, para no pisar lo que la persona acaba de escribir. */
+  const tocado = useRef(false)
+  useEffect(() => {
+    if (!tocado.current && sugerido !== undefined) setCantidad(String(sugerido))
+  }, [sugerido])
 
   const primerTipo = opciones[0]
   const tipo = roomType || (primerTipo ? String(primerTipo.id) : '')
@@ -58,9 +90,7 @@ export function RoomsStep({ onDone }: { onDone: () => void }) {
       setInicio(String(primera + hechas))
       setCantidad(String(total - hechas))
       toast.error(
-        hechas > 0
-          ? `Se crearon ${hechas} de ${total}`
-          : 'No se pudo crear la primera habitación',
+        hechas > 0 ? `Se crearon ${hechas} de ${total}` : 'No se pudo crear la primera habitación',
         apiErrorMessage(error),
       )
     } finally {
@@ -103,7 +133,10 @@ export function RoomsStep({ onDone }: { onDone: () => void }) {
             min={1}
             max={MAXIMO}
             value={cantidad}
-            onChange={(event) => setCantidad(event.target.value)}
+            onChange={(event) => {
+              tocado.current = true
+              setCantidad(event.target.value)
+            }}
             autoFocus
           />
         </StepField>
@@ -143,9 +176,11 @@ export function RoomsStep({ onDone }: { onDone: () => void }) {
         </div>
       ) : (
         <p className="text-xs leading-relaxed text-muted-foreground">
-          {valid
-            ? `Se numerarán de la ${primera} a la ${primera + total - 1}.`
-            : 'Indica cuántas habitaciones tiene este piso.'}
+          {!valid
+            ? 'Indica cuántas habitaciones tiene este piso.'
+            : sugerido !== undefined && !tocado.current
+              ? `Se numerarán de la ${primera} a la ${primera + total - 1}. Tomamos ${sugerido} de lo que nos dijiste al registrarte; cámbialo si no es exacto.`
+              : `Se numerarán de la ${primera} a la ${primera + total - 1}.`}
         </p>
       )}
     </StepShell>

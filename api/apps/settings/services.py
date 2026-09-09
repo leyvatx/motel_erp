@@ -16,6 +16,7 @@ def create_motel(
     owner_full_name: str,
     owner_password: str,
     owner_email: str = "",
+    owner_phone: str = "",
     **fields,
 ) -> Motel:
     """Da de alta un motel junto con el usuario dueño que lo va a operar.
@@ -37,6 +38,7 @@ def create_motel(
         password=owner_password,
         full_name=owner_full_name,
         email=owner_email,
+        phone=owner_phone,
         role=Role.SUPERADMIN,
         motel=motel,
     )

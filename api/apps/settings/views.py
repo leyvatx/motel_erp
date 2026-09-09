@@ -289,10 +289,13 @@ class RegistroPublicoView(APIView):
             motel = services.create_motel(
                 name=datos["business_name"],
                 email=datos["email"],
+                phone=datos["phone"],
+                operation_size=datos["operation_size"],
                 owner_username=clave,
                 owner_full_name=datos["admin_full_name"],
                 owner_password=datos["password"],
                 owner_email=datos["email"],
+                owner_phone=datos["phone"],
             )
             owner = User.all_objects.get(motel=motel, username=clave)
             if intento:

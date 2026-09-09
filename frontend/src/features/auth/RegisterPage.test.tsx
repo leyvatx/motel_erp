@@ -38,6 +38,22 @@ function correo(): HTMLInputElement {
   return screen.getByLabelText('Correo') as HTMLInputElement
 }
 
+function usuario(): HTMLInputElement {
+  return screen.getByLabelText('Nombre de usuario') as HTMLInputElement
+}
+
+/** Deja el formulario listo para enviar, con todo lo que el alta exige. */
+function llenarTodo(): void {
+  fireEvent.change(screen.getByLabelText('Nombre del negocio'), {
+    target: { value: 'Motel Tunsur' },
+  })
+  fireEvent.change(screen.getByLabelText('Tu nombre'), { target: { value: 'Efrain Leyva' } })
+  fireEvent.change(screen.getByLabelText('Teléfono'), { target: { value: '667 220 1188' } })
+  fireEvent.change(correo(), { target: { value: 'efrainleyva240@gmail.com' } })
+  fireEvent.click(screen.getByLabelText('11-30'))
+  fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: '12345678' } })
+}
+
 describe('formulario de registro', () => {
   beforeEach(() => {
     mutate.mockReset()
@@ -101,14 +117,60 @@ describe('formulario de registro', () => {
     )
 
     pintar()
-    fireEvent.change(screen.getByLabelText('Nombre del negocio'), {
-      target: { value: 'Motel Tunsur' },
-    })
-    fireEvent.change(screen.getByLabelText('Tu nombre'), { target: { value: 'Efrain Leyva' } })
-    fireEvent.change(correo(), { target: { value: 'efrainleyva240@gmail.com' } })
-    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: '12345678' } })
+    llenarTodo()
     fireEvent.click(screen.getByRole('button', { name: /Crear cuenta/ }))
 
     expect(await screen.findByText('Esta contraseña es muy común.')).toBeInTheDocument()
+  })
+
+  // El servidor derivaba la clave del correo y la persona la descubria despues.
+  // Ahora se propone a la vista, editable, y deja de proponerse en cuanto la
+  // tocan: una sugerencia que se reimpone sobre lo tecleado no es una ayuda.
+  it('propone el usuario a partir del correo mientras nadie lo toque', async () => {
+    pintar()
+    fireEvent.change(correo(), { target: { value: 'laura.dominguez@laspalmas.mx' } })
+
+    await waitFor(() => expect(usuario().value).toBe('laura.dominguez'))
+
+    fireEvent.change(usuario(), { target: { value: 'lau' } })
+    fireEvent.change(correo(), { target: { value: 'otra@laspalmas.mx' } })
+
+    await waitFor(() => expect(correo().value).toBe('otra@laspalmas.mx'))
+    expect(usuario().value).toBe('lau')
+  })
+
+  it('no deja pasar un usuario con caracteres que el servidor va a rechazar', async () => {
+    pintar()
+    llenarTodo()
+    fireEvent.change(usuario(), { target: { value: 'Laura Dominguez' } })
+    fireEvent.click(screen.getByRole('button', { name: /Crear cuenta/ }))
+
+    expect(
+      await screen.findByText('Solo minúsculas, números, punto, guion y guion bajo.'),
+    ).toBeInTheDocument()
+    expect(mutate).not.toHaveBeenCalled()
+  })
+
+  it('exige un teléfono al que se pueda marcar', async () => {
+    pintar()
+    llenarTodo()
+    fireEvent.change(screen.getByLabelText('Teléfono'), { target: { value: '667' } })
+    fireEvent.click(screen.getByRole('button', { name: /Crear cuenta/ }))
+
+    expect(await screen.findByText('Escribe el teléfono con lada.')).toBeInTheDocument()
+    expect(mutate).not.toHaveBeenCalled()
+  })
+
+  it('manda el tamaño de la operación con el alta', async () => {
+    pintar()
+    llenarTodo()
+    fireEvent.click(screen.getByRole('button', { name: /Crear cuenta/ }))
+
+    await waitFor(() => expect(mutate).toHaveBeenCalled())
+    expect(mutate.mock.calls[0]?.[0]).toMatchObject({
+      username: 'efrainleyva240',
+      phone: '667 220 1188',
+      operation_size: '11-30',
+    })
   })
 })

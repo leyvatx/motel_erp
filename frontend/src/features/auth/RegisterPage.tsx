@@ -15,16 +15,68 @@ import { APP_FALLBACK_NAME } from '@/lib/brand'
 import { cn } from '@/lib/utils'
 import { defaultRouteFor, useAuthStore } from '@/store/auth'
 
+/** Lo mismo que exige el servidor, para no descubrirlo hasta después de enviar. */
+const FORMA_DEL_USUARIO = /^[a-z0-9._-]{3,40}$/
+
 const registroSchema = z.object({
   business_name: z.string().trim().min(2, 'Escribe el nombre del negocio.').max(120),
   admin_full_name: z.string().trim().min(3, 'Escribe tu nombre completo.').max(150),
   email: z.string().trim().toLowerCase().email('Ese correo no parece válido.'),
+  username: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(3, 'Al menos 3 caracteres.')
+    .max(40, 'Máximo 40 caracteres.')
+    .regex(FORMA_DEL_USUARIO, 'Solo minúsculas, números, punto, guion y guion bajo.'),
+  // Sin formato impuesto: hay lada, extensión y prefijo de país, y todos son
+  // legítimos. Lo que sí se exige es que tenga dígitos suficientes para poder
+  // marcarlo, que es la misma regla del servidor.
+  phone: z
+    .string()
+    .trim()
+    .refine((valor) => (valor.match(/\d/g) ?? []).length >= 8, 'Escribe el teléfono con lada.'),
+  operation_size: z.enum(['1-10', '11-30', '31-50', '50+'], {
+    errorMap: () => ({ message: 'Elige el tamaño de tu operación.' }),
+  }),
   password: z.string().min(8, 'Al menos 8 caracteres.'),
 })
 
 type RegistroForm = z.infer<typeof registroSchema>
 
-const CAMPOS = ['business_name', 'admin_full_name', 'email', 'password'] as const
+const CAMPOS = [
+  'business_name',
+  'admin_full_name',
+  'email',
+  'username',
+  'phone',
+  'operation_size',
+  'password',
+] as const
+
+/** Las cuatro franjas con las que se perfila la operación.
+ *
+ *  Se preguntan aquí para no volver a preguntarlas en el asistente: de aquí
+ *  sale la cifra que llega ya propuesta en el paso de habitaciones. */
+const TAMANOS = [
+  { valor: '1-10', etiqueta: '1-10 cuartos' },
+  { valor: '11-30', etiqueta: '11-30' },
+  { valor: '31-50', etiqueta: '31-50' },
+  { valor: '50+', etiqueta: 'Más de 50' },
+] as const
+
+/** Propuesta de clave a partir del correo, con la misma regla del servidor.
+ *
+ *  Es lo que este formulario hacía en silencio: derivaba la clave del correo y
+ *  la persona la descubría después. Se sigue proponiendo -- ahorra teclear --
+ *  pero a la vista y editable, que es la diferencia entre proponer e imponer. */
+function usuarioDesdeCorreo(correo: string): string {
+  const local = correo.split('@')[0] ?? ''
+  return local
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]/g, '')
+    .slice(0, 40)
+}
 
 /** Los cuatro dominios que cubren casi todo el correo personal en México.
  *  No es autocompletado real -- eso pide una lista que nadie va a mantener --
@@ -73,7 +125,18 @@ export default function RegisterPage() {
     formState: { errors },
   } = useForm<RegistroForm>({
     resolver: zodResolver(registroSchema),
-    defaultValues: { business_name: '', admin_full_name: '', email: '', password: '' },
+    // Los errores aparecen al salir de cada campo y se corrigen mientras se
+    // teclea. En un formulario de siete campos, guardarlos todos para el envío
+    // es mandar a alguien a buscar cuál de los siete estaba mal.
+    mode: 'onTouched',
+    defaultValues: {
+      business_name: '',
+      admin_full_name: '',
+      email: '',
+      username: '',
+      phone: '',
+      password: '',
+    },
   })
 
   // Una clave por intento de alta, no por clic. Mientras el usuario no
@@ -83,11 +146,23 @@ export default function RegisterPage() {
   const [inicioEspera, setInicioEspera] = useState(0)
 
   const correo = watch('email')
+  const tamano = watch('operation_size')
 
   // Las sugerencias solo estorban una vez que el dominio ya está escrito: se
   // muestran mientras haya algo antes de la arroba y nada -- o poco -- después.
   const [local = '', dominio] = correo.split('@')
   const sugerirDominios = local.length > 0 && (dominio === undefined || !dominio.includes('.'))
+
+  /* La clave se propone desde el correo mientras nadie la haya tocado.
+   *
+   *  En cuanto el usuario escribe la suya, este efecto se calla para siempre:
+   *  una propuesta que se reimpone sobre lo tecleado deja de ser una ayuda. */
+  const usuarioTocado = useRef(false)
+  const propuesta = usuarioDesdeCorreo(correo)
+  useEffect(() => {
+    if (usuarioTocado.current || propuesta.length < 3) return
+    setValue('username', propuesta, { shouldValidate: false })
+  }, [propuesta, setValue])
 
   if (access) return <Navigate to={defaultRouteFor(user)} replace />
 
@@ -124,7 +199,10 @@ export default function RegisterPage() {
     <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-background p-4 sm:p-6">
       <div className="grid-surface grid-fade pointer-events-none absolute inset-0" aria-hidden />
 
-      <div className="relative w-full max-w-[24rem] space-y-8">
+      {/* Más ancho que el acceso a propósito: siete campos en una sola columna
+          son un formulario que se desplaza, y desplazarse es donde la gente
+          abandona. En dos columnas cabe entero en una pantalla de escritorio. */}
+      <div className="relative w-full max-w-[24rem] space-y-8 md:max-w-2xl">
         <div className="flex flex-col items-center gap-4 text-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-lg border bg-card">
             <LuBuilding2 className="h-5 w-5" aria-hidden />
@@ -138,85 +216,197 @@ export default function RegisterPage() {
         </div>
 
         {signup.isPending ? (
-          <PreparandoEspacio desde={inicioEspera} onCancelar={() => signup.reset()} />
+          // Acotada, aunque el formulario de atrás mida el doble. Sin esto la
+          // espera hereda el ancho de las dos columnas y aparece como una caja
+          // enorme con un punto girando en medio: el salto se lee como que algo
+          // se rompió, justo en el segundo en que hay que dar confianza.
+          <div className="mx-auto w-full max-w-[24rem]">
+            <PreparandoEspacio desde={inicioEspera} onCancelar={() => signup.reset()} />
+          </div>
         ) : (
           <div className="rounded-lg border bg-card p-6">
             <form onSubmit={onSubmit} className="space-y-5" noValidate>
-              <div className="space-y-2">
-                <Label htmlFor="business_name">Nombre del negocio</Label>
-                <Input
-                  id="business_name"
-                  autoFocus
-                  autoComplete="organization"
-                  placeholder="Hospedaje Las Palmas"
-                  aria-invalid={Boolean(errors.business_name)}
-                  {...register('business_name')}
-                />
-                {errors.business_name ? (
-                  <p role="alert" className="text-xs leading-relaxed text-destructive">
-                    {errors.business_name.message}
-                  </p>
-                ) : null}
+              {/* Dos columnas en escritorio, una en el teléfono. El orden de
+                  tabulación sigue siendo el de lectura porque el grid coloca en
+                  el mismo orden del marcado. */}
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="business_name">Nombre del negocio</Label>
+                  <Input
+                    id="business_name"
+                    autoFocus
+                    autoComplete="organization"
+                    placeholder="Hospedaje Las Palmas"
+                    aria-invalid={Boolean(errors.business_name)}
+                    {...register('business_name')}
+                  />
+                  {errors.business_name ? (
+                    <p role="alert" className="text-xs leading-relaxed text-destructive">
+                      {errors.business_name.message}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="admin_full_name">Tu nombre</Label>
+                  <Input
+                    id="admin_full_name"
+                    autoComplete="name"
+                    placeholder="Laura Domínguez"
+                    aria-invalid={Boolean(errors.admin_full_name)}
+                    {...register('admin_full_name')}
+                  />
+                  {errors.admin_full_name ? (
+                    <p role="alert" className="text-xs leading-relaxed text-destructive">
+                      {errors.admin_full_name.message}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Teléfono</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    placeholder="667 220 1188"
+                    aria-invalid={Boolean(errors.phone)}
+                    {...register('phone')}
+                  />
+                  {errors.phone ? (
+                    <p role="alert" className="text-xs leading-relaxed text-destructive">
+                      {errors.phone.message}
+                    </p>
+                  ) : (
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      Para avisarte si algo pasa con tu cuenta.
+                    </p>
+                  )}
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="admin_full_name">Tu nombre</Label>
-                <Input
-                  id="admin_full_name"
-                  autoComplete="name"
-                  placeholder="Laura Domínguez"
-                  aria-invalid={Boolean(errors.admin_full_name)}
-                  {...register('admin_full_name')}
-                />
-                {errors.admin_full_name ? (
-                  <p role="alert" className="text-xs leading-relaxed text-destructive">
-                    {errors.admin_full_name.message}
+              {/* El correo y la clave, juntos: la segunda se propone desde el
+                  primero, y verlos en la misma línea hace evidente de dónde
+                  salió. Además ahorra un renglón, que es lo que sacaba el
+                  botón de enviar fuera de la pantalla. */}
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Correo</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="laura@laspalmas.mx"
+                    aria-invalid={Boolean(errors.email)}
+                    {...register('email')}
+                  />
+
+                  {sugerirDominios ? (
+                    <div className="flex flex-wrap gap-1.5 pt-0.5">
+                      {DOMINIOS.map((sufijo) => (
+                        <button
+                          key={sufijo}
+                          type="button"
+                          onClick={() => completarDominio(sufijo)}
+                          aria-label={`Completar como ${local}${sufijo}`}
+                          className={cn(
+                            'rounded-md border border-border/60 px-2 py-1 font-mono text-2xs',
+                            'text-muted-foreground transition-colors duration-150',
+                            'hover:border-foreground/25 hover:bg-accent hover:text-foreground',
+                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                          )}
+                        >
+                          {sufijo}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  {errors.email ? (
+                    <p role="alert" className="text-xs leading-relaxed text-destructive">
+                      {errors.email.message}
+                    </p>
+                  ) : sugerirDominios ? null : (
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      Con este correo también puedes entrar al sistema.
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="username">Nombre de usuario</Label>
+                  <Input
+                    id="username"
+                    autoComplete="username"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    className="font-mono"
+                    placeholder="laura.dominguez"
+                    aria-invalid={Boolean(errors.username)}
+                    aria-describedby="username-ayuda"
+                    {...register('username', {
+                      onChange: () => {
+                        usuarioTocado.current = true
+                      },
+                    })}
+                  />
+                  <p
+                    id="username-ayuda"
+                    role={errors.username ? 'alert' : undefined}
+                    className={cn(
+                      'text-xs leading-relaxed',
+                      errors.username ? 'text-destructive' : 'text-muted-foreground',
+                    )}
+                  >
+                    {errors.username
+                      ? errors.username.message
+                      : 'Minúsculas, números, punto, guion y guion bajo. Es la clave con la que entra tu equipo.'}
                   </p>
-                ) : null}
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Correo</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="laura@laspalmas.mx"
-                  aria-invalid={Boolean(errors.email)}
-                  {...register('email')}
-                />
-
-                {sugerirDominios ? (
-                  <div className="flex flex-wrap gap-1.5 pt-0.5">
-                    {DOMINIOS.map((sufijo) => (
-                      <button
-                        key={sufijo}
-                        type="button"
-                        onClick={() => completarDominio(sufijo)}
-                        aria-label={`Completar como ${local}${sufijo}`}
-                        className={cn(
-                          'rounded-md border border-border/60 px-2 py-1 font-mono text-2xs',
-                          'text-muted-foreground transition-colors duration-150',
-                          'hover:border-foreground/25 hover:bg-accent hover:text-foreground',
-                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                        )}
-                      >
-                        {sufijo}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-
-                {errors.email ? (
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium leading-none">
+                  ¿De qué tamaño es tu operación?
+                </legend>
+                {/* Cuatro botones y no una lista desplegable: son pocas
+                    opciones, caben todas a la vista y se contesta en un toque en
+                    vez de en dos. */}
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {TAMANOS.map((opcion) => (
+                    <label
+                      key={opcion.valor}
+                      className={cn(
+                        'flex cursor-pointer items-center justify-center rounded-md border px-2 py-2.5',
+                        'text-center text-xs font-medium transition-colors duration-150',
+                        'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring',
+                        tamano === opcion.valor
+                          ? 'border-primary bg-primary/10 text-foreground'
+                          : 'text-muted-foreground hover:border-foreground/25 hover:bg-accent',
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        value={opcion.valor}
+                        className="sr-only"
+                        {...register('operation_size')}
+                      />
+                      {opcion.etiqueta}
+                    </label>
+                  ))}
+                </div>
+                {errors.operation_size ? (
                   <p role="alert" className="text-xs leading-relaxed text-destructive">
-                    {errors.email.message}
+                    {errors.operation_size.message}
                   </p>
-                ) : sugerirDominios ? null : (
+                ) : (
                   <p className="text-xs leading-relaxed text-muted-foreground">
-                    De aquí sale tu clave de acceso al sistema.
+                    Con esto llegas al asistente con tus habitaciones ya propuestas.
                   </p>
                 )}
-              </div>
+              </fieldset>
 
               <div className="space-y-2">
                 <Label htmlFor="password">Contraseña</Label>

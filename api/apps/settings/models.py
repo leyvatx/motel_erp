@@ -28,7 +28,7 @@ from django.db import models
 from django.db.utils import Error as DatabaseError
 from django.utils.text import slugify
 
-from apps.settings.constants import LOGO_EXTENSIONS, PrinterBackend
+from apps.settings.constants import LOGO_EXTENSIONS, OperationSize, PrinterBackend
 from common.managers import SoftDeleteQuerySet
 from common.models import AuthorStampedModel, SoftDeleteModel, TimeStampedModel
 from common.tenancy import current_motel_id
@@ -79,6 +79,13 @@ class Motel(TimeStampedModel, AuthorStampedModel, SoftDeleteModel):
     address = models.CharField("Dirección", max_length=255, blank=True)
     phone = models.CharField("Teléfono", max_length=30, blank=True)
     email = models.EmailField("Correo", blank=True)
+    operation_size = models.CharField(
+        "Tamaño de la operación",
+        max_length=10,
+        choices=OperationSize.choices,
+        blank=True,
+        help_text="Franja de habitaciones declarada al darse de alta.",
+    )
     logo = models.FileField(
         "Logotipo",
         upload_to="branding/",

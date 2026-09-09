@@ -13,8 +13,9 @@ from apps.audit.constants import AuditAction, AuditModule
 from apps.audit.models import AuditLog
 from apps.rooms import services as frontdesk
 from apps.rooms.models import Room, RoomType, TariffBlock
-from apps.settings.constants import PrinterBackend
+from apps.settings.constants import OperationSize, PrinterBackend
 from apps.settings.models import Motel
+from apps.settings.serializers import clave_desde_correo
 from apps.settings.services import create_motel
 from apps.users.constants import Role
 from apps.users.models import User
@@ -499,6 +500,9 @@ class RegistroPublicoTests(TestCase):
             "business_name": "Motel Las Palmas",
             "admin_full_name": "Laura Domínguez",
             "email": "laura.dominguez@laspalmas.mx",
+            "username": "laura.dominguez",
+            "phone": "667 220 1188",
+            "operation_size": OperationSize.HASTA_30,
             "password": "Palmas.2026!seguro",
         }
         datos.update(cambios)
@@ -519,21 +523,21 @@ class RegistroPublicoTests(TestCase):
         self.assertEqual(owner.email, "laura.dominguez@laspalmas.mx")
         self.assertEqual(response.data["user"]["id"], owner.pk)
 
-    def test_la_clave_de_empleado_sale_del_correo(self) -> None:
+    def test_la_clave_de_empleado_es_la_que_se_pidio_en_el_formulario(self) -> None:
+        # Antes se derivaba del correo y la persona la descubria despues, en el
+        # correo de bienvenida. Ahora la elige, que es con la que va a entrar.
         response = APIClient().post(
-            REGISTRO_URL, self.payload(email="Ana+Ventas@laspalmas.mx"), format="json"
+            REGISTRO_URL, self.payload(username="ana.ventas"), format="json"
         )
 
-        self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.data["user"]["username"], "anaventas")
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.data["user"]["username"], "ana.ventas")
 
-    def test_un_correo_de_local_muy_corto_cae_en_admin(self) -> None:
-        response = APIClient().post(
-            REGISTRO_URL, self.payload(email="jr@laspalmas.mx"), format="json"
-        )
-
-        self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.data["user"]["username"], "admin")
+    def test_la_derivacion_desde_el_correo_sigue_para_las_altas_sin_formulario(self) -> None:
+        # `clave_desde_correo` ya no la usa este endpoint, pero sigue siendo la
+        # regla para dar de alta a alguien sin preguntarle nada.
+        self.assertEqual(clave_desde_correo("Ana+Ventas@laspalmas.mx"), "anaventas")
+        self.assertEqual(clave_desde_correo("jr@laspalmas.mx"), "admin")
 
     def test_el_token_sirve_para_operar_de_inmediato(self) -> None:
         """Sin esto el cliente tendría que volver a escribir la contraseña."""
@@ -549,7 +553,9 @@ class RegistroPublicoTests(TestCase):
     def test_dos_negocios_con_el_mismo_nombre_no_chocan(self) -> None:
         primero = APIClient().post(REGISTRO_URL, self.payload(), format="json")
         segundo = APIClient().post(
-            REGISTRO_URL, self.payload(email="otra@otrolado.mx"), format="json"
+            REGISTRO_URL,
+            self.payload(email="otra@otrolado.mx", username="otra.duena"),
+            format="json",
         )
 
         self.assertEqual(primero.status_code, 201)
@@ -632,6 +638,9 @@ class RegistroIdempotenteTests(TestCase):
             "business_name": "Hostal La Cañada",
             "admin_full_name": "Efraín Ruiz",
             "email": "efrain@lacanada.mx",
+            "username": "efrain",
+            "phone": "555 123 4567",
+            "operation_size": OperationSize.HASTA_30,
             "password": "Canada.2026!segura",
         }
         datos.update(cambios)
@@ -663,7 +672,9 @@ class RegistroIdempotenteTests(TestCase):
         cliente = APIClient()
         cliente.post(REGISTRO_URL, self.payload(), format="json")
         repetida = cliente.post(
-            REGISTRO_URL, self.payload(business_name="Otro Hostal"), format="json"
+            REGISTRO_URL,
+            self.payload(business_name="Otro Hostal", username="efrain2"),
+            format="json",
         )
 
         self.assertEqual(repetida.status_code, 409)
@@ -676,9 +687,149 @@ class RegistroIdempotenteTests(TestCase):
         cliente.post(REGISTRO_URL, self.payload(), format="json")
         otra = cliente.post(
             REGISTRO_URL,
-            self.payload(email="rosa@otrositio.mx", business_name="Posada Otra"),
+            self.payload(
+                email="rosa@otrositio.mx", business_name="Posada Otra", username="rosa"
+            ),
             format="json",
         )
 
         self.assertEqual(otra.status_code, 201)
         self.assertEqual(Motel.all_objects.filter(name="Posada Otra").count(), 1)
+
+
+class RegistroB2BTests(TestCase):
+    """Los datos con los que el alta perfila al negocio, y sus fronteras."""
+
+    def setUp(self) -> None:
+        cache.clear()
+
+    def payload(self, **cambios) -> dict:
+        datos = {
+            "business_name": "Motel Las Brisas",
+            "admin_full_name": "Laura Domínguez",
+            "email": "laura@lasbrisas.mx",
+            "username": "laura",
+            "phone": "664 155 9080",
+            "operation_size": OperationSize.HASTA_50,
+            "password": "Brisas.2026!clave",
+        }
+        datos.update(cambios)
+        return datos
+
+    def test_el_alta_guarda_telefono_y_tamano_en_el_negocio(self) -> None:
+        respuesta = APIClient().post(REGISTRO_URL, self.payload(), format="json")
+
+        self.assertEqual(respuesta.status_code, 201, respuesta.data)
+        motel = Motel.all_objects.get(name="Motel Las Brisas")
+        self.assertEqual(motel.phone, "664 155 9080")
+        self.assertEqual(motel.operation_size, OperationSize.HASTA_50)
+
+    def test_la_clave_de_acceso_es_la_que_eligio_el_usuario(self) -> None:
+        # Antes se derivaba del correo y la persona la descubria despues.
+        APIClient().post(REGISTRO_URL, self.payload(), format="json")
+
+        motel = Motel.all_objects.get(name="Motel Las Brisas")
+        propietario = User.all_objects.get(motel=motel)
+        self.assertEqual(propietario.username, "laura")
+        self.assertEqual(propietario.phone, "664 155 9080")
+
+    def test_un_usuario_ya_tomado_se_dice_en_su_campo(self) -> None:
+        cliente = APIClient()
+        cliente.post(REGISTRO_URL, self.payload(), format="json")
+
+        repetido = cliente.post(
+            REGISTRO_URL,
+            self.payload(email="otra@lasbrisas.mx", business_name="Otro"),
+            format="json",
+        )
+
+        self.assertEqual(repetido.status_code, 400)
+        self.assertIn("username", repetido.data["error"]["details"])
+        self.assertEqual(Motel.all_objects.filter(name="Otro").count(), 0)
+
+    def test_el_usuario_se_guarda_en_minusculas_y_sin_espacios(self) -> None:
+        respuesta = APIClient().post(
+            REGISTRO_URL, self.payload(username="  Laura.D  "), format="json"
+        )
+
+        self.assertEqual(respuesta.status_code, 201, respuesta.data)
+        self.assertEqual(respuesta.data["user"]["username"], "laura.d")
+
+    def test_un_usuario_con_caracteres_invalidos_no_pasa(self) -> None:
+        respuesta = APIClient().post(
+            REGISTRO_URL, self.payload(username="laura dominguez"), format="json"
+        )
+
+        self.assertEqual(respuesta.status_code, 400)
+        self.assertIn("username", respuesta.data["error"]["details"])
+
+    def test_un_telefono_a_medias_no_pasa(self) -> None:
+        respuesta = APIClient().post(REGISTRO_URL, self.payload(phone="664"), format="json")
+
+        self.assertEqual(respuesta.status_code, 400)
+        self.assertIn("phone", respuesta.data["error"]["details"])
+
+    def test_un_tamano_inventado_no_pasa(self) -> None:
+        respuesta = APIClient().post(
+            REGISTRO_URL, self.payload(operation_size="200-300"), format="json"
+        )
+
+        self.assertEqual(respuesta.status_code, 400)
+        self.assertIn("operation_size", respuesta.data["error"]["details"])
+
+
+class AccesoDualTests(TestCase):
+    """Entrar con la clave de empleado o con el correo, indistintamente.
+
+    Quien da de alta el negocio se registra con su correo y es lo unico que
+    recuerda al dia siguiente; quien trabaja en el mostrador entra con su clave.
+    Las dos puertas llevan al mismo lugar.
+    """
+
+    def setUp(self) -> None:
+        cache.clear()
+        APIClient().post(
+            REGISTRO_URL,
+            {
+                "business_name": "Motel El Roble",
+                "admin_full_name": "Sergio Paredes",
+                "email": "sergio@elroble.mx",
+                "username": "sergio",
+                "phone": "833 210 4455",
+                "operation_size": OperationSize.HASTA_10,
+                "password": "Roble.2026!buena",
+            },
+            format="json",
+        )
+
+    def entrar(self, identificador: str, password: str = "Roble.2026!buena"):
+        return APIClient().post(
+            "/api/v1/auth/login/",
+            {"username": identificador, "password": password},
+            format="json",
+        )
+
+    def test_entra_con_su_clave_de_empleado(self) -> None:
+        respuesta = self.entrar("sergio")
+
+        self.assertEqual(respuesta.status_code, 200, respuesta.data)
+        self.assertIn("access", respuesta.data)
+
+    def test_entra_con_su_correo(self) -> None:
+        respuesta = self.entrar("sergio@elroble.mx")
+
+        self.assertEqual(respuesta.status_code, 200, respuesta.data)
+        self.assertEqual(respuesta.data["user"]["username"], "sergio")
+
+    def test_el_correo_no_distingue_mayusculas(self) -> None:
+        respuesta = self.entrar("Sergio@ElRoble.MX")
+
+        self.assertEqual(respuesta.status_code, 200, respuesta.data)
+
+    def test_la_contrasena_sigue_mandando(self) -> None:
+        # La puerta nueva no puede ser una puerta abierta.
+        self.assertEqual(self.entrar("sergio@elroble.mx", "otra-cosa").status_code, 401)
+        self.assertEqual(self.entrar("sergio", "otra-cosa").status_code, 401)
+
+    def test_un_correo_que_no_existe_no_entra(self) -> None:
+        self.assertEqual(self.entrar("nadie@ningunlado.mx").status_code, 401)

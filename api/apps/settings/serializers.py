@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import zoneinfo
 
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import FileExtensionValidator
 from rest_framework import serializers
 
-from apps.settings.constants import LOGO_EXTENSIONS, LOGO_MAX_BYTES
+from apps.settings.constants import LOGO_EXTENSIONS, LOGO_MAX_BYTES, OperationSize
 from apps.settings.models import Motel
+from common.tenancy import without_motel
 
 
 def logo_url(motel: Motel) -> str | None:
@@ -92,6 +94,10 @@ class MotelSerializer(serializers.ModelSerializer):
             "address",
             "phone",
             "email",
+            # El asistente de alta lo lee para proponer cuántas habitaciones
+            # crear, en vez de volver a preguntar lo que ya se contestó al
+            # registrarse.
+            "operation_size",
             "logo",
             "logo_url",
             "brand_primary_color",
@@ -270,6 +276,11 @@ class RegistroPublicoSerializer(serializers.Serializer):
     business_name = serializers.CharField(max_length=120, label="Nombre del negocio")
     admin_full_name = serializers.CharField(max_length=150, label="Nombre del administrador")
     email = serializers.EmailField(label="Correo")
+    username = serializers.CharField(max_length=40, label="Nombre de usuario")
+    phone = serializers.CharField(max_length=20, label="Teléfono de contacto")
+    operation_size = serializers.ChoiceField(
+        choices=OperationSize.choices, label="Tamaño de la operación"
+    )
     password = serializers.CharField(min_length=8, write_only=True, label="Contraseña")
     # La genera el navegador una vez por intento de alta. Opcional para no
     # romper a un cliente viejo, pero sin ella se pierde la protección contra
@@ -284,6 +295,40 @@ class RegistroPublicoSerializer(serializers.Serializer):
 
     def validate_email(self, value: str) -> str:
         return value.strip().lower()
+
+    def validate_username(self, value: str) -> str:
+        """Forma de la clave con la que va a entrar todos los días.
+
+        Aquí solo el formato. Que no choque con nadie se revisa en `validate`,
+        donde ya se sabe si esto es un alta nueva o el reintento de una que ya
+        se hizo -- y en el reintento, chocar consigo mismo es lo esperado.
+        """
+        from apps.users.models import username_validator
+
+        clave = value.strip().lower()
+        if not clave:
+            raise serializers.ValidationError("Escribe un nombre de usuario.")
+
+        try:
+            username_validator(clave)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(list(exc.messages)) from exc
+
+        return clave
+
+    def validate_phone(self, value: str) -> str:
+        """Un teléfono al que de verdad se pueda marcar.
+
+        No se impone formato -- hay lada, extensión, prefijo de país y todos son
+        legítimos -- pero sí que tenga dígitos suficientes para ser un número.
+        """
+        telefono = " ".join(value.split())
+        digitos = sum(caracter.isdigit() for caracter in telefono)
+        if digitos < 8:
+            raise serializers.ValidationError(
+                "Escribe un teléfono completo, con lada."
+            )
+        return telefono
 
     def validate(self, attrs: dict) -> dict:
         """La contraseña se revisa aquí y no campo por campo.
@@ -304,12 +349,37 @@ class RegistroPublicoSerializer(serializers.Serializer):
         formulario los pinte debajo de su campo y no en un aviso suelto.
         """
         from django.contrib.auth.password_validation import validate_password
-        from django.core.exceptions import ValidationError as DjangoValidationError
 
+        from apps.settings.models import SignupAttempt
         from apps.users.models import User
 
+        # Una clave única en toda la plataforma, no solo dentro de la sucursal.
+        #
+        # Al entrar sin decir a qué negocio pertenece, el sistema resuelve la
+        # sucursal por la clave; una repetida obliga a preguntar cuál de las dos
+        # es, con un dato que a quien acaba de registrarse nadie le dio.
+        #
+        # El reintento se exceptúa a propósito: el navegador reenvía el alta con
+        # la misma clave de intento cuando la respuesta se perdió, y esa segunda
+        # llamada choca contra el usuario que ella misma creó. Rechazarla ahí
+        # convertía la protección contra duplicados en un "ese nombre ya está
+        # tomado" para el dueño legítimo, sin manera de salir.
+        intento = (attrs.get("attempt_key") or "").strip()[:64]
+        es_reintento = bool(intento) and SignupAttempt.objects.filter(key=intento).exists()
+
+        if not es_reintento:
+            with without_motel():
+                if User.all_objects.filter(username=attrs["username"]).exists():
+                    raise serializers.ValidationError(
+                        {
+                            "username": [
+                                "Ese nombre de usuario ya está tomado. Prueba con otro."
+                            ]
+                        }
+                    )
+
         candidato = User(
-            username=clave_desde_correo(attrs["email"]),
+            username=attrs["username"],
             full_name=attrs["admin_full_name"],
             email=attrs["email"],
         )
@@ -322,7 +392,15 @@ class RegistroPublicoSerializer(serializers.Serializer):
         return attrs
 
     def clave_de_empleado(self) -> str:
-        return clave_desde_correo(self.validated_data["email"])
+        """La que eligió quien se registró.
+
+        Antes se derivaba del correo, porque el formulario no la preguntaba y
+        había que inventar algo con lo que entrar. Ahora se pregunta: la persona
+        sabe con qué va a entrar mañana en lugar de descubrirlo en el correo de
+        bienvenida. ``clave_desde_correo`` sigue existiendo para las altas que
+        no pasan por este formulario.
+        """
+        return self.validated_data["username"]
 
 
 def clave_desde_correo(email: str) -> str:

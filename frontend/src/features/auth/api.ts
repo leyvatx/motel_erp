@@ -11,6 +11,12 @@ export interface SignupPayload {
   business_name: string
   admin_full_name: string
   email: string
+  /** La clave con la que va a entrar. Antes se derivaba del correo en el
+   *  servidor y quien se registraba la descubría después. */
+  username: string
+  phone: string
+  /** Franja de habitaciones. El asistente la usa para proponer cuántas crear. */
+  operation_size: '1-10' | '11-30' | '31-50' | '50+'
   password: string
   /** Identifica el intento de alta, no la petición: el reintento repite clave
    *  y el servidor devuelve la organización que ya creó. */

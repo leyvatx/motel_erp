@@ -240,6 +240,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "users.User"
 
+# Una sola puerta, dos llaves: la clave de empleado y el correo. Hereda de
+# ``ModelBackend``, así que los permisos y el admin de Django siguen igual; lo
+# único que cambia es por qué campo se busca a la persona.
+AUTHENTICATION_BACKENDS = ["common.auth_backends.EmailOrUsernameBackend"]
+
 AUTH_PASSWORD_VALIDATORS = [
     # La lista por omisión compara contra username, first_name, last_name y
     # email; este modelo de usuario no tiene los dos del medio, guarda el nombre

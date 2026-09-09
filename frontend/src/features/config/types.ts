@@ -11,12 +11,17 @@ export interface PublicBusinessProfile extends BusinessAppearance {
   login_message: string
 }
 
+/** Franja de habitaciones declarada al darse de alta. Vacía en los negocios
+ *  creados antes de que el formulario la preguntara. */
+export type OperationSize = '1-10' | '11-30' | '31-50' | '50+' | ''
+
 export interface BusinessProfile extends PublicBusinessProfile {
   legal_name: string
   tax_id: string
   address: string
   phone: string
   email: string
+  operation_size: OperationSize
   ticket_footer: string
   print_ticket_on_close: boolean
   expiration_warning_minutes: number

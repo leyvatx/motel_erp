@@ -17,7 +17,11 @@ import { APP_FALLBACK_NAME } from '@/lib/brand'
 import { defaultRouteFor, useAuthStore } from '@/store/auth'
 
 const loginSchema = z.object({
-  username: z.string().min(3, 'Escribe tu usuario.').toLowerCase(),
+  // Acepta las dos formas de identificarse -- clave de empleado y correo -- sin
+  // pedir formato de ninguna: exigir que parezca correo dejaba fuera a quien
+  // entra con su clave, y exigir que no lo parezca, al revés. El servidor busca
+  // por los dos campos y sabe cuál es cuál.
+  username: z.string().trim().min(3, 'Escribe tu usuario o tu correo.').toLowerCase(),
   password: z.string().min(1, 'Escribe tu contraseña.'),
   motel: z.string().optional(),
 })
@@ -87,13 +91,16 @@ export default function LoginPage() {
         <div className="rounded-lg border bg-card p-6">
           <form onSubmit={onSubmit} className="space-y-5" noValidate>
             <div className="space-y-2">
-              <Label htmlFor="username">Usuario</Label>
+              <Label htmlFor="username">Correo electrónico o nombre de usuario</Label>
               <Input
                 id="username"
                 autoComplete="username"
                 autoFocus
-                placeholder="recepcion"
-                className="font-mono"
+                inputMode="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                placeholder="recepcion  ·  laura@tunegocio.mx"
                 aria-invalid={Boolean(errors.username)}
                 {...register('username')}
               />

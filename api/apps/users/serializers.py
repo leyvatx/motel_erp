@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db.models import Q
 from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import InvalidToken
 from rest_framework_simplejwt.serializers import (
@@ -170,16 +171,24 @@ class MotelTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs: dict) -> dict:
         slug = (attrs.pop("motel", "") or "").strip()
-        username = (attrs.get(self.username_field) or "").strip().lower()
-        attrs[self.username_field] = username
+        identificador = (attrs.get(self.username_field) or "").strip().lower()
+        attrs[self.username_field] = identificador
 
-        with use_motel(self._resolve_motel_id(username, slug)):
+        with use_motel(self._resolve_motel_id(identificador, slug)):
             data = super().validate(attrs)
 
         data["user"] = UserSerializer(self.user).data
         return data
 
-    def _resolve_motel_id(self, username: str, slug: str) -> int | None:
+    def _resolve_motel_id(self, identificador: str, slug: str) -> int | None:
+        """De qué sucursal es quien está entrando.
+
+        El identificador puede ser la clave de empleado o el correo: quien dio
+        de alta el negocio se registró con su correo y es lo único que recuerda.
+        Se busca por los dos porque este paso ocurre *antes* de autenticar, y si
+        aquí no se acierta el motel, el manager acotado no encuentra a nadie
+        después -- por muy correcta que sea la contraseña.
+        """
         if slug:
             motel_id = (
                 Motel.objects.filter(slug__iexact=slug).values_list("pk", flat=True).first()
@@ -190,12 +199,19 @@ class MotelTokenObtainPairSerializer(TokenObtainPairSerializer):
                 )
             return motel_id
 
+        if not identificador:
+            return None
+
         candidatos = list(
-            User.objects.filter(username=username).values_list("motel_id", flat=True)[:2]
+            User.objects.filter(
+                Q(username=identificador) | Q(email__iexact=identificador)
+            )
+            .values_list("motel_id", flat=True)
+            .distinct()[:2]
         )
         if len(candidatos) > 1:
             raise DomainError(
-                "Esa clave de empleado se usa en varias sucursales. Indica cuál es la tuya.",
+                "Ese dato se usa en varias sucursales. Indica cuál es la tuya.",
                 code="motel_requerido",
             )
         return candidatos[0] if candidatos else None
