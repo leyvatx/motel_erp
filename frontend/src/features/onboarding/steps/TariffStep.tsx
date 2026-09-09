@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Input } from '@/components/ui/input'
 import {
@@ -13,6 +14,7 @@ import { useCreateTariff } from '@/features/config/hooks'
 import { useRoomTypes } from '@/features/frontdesk/hooks'
 
 export function TariffStep({ onDone }: { onDone: () => void }) {
+  const { t } = useTranslation()
   const { data: types } = useRoomTypes()
   const create = useCreateTariff()
 
@@ -43,10 +45,10 @@ export function TariffStep({ onDone }: { onDone: () => void }) {
   return (
     <StepShell valid={valid} submitting={create.isPending} onSubmit={submit}>
       {opciones.length > 1 ? (
-        <StepField label="Para qué tipo de habitación" htmlFor="setup-tariff-type">
+        <StepField label={t('asistente.paraQueTipo')} htmlFor="setup-tariff-type">
           <Select value={tipo} onValueChange={setRoomType}>
             <SelectTrigger id="setup-tariff-type">
-              <SelectValue placeholder="Elige el tipo" />
+              <SelectValue placeholder={t('asistente.eligeElTipo')} />
             </SelectTrigger>
             <SelectContent>
               {opciones.map((item) => (
@@ -60,7 +62,7 @@ export function TariffStep({ onDone }: { onDone: () => void }) {
       ) : null}
 
       <div className="grid grid-cols-2 gap-3">
-        <StepField label="¿Cuántas horas dura?" htmlFor="setup-hours">
+        <StepField label={t('asistente.cuantasHoras')} htmlFor="setup-hours">
           <Input
             id="setup-hours"
             type="number"
@@ -71,7 +73,7 @@ export function TariffStep({ onDone }: { onDone: () => void }) {
           />
         </StepField>
 
-        <StepField label="¿Cuánto cuesta?" htmlFor="setup-price">
+        <StepField label={t('asistente.cuantoCuesta')} htmlFor="setup-price">
           <Input
             id="setup-price"
             inputMode="decimal"

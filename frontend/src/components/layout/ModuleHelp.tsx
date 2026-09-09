@@ -24,56 +24,51 @@ interface Guia {
  *  necesitara doce pasos aquí, el problema estaría en el módulo. */
 const GUIAS: Record<ModuloAyuda, Guia> = {
   recepcion: {
-    titulo: 'Cómo usar Recepción',
-    proposito: 'Aquí se ve el estado de todas las habitaciones y se opera sobre ellas.',
+    titulo: 'recepcion.comoUsarRecepcion',
+    proposito: 'recepcion.aquiSeVeElEstado',
     pasos: [
-      'Busca la habitación por número, placas o nombre del huésped.',
-      'Toca la acción que dice la tarjeta: Rentar, Cobrar y salir, o Limpieza lista.',
-      'Para todo lo demás -- extender tiempo, mantenimiento, ver la cuenta -- usa el botón ⋯ de la tarjeta.',
-      'El cronómetro y la barra dicen cuánto falta. En rojo, la renta ya venció.',
+      'recepcion.buscaLaHabitacion',
+      'recepcion.tocaLaAccion',
+      'recepcion.paraTodoLoDemas',
+      'recepcion.elCronometro',
     ],
-    notas: [
-      'El color de la franja superior es el estado: verde disponible, rojo ocupada, ámbar en limpieza.',
-      'Los consumos cargados a la habitación se cobran al hacer el check-out, no antes.',
-    ],
+    notas: ['recepcion.elColorDeLaFranja', 'caja.consumosSeCobranAlCheckout'],
   },
   caja: {
-    titulo: 'Cómo usar Caja',
-    proposito: 'Aquí se venden productos, se registran gastos y se cierra el turno.',
+    titulo: 'caja.comoUsarCaja',
+    proposito: 'caja.aquiSeVenden',
     pasos: [
-      'Abre tu turno contando el fondo de caja. Sin turno no se puede cobrar.',
-      'Elige si el consumo se cobra ahora o se carga a una habitación.',
-      'Toca los productos para agregarlos. También puedes escanear el código.',
-      'Cobra: elige el método de pago y el sistema calcula el cambio.',
+      'caja.abreTuTurno',
+      'caja.eligeSiElConsumo',
+      'caja.tocaLosProductos',
+      'caja.cobraEligeMetodo',
     ],
     notas: [
       'Si falta un producto, créalo desde aquí con "Nuevo producto" y se agrega a la venta.',
-      'Los cortes anteriores se consultan aunque tu turno esté cerrado.',
+      'caja.cortesSeConsultan',
     ],
   },
   limpieza: {
-    titulo: 'Cómo usar Limpieza',
-    proposito: 'Aquí está tu lista de habitaciones por limpiar y por dónde empezar.',
+    titulo: 'limpieza.comoUsarLimpieza',
+    proposito: 'limpieza.aquiEstaTuLista',
     pasos: [
       'Toca "Empezar" en la habitación que vas a limpiar. El tiempo empieza a correr.',
       'Al terminar, toca "Lista" y el cuarto queda disponible para rentarse.',
       'Si algo está roto o falta, toca "Problema": puedes tomar una foto y describirlo.',
-      'La siguiente habitación aparece sola. No tienes que buscarla.',
+      'limpieza.siguienteAparecesSola',
     ],
-    notas: [
-      'Un reporte marcado como urgente saca la habitación de servicio hasta que se resuelva.',
-    ],
+    notas: ['limpieza.reporteUrgente'],
   },
   inventario: {
-    titulo: 'Cómo usar Inventarios',
-    proposito: 'Aquí se ve qué hay, qué se está acabando y qué hay que comprar.',
+    titulo: 'inventario.comoUsarInventarios',
+    proposito: 'inventario.aquiSeVeQueHay',
     pasos: [
       'Empieza por "Bajo mínimo": son los productos que hay que resurtir.',
-      'Cuando llegue mercancía, registra una entrada para que la existencia suba.',
+      'inventario.cuandoLlegueMercancia',
       'Si el conteo físico no cuadra, usa "Ajuste" y deja el motivo.',
-      'Lo que se rompe o caduca se registra como merma, no se borra.',
+      'inventario.loQueSeRompe',
     ],
-    notas: ['Todo movimiento queda en el Kardex con quién lo hizo y cuándo.'],
+    notas: ['inventario.todoMovimientoKardex'],
   },
 }
 
@@ -118,8 +113,8 @@ export function ModuleHelp({ modulo, variant = 'outline' }: Props) {
           variant="outline"
           className="h-11 w-11 p-0 sm:h-9 sm:w-auto sm:px-3"
           onClick={() => setAbierta(true)}
-          aria-label={guia.titulo}
-          title={guia.titulo}
+          aria-label={t(guia.titulo)}
+          title={t(guia.titulo)}
         >
           <PiLightbulb />
           <span className="hidden lg:inline">{t('comun.comoUsar')}</span>
@@ -129,19 +124,19 @@ export function ModuleHelp({ modulo, variant = 'outline' }: Props) {
       <ResponsiveDialog
         open={abierta}
         onOpenChange={setAbierta}
-        title={guia.titulo}
-        description={guia.proposito}
+        title={t(guia.titulo)}
+        description={t(guia.proposito)}
         className="sm:max-w-lg"
         footer={<Button onClick={() => setAbierta(false)}>Entendido</Button>}
       >
         <div className="space-y-5">
           <ol className="space-y-3">
             {guia.pasos.map((paso, indice) => (
-              <li key={paso} className="flex gap-3">
+              <li key={t(paso)} className="flex gap-3">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-accent/10 text-2xs font-semibold text-brand-accent">
                   {indice + 1}
                 </span>
-                <p className="text-sm leading-relaxed">{paso}</p>
+                <p className="text-sm leading-relaxed">{t(paso)}</p>
               </li>
             ))}
           </ol>
@@ -149,8 +144,8 @@ export function ModuleHelp({ modulo, variant = 'outline' }: Props) {
           {guia.notas?.length ? (
             <div className="space-y-2 rounded-lg bg-muted/50 p-3">
               {guia.notas.map((nota) => (
-                <p key={nota} className="text-xs leading-relaxed text-muted-foreground">
-                  {nota}
+                <p key={t(nota)} className="text-xs leading-relaxed text-muted-foreground">
+                  {t(nota)}
                 </p>
               ))}
             </div>

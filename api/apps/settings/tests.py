@@ -887,3 +887,46 @@ class IdiomaDeLaApiTests(TestCase):
 
         self.assertEqual(respuesta.status_code, 400)
         self.assertIn("contraseña", self.razon(respuesta).lower())
+
+
+class MarcaPublicaNeutraTests(TestCase):
+    """Quien llega sin sesión no ve el nombre de ningún negocio.
+
+    El endpoint público caía en `Motel.defaults()`, que toma su nombre de la
+    variable `BUSINESS_NAME`. En un despliegue con varios negocios esa variable
+    lleva el de uno solo, así que la pantalla de acceso se presentaba con él
+    ante cualquier visitante -- y cerrar sesión no lo arreglaba, porque el dato
+    no vivía en el navegador sino en la respuesta del servidor.
+    """
+
+    URL = "/api/v1/settings/business/public/"
+
+    def setUp(self) -> None:
+        cache.clear()
+
+    def test_sin_slug_no_sale_el_nombre_de_ningun_negocio(self) -> None:
+        Motel.objects.create(name="Kissu", slug="kissu")
+
+        respuesta = APIClient().get(self.URL)
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(respuesta.data["name"], "")
+        self.assertIsNone(respuesta.data["logo_url"])
+
+    def test_con_slug_si_sale_su_marca(self) -> None:
+        # La terminal que ya entró recuerda a qué sucursal pertenece y la manda:
+        # ahí sí debe verse su nombre, que es de lo que trata la marca blanca.
+        Motel.objects.create(name="Kissu", slug="kissu")
+
+        respuesta = APIClient().get(self.URL, {"slug": "kissu"})
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(respuesta.data["name"], "Kissu")
+
+    def test_un_slug_que_no_existe_tampoco_delata_a_nadie(self) -> None:
+        Motel.objects.create(name="Kissu", slug="kissu")
+
+        respuesta = APIClient().get(self.URL, {"slug": "no-existe"})
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(respuesta.data["name"], "")

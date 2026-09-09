@@ -15,13 +15,21 @@ import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/auth'
 
 const SECTION_LABELS: Record<string, string> = {
-  frontdesk: 'Recepción',
-  housekeeping: 'Ama de llaves',
-  inventory: 'Inventarios',
-  finances: 'Finanzas',
-  reports: 'Reportes',
-  audit: 'Auditoría',
-  users: 'Usuarios',
+  frontdesk: 'nav.frontdesk',
+  housekeeping: 'nav.housekeeping',
+  inventory: 'nav.inventory',
+  finances: 'nav.finances',
+  reports: 'nav.reports',
+  audit: 'nav.audit',
+  users: 'nav.users',
+}
+
+/** La sección donde alguien está trabajando, en el idioma de quien mira. Una
+ *  sección desconocida -- porque el servidor agregó una nueva -- sale tal cual
+ *  en vez de dejar el renglón vacío. */
+function traducirSeccion(t: (clave: string) => string, seccion: string): string {
+  const clave = SECTION_LABELS[seccion]
+  return clave ? t(clave) : seccion
 }
 
 function Avatar({ member, size = 'sm' }: { member: TeamMember; size?: 'sm' | 'md' }) {
@@ -105,13 +113,15 @@ export function TeamPresence() {
                 <p className="truncate text-sm font-medium">
                   {member.full_name}
                   {member.user_id === currentUserId ? (
-                    <span className="ml-1 text-xs font-normal text-muted-foreground">(tú)</span>
+                    <span className="ml-1 text-xs font-normal text-muted-foreground">
+                      {t('usuarios.tu')}
+                    </span>
                   ) : null}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
                   {member.role_display}
                   {member.is_online && member.last_section ? (
-                    <span> · en {SECTION_LABELS[member.last_section] ?? member.last_section}</span>
+                    <span> · en {traducirSeccion(t, member.last_section)}</span>
                   ) : null}
                 </p>
               </div>

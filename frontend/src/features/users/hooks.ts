@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import i18n from '@/lib/i18n'
 
 import { toast } from '@/components/ui/toast'
 import { usersApi } from '@/features/users/api'
@@ -48,9 +49,10 @@ export function useRevokeSession() {
     mutationFn: usersApi.revokeSession,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.users.sessions })
-      toast.success('Sesión cerrada', 'Deja de operar en su siguiente acción.')
+      toast.success(i18n.t('usuarios.sesionCerrada'), i18n.t('usuarios.dejaDeOperar'))
     },
-    onError: (error) => toast.error('No se pudo cerrar la sesión', apiErrorMessage(error)),
+    onError: (error) =>
+      toast.error(i18n.t('usuarios.noSePudoCerrarSesion'), apiErrorMessage(error)),
   })
 }
 
@@ -65,7 +67,7 @@ function useUserMutation<TArgs>(
       void queryClient.invalidateQueries({ queryKey: ['users'] })
       toast.success(successMessage)
     },
-    onError: (error) => toast.error('No se pudo completar la operación', apiErrorMessage(error)),
+    onError: (error) => toast.error(i18n.t('usuarios.noSePudoCompletar'), apiErrorMessage(error)),
   })
 }
 
@@ -82,4 +84,4 @@ export const useDeactivateUser = () => useUserMutation(usersApi.deactivate, 'Usu
 export const useRestoreUser = () => useUserMutation(usersApi.restore, 'Usuario reactivado')
 
 export const useForcePasswordChange = () =>
-  useUserMutation(usersApi.forcePasswordChange, 'Cambio de contraseña solicitado')
+  useUserMutation(usersApi.forcePasswordChange, i18n.t('usuarios.cambioSolicitado'))

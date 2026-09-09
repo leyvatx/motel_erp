@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { PiKey, PiPencilSimple, PiUserCheck, PiUserMinus, PiUserPlus } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { PageShell, TableScroll } from '@/components/layout/PageShell'
 import { Badge } from '@/components/ui/badge'
@@ -60,6 +61,7 @@ function esSeccion(valor: string | null): valor is Seccion {
 type StatusFilter = 'all' | 'active' | 'inactive'
 
 export default function UsersPage() {
+  const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
   const pedida = searchParams.get('seccion')
   const seccion = esSeccion(pedida) ? pedida : SECCION_POR_OMISION
@@ -107,7 +109,7 @@ export default function UsersPage() {
     },
     {
       key: 'password',
-      label: 'Forzar nueva contraseña',
+      label: t('usuarios.forzarNuevaContrasena'),
       icon: <PiKey />,
       onSelect: () => forcePassword.mutate(user.id),
       disabled: !user.is_active,
@@ -138,7 +140,7 @@ export default function UsersPage() {
   return (
     <PageShell
       title="Usuarios"
-      description="Altas, roles y acceso del personal de esta sucursal."
+      description={t('usuarios.subtitulo')}
       actions={
         seccion === 'personal' ? (
           <Button onClick={openCreate}>
@@ -169,7 +171,7 @@ export default function UsersPage() {
                 setSearch(event.target.value)
                 setPage(1)
               }}
-              placeholder="Buscar nombre, usuario o empleado"
+              placeholder={t('usuarios.buscarUsuario')}
               className="min-w-64 flex-1 sm:max-w-sm"
               aria-label="Buscar usuarios"
             />
@@ -184,7 +186,7 @@ export default function UsersPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos los roles</SelectItem>
+                <SelectItem value="all">{t('usuarios.todosLosRoles')}</SelectItem>
                 {(roles.data ?? []).map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
@@ -218,7 +220,7 @@ export default function UsersPage() {
                     <TableHead>Empleado</TableHead>
                     <TableHead>Rol</TableHead>
                     <TableHead>Estado</TableHead>
-                    <TableHead>Último acceso</TableHead>
+                    <TableHead>{t('usuarios.ultimoAcceso')}</TableHead>
                     <TableHead>Ingreso</TableHead>
                     <TableHead className="w-12" />
                   </TableRow>
@@ -257,7 +259,9 @@ export default function UsersPage() {
                                 <div className="truncate font-medium">
                                   {user.full_name}
                                   {user.id === currentUserId ? (
-                                    <span className="ml-1 text-xs text-muted-foreground">(tú)</span>
+                                    <span className="ml-1 text-xs text-muted-foreground">
+                                      {t('usuarios.tu')}
+                                    </span>
                                   ) : null}
                                 </div>
                                 <div className="truncate text-xs text-muted-foreground">
@@ -274,7 +278,7 @@ export default function UsersPage() {
                                 {user.is_active ? 'Activo' : 'Inactivo'}
                               </Badge>
                               {user.must_change_password ? (
-                                <Badge variant="outline">Cambiar contraseña</Badge>
+                                <Badge variant="outline">{t('usuarios.cambiarContrasena')}</Badge>
                               ) : null}
                             </div>
                           </TableCell>
@@ -289,7 +293,7 @@ export default function UsersPage() {
                       )
                     })
                   ) : (
-                    <TableEmpty colSpan={6} message="No se encontraron usuarios." />
+                    <TableEmpty colSpan={6} message={t('usuarios.sinUsuarios')} />
                   )}
                 </TableBody>
               </Table>

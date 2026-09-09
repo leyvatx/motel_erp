@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { PiBuildings, PiDoorOpen, PiTreeStructure, PiUsers } from 'react-icons/pi'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 import { PageShell } from '@/components/layout/PageShell'
 import { Badge } from '@/components/ui/badge'
@@ -63,6 +64,7 @@ function MetricCard({
 }
 
 export default function CorporatePage() {
+  const { t } = useTranslation()
   const dashboard = useCorporateDashboard()
   const motels = useCorporateMotels()
   const groups = useCorporateGroups()
@@ -96,24 +98,30 @@ export default function CorporatePage() {
   const [assignedIds, setAssignedIds] = useState<number[]>([])
 
   const createGroup = useCorporateMutation(corporateApi.createGroup, 'Grupo creado')
-  const createRegion = useCorporateMutation(corporateApi.createRegion, 'Región creada')
+  const createRegion = useCorporateMutation(
+    corporateApi.createRegion,
+    t('corporativo.regionCreada'),
+  )
   const createUser = useCorporateMutation(corporateApi.createUser, 'Usuario corporativo creado')
   const createAccess = useCorporateMutation(corporateApi.createAccess, 'Acceso asignado')
   const assignMotels = useCorporateMutation(
     (body: { region: number; motel_ids: number[] }) =>
       corporateApi.assignRegionMotels(body.region, body.motel_ids),
-    'Propiedades de la región actualizadas',
+    t('corporativo.propiedadesActualizadas'),
   )
   const bulk = useMutation({
     mutationFn: corporateApi.bulkConfig,
     onSuccess: (data) => {
       setPreview(data)
       if (data.applied) {
-        toast.success('Configuración aplicada', `${data.target_count} sucursales actualizadas.`)
+        toast.success(
+          t('comun.configuracionAplicada'),
+          `${data.target_count} sucursales actualizadas.`,
+        )
         void queryClient.invalidateQueries({ queryKey: ['corporate'] })
       }
     },
-    onError: (error) => toast.error('No se pudo procesar', apiErrorMessage(error)),
+    onError: (error) => toast.error(t('comun.noSePudoProcesar'), apiErrorMessage(error)),
   })
 
   const openMotel = (id: number, name: string, role: Role) => {
@@ -135,16 +143,13 @@ export default function CorporatePage() {
 
   const totals = dashboard.data?.totals
   return (
-    <PageShell
-      title="Administración corporativa"
-      description="Control consolidado de grupos, regiones y propiedades desde un solo lugar."
-    >
+    <PageShell title={t('corporativo.titulo')} description={t('corporativo.subtitulo')}>
       <Tabs defaultValue="overview" className="min-h-0 flex-1 overflow-auto">
         <TabsList>
           <TabsTrigger value="overview">Resumen</TabsTrigger>
-          <TabsTrigger value="structure">Grupos y regiones</TabsTrigger>
-          <TabsTrigger value="team">Equipo y accesos</TabsTrigger>
-          <TabsTrigger value="bulk">Configuración masiva</TabsTrigger>
+          <TabsTrigger value="structure">{t('corporativo.gruposYRegiones')}</TabsTrigger>
+          <TabsTrigger value="team">{t('corporativo.equipoYAccesos')}</TabsTrigger>
+          <TabsTrigger value="bulk">{t('corporativo.configuracionMasiva')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -157,14 +162,14 @@ export default function CorporatePage() {
             <MetricCard label="Habitaciones" value={totals?.rooms ?? '—'} icon={PiDoorOpen} />
             <MetricCard label="Ocupadas ahora" value={totals?.occupied ?? '—'} icon={PiBuildings} />
             <MetricCard
-              label="Ingresos últimas 24 h"
+              label={t('comun.ingresos24h')}
               value={formatMoney(totals?.revenue_24h)}
               icon={PiTreeStructure}
             />
           </div>
           <Card>
             <CardHeader>
-              <CardTitle>Operación por sucursal</CardTitle>
+              <CardTitle>{t('comun.operacionPorSucursal')}</CardTitle>
               <CardDescription>
                 Selecciona una propiedad para entrar a su operación sin cerrar sesión.
               </CardDescription>
@@ -192,10 +197,10 @@ export default function CorporatePage() {
                         <TableCell>
                           <p className="font-medium">{row.motel_name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {row.group_name ?? 'Sin grupo'}
+                            {row.group_name ?? t('comun.sinGrupo')}
                           </p>
                         </TableCell>
-                        <TableCell>{row.region_name ?? 'Sin región'}</TableCell>
+                        <TableCell>{row.region_name ?? t('comun.sinRegion')}</TableCell>
                         <TableCell>{row.rooms}</TableCell>
                         <TableCell>
                           <Badge variant={row.occupancy_rate >= 80 ? 'occupied' : 'secondary'}>
@@ -207,11 +212,7 @@ export default function CorporatePage() {
                           <Button
                             size="sm"
                             disabled={!context || isPlatform}
-                            title={
-                              isPlatform
-                                ? 'Crea un usuario corporativo para operar propiedades.'
-                                : undefined
-                            }
+                            title={isPlatform ? t('corporativo.creaUsuarioCorporativo') : undefined}
                             onClick={() =>
                               context && openMotel(context.id, context.name, context.access_role)
                             }
@@ -227,8 +228,8 @@ export default function CorporatePage() {
                     colSpan={6}
                     message={
                       dashboard.isLoading
-                        ? 'Cargando operación…'
-                        : 'No hay sucursales dentro de tu alcance.'
+                        ? t('comun.cargandoOperacion')
+                        : t('corporativo.sinSucursalesEnAlcance')
                     }
                   />
                 )}
@@ -241,7 +242,7 @@ export default function CorporatePage() {
           <Card>
             <CardHeader>
               <CardTitle>Grupos</CardTitle>
-              <CardDescription>Cadenas o razones operativas principales.</CardDescription>
+              <CardDescription>{t('corporativo.cadenasORazones')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <form
@@ -260,7 +261,7 @@ export default function CorporatePage() {
                   required
                 />
                 <Input
-                  placeholder="Nombre del grupo"
+                  placeholder={t('corporativo.nombreDelGrupo')}
                   value={groupForm.name}
                   onChange={(e) => setGroupForm({ ...groupForm, name: e.target.value })}
                   required
@@ -324,7 +325,7 @@ export default function CorporatePage() {
                   required
                 />
                 <Input
-                  placeholder="Nombre de la región"
+                  placeholder={t('corporativo.nombreDeLaRegion')}
                   value={regionForm.name}
                   onChange={(e) => setRegionForm({ ...regionForm, name: e.target.value })}
                   required
@@ -350,7 +351,7 @@ export default function CorporatePage() {
           </Card>
           <Card className="xl:col-span-2">
             <CardHeader>
-              <CardTitle>Asignar propiedades a una región</CardTitle>
+              <CardTitle>{t('corporativo.asignarPropiedades')}</CardTitle>
               <CardDescription>
                 Cada sucursal pertenece a una sola región; al moverla se actualiza automáticamente.
               </CardDescription>
@@ -369,7 +370,7 @@ export default function CorporatePage() {
                   )
                 }}
               >
-                <option value="">Selecciona región</option>
+                <option value="">{t('corporativo.seleccionaRegion')}</option>
                 {regions.data?.results.map((region) => (
                   <option key={region.id} value={region.id}>
                     {region.group_name} / {region.name}
@@ -397,7 +398,7 @@ export default function CorporatePage() {
                       <span>
                         <span className="block font-medium">{motel.name}</span>
                         <span className="text-xs text-muted-foreground">
-                          {motel.region_name ?? 'Sin región'}
+                          {motel.region_name ?? t('comun.sinRegion')}
                         </span>
                       </span>
                     </label>
@@ -462,7 +463,7 @@ export default function CorporatePage() {
                   <Input
                     type="password"
                     minLength={8}
-                    placeholder="Contraseña inicial"
+                    placeholder={t('comun.contrasenaInicial')}
                     value={userForm.password}
                     onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
                     required
@@ -474,7 +475,7 @@ export default function CorporatePage() {
                   >
                     <option value="MANAGER">Gerencia corporativa</option>
                     <option value="RECEPTION">Operación</option>
-                    <option value="HOUSEKEEPING">Ama de llaves</option>
+                    <option value="HOUSEKEEPING">{t('comun.amaDeLlaves')}</option>
                   </select>
                 </div>
                 <select
@@ -483,7 +484,7 @@ export default function CorporatePage() {
                   onChange={(e) => setUserForm({ ...userForm, region: e.target.value })}
                   required
                 >
-                  <option value="">Región inicial</option>
+                  <option value="">{t('corporativo.regionInicial')}</option>
                   {regions.data?.results.map((region) => (
                     <option key={region.id} value={region.id}>
                       {region.group_name} / {region.name}
@@ -537,7 +538,7 @@ export default function CorporatePage() {
                   onChange={(e) => setAccessForm({ ...accessForm, region: e.target.value })}
                   required
                 >
-                  <option value="">Selecciona región</option>
+                  <option value="">{t('corporativo.seleccionaRegion')}</option>
                   {regions.data?.results.map((region) => (
                     <option key={region.id} value={region.id}>
                       {region.group_name} / {region.name}
@@ -551,7 +552,7 @@ export default function CorporatePage() {
                 >
                   <option value="MANAGER">Gerente</option>
                   <option value="RECEPTION">Recepción</option>
-                  <option value="HOUSEKEEPING">Ama de llaves</option>
+                  <option value="HOUSEKEEPING">{t('comun.amaDeLlaves')}</option>
                 </select>
                 <Button type="submit" disabled={createAccess.isPending}>
                   Asignar región
@@ -568,7 +569,7 @@ export default function CorporatePage() {
         <TabsContent value="bulk">
           <Card className="max-w-3xl">
             <CardHeader>
-              <CardTitle>Configuración masiva</CardTitle>
+              <CardTitle>{t('corporativo.configuracionMasiva')}</CardTitle>
               <CardDescription>
                 Previsualiza el alcance antes de aplicar los mismos parámetros a una región
                 completa.
@@ -576,7 +577,7 @@ export default function CorporatePage() {
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="space-y-2">
-                <Label>Región destino</Label>
+                <Label>{t('corporativo.regionDestino')}</Label>
                 <select
                   className={selectClass}
                   value={bulkForm.region}
@@ -585,7 +586,7 @@ export default function CorporatePage() {
                     setPreview(null)
                   }}
                 >
-                  <option value="">Selecciona región</option>
+                  <option value="">{t('corporativo.seleccionaRegion')}</option>
                   {regions.data?.results.map((region) => (
                     <option key={region.id} value={region.id}>
                       {region.group_name} / {region.name} ({region.motel_count})
@@ -613,7 +614,7 @@ export default function CorporatePage() {
                   >
                     <option value="light">Claro</option>
                     <option value="dark">Oscuro</option>
-                    <option value="system">Del sistema</option>
+                    <option value="system">{t('comun.delSistema')}</option>
                   </select>
                 </div>
                 <div className="space-y-2">
@@ -641,7 +642,7 @@ export default function CorporatePage() {
                   </p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {preview.targets.map((target) => target.name).join(', ') ||
-                      'La región no contiene sucursales.'}
+                      t('corporativo.regionSinSucursales')}
                   </p>
                 </div>
               ) : null}

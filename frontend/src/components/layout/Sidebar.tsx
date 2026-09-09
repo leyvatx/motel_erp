@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import { SidebarNav } from '@/components/layout/SidebarNav'
 import { useBrand } from '@/features/config/hooks'
-import { APP_FALLBACK_NAME } from '@/lib/brand'
+import { nombreDelProducto } from '@/lib/brand'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/auth'
 import { useUiStore } from '@/store/ui'
@@ -68,7 +68,7 @@ export function Sidebar() {
             )}
           >
             <p className="truncate text-sm font-semibold text-sidebar-accent-foreground">
-              {businessName || APP_FALLBACK_NAME}
+              {businessName || nombreDelProducto()}
             </p>
             <p className="truncate text-2xs text-sidebar-foreground/70">Administración</p>
           </div>

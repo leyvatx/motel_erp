@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { LuLoaderCircle } from 'react-icons/lu'
+import { useTranslation } from 'react-i18next'
 
 import { cn } from '@/lib/utils'
 
@@ -15,9 +16,9 @@ import { cn } from '@/lib/utils'
  *  qué está alojado esto.
  */
 const FASES = [
-  { desde: 0, texto: 'Preparando tu espacio…' },
-  { desde: 6000, texto: 'Levantando el sistema. Tarda un poco la primera vez.' },
-  { desde: 20000, texto: 'Casi listo. Gracias por esperar.' },
+  { desde: 0, texto: 'acceso.preparandoTuEspacio' },
+  { desde: 6000, texto: 'acceso.levantandoElSistema' },
+  { desde: 20000, texto: 'acceso.casiListo' },
 ] as const
 
 interface Props {
@@ -39,6 +40,7 @@ interface Props {
  * ahí dejaría al usuario sin saber si su negocio se creó o no.
  */
 export function PreparandoEspacio({ desde, onCancelar }: Props) {
+  const { t } = useTranslation()
   const [transcurrido, setTranscurrido] = useState(() => Date.now() - desde)
 
   useEffect(() => {
@@ -55,7 +57,7 @@ export function PreparandoEspacio({ desde, onCancelar }: Props) {
         aria-hidden
       />
 
-      <p className="mt-4 text-sm font-medium">{fase.texto}</p>
+      <p className="mt-4 text-sm font-medium">{t(fase.texto)}</p>
       <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
         No cierres esta ventana. En cuanto esté, entras directo a configurar tu negocio.
       </p>

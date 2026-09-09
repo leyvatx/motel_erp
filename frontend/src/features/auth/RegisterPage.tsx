@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { Link, Navigate } from 'react-router-dom'
@@ -12,38 +12,39 @@ import { Label } from '@/components/ui/label'
 import { PreparandoEspacio } from '@/features/auth/PreparandoEspacio'
 import { useSignup } from '@/features/auth/hooks'
 import { apiErrorMessage, apiFieldErrors } from '@/lib/axios'
-import { APP_FALLBACK_NAME } from '@/lib/brand'
+import { nombreDelProducto } from '@/lib/brand'
 import { cn } from '@/lib/utils'
 import { defaultRouteFor, useAuthStore } from '@/store/auth'
 
 /** Lo mismo que exige el servidor, para no descubrirlo hasta después de enviar. */
 const FORMA_DEL_USUARIO = /^[a-z0-9._-]{3,40}$/
 
-const registroSchema = z.object({
-  business_name: z.string().trim().min(2, 'Escribe el nombre del negocio.').max(120),
-  admin_full_name: z.string().trim().min(3, 'Escribe tu nombre completo.').max(150),
-  email: z.string().trim().toLowerCase().email('Ese correo no parece válido.'),
-  username: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .min(3, 'Al menos 3 caracteres.')
-    .max(40, 'Máximo 40 caracteres.')
-    .regex(FORMA_DEL_USUARIO, 'Solo minúsculas, números, punto, guion y guion bajo.'),
-  // Sin formato impuesto: hay lada, extensión y prefijo de país, y todos son
-  // legítimos. Lo que sí se exige es que tenga dígitos suficientes para poder
-  // marcarlo, que es la misma regla del servidor.
-  phone: z
-    .string()
-    .trim()
-    .refine((valor) => (valor.match(/\d/g) ?? []).length >= 8, 'Escribe el teléfono con lada.'),
-  operation_size: z.enum(['1-10', '11-30', '31-50', '50+'], {
-    errorMap: () => ({ message: 'Elige el tamaño de tu operación.' }),
-  }),
-  password: z.string().min(8, 'Al menos 8 caracteres.'),
-})
+const construirEsquema = (t: (clave: string) => string) =>
+  z.object({
+    business_name: z.string().trim().min(2, t('acceso.escribeNombreNegocio')).max(120),
+    admin_full_name: z.string().trim().min(3, t('acceso.escribeTuNombreCompleto')).max(150),
+    email: z.string().trim().toLowerCase().email(t('acceso.correoNoValido')),
+    username: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .min(3, t('acceso.alMenos3'))
+      .max(40, t('acceso.maximo40'))
+      .regex(FORMA_DEL_USUARIO, t('acceso.soloMinusculas')),
+    // Sin formato impuesto: hay lada, extensión y prefijo de país, y todos son
+    // legítimos. Lo que sí se exige es que tenga dígitos suficientes para poder
+    // marcarlo, que es la misma regla del servidor.
+    phone: z
+      .string()
+      .trim()
+      .refine((valor) => (valor.match(/\d/g) ?? []).length >= 8, t('acceso.telefonoConLada')),
+    operation_size: z.enum(['1-10', '11-30', '31-50', '50+'], {
+      errorMap: () => ({ message: t('acceso.eligeTamano') }),
+    }),
+    password: z.string().min(8, t('acceso.alMenos8')),
+  })
 
-type RegistroForm = z.infer<typeof registroSchema>
+type RegistroForm = z.infer<ReturnType<typeof construirEsquema>>
 
 const CAMPOS = [
   'business_name',
@@ -60,10 +61,10 @@ const CAMPOS = [
  *  Se preguntan aquí para no volver a preguntarlas en el asistente: de aquí
  *  sale la cifra que llega ya propuesta en el paso de habitaciones. */
 const TAMANOS = [
-  { valor: '1-10', etiqueta: '1-10 cuartos' },
-  { valor: '11-30', etiqueta: '11-30' },
-  { valor: '31-50', etiqueta: '31-50' },
-  { valor: '50+', etiqueta: 'Más de 50' },
+  { valor: '1-10', etiqueta: 'acceso.tamano1a10' },
+  { valor: '11-30', etiqueta: 'acceso.tamano11a30' },
+  { valor: '31-50', etiqueta: 'acceso.tamano31a50' },
+  { valor: '50+', etiqueta: 'acceso.tamanoMas50' },
 ] as const
 
 /** Propuesta de clave a partir del correo, con la misma regla del servidor.
@@ -105,6 +106,7 @@ function nuevaClaveDeIntento(): string {
  */
 export default function RegisterPage() {
   const { t } = useTranslation()
+  const esquema = useMemo(() => construirEsquema(t), [t])
   const access = useAuthStore((state) => state.access)
   const user = useAuthStore((state) => state.user)
   const signup = useSignup()
@@ -114,8 +116,8 @@ export default function RegisterPage() {
   // aquí todavía no hay negocio. Quien llega a darse de alta vería el nombre de
   // la sucursal que esta terminal visitó por última vez, que no es la suya.
   useEffect(() => {
-    document.title = `Crear cuenta · ${APP_FALLBACK_NAME}`
-  }, [])
+    document.title = `${t('acceso.tituloPestanaAlta')} · ${nombreDelProducto()}`
+  }, [t])
 
   const {
     register,
@@ -126,7 +128,7 @@ export default function RegisterPage() {
     watch,
     formState: { errors },
   } = useForm<RegistroForm>({
-    resolver: zodResolver(registroSchema),
+    resolver: zodResolver(esquema),
     // Los errores aparecen al salir de cada campo y se corrigen mientras se
     // teclea. En un formulario de siete campos, guardarlos todos para el envío
     // es mandar a alguien a buscar cuál de los siete estaba mal.
@@ -189,7 +191,7 @@ export default function RegisterPage() {
   // Si el error ya quedó pintado bajo su input, el banner solo repite.
   const errorGeneral =
     signup.isError && !CAMPOS.some((campo) => errors[campo])
-      ? apiErrorMessage(signup.error, 'No se pudo crear la cuenta.')
+      ? apiErrorMessage(signup.error, t('acceso.noSePudoCrearCuenta'))
       : null
 
   const completarDominio = (sufijo: string): void => {
@@ -210,9 +212,9 @@ export default function RegisterPage() {
             <LuBuilding2 className="h-5 w-5" aria-hidden />
           </div>
           <div className="space-y-1.5">
-            <h1 className="text-2xl font-semibold tracking-tightest">Crea tu cuenta</h1>
+            <h1 className="text-2xl font-semibold tracking-tightest">{t('acceso.creaTuCuenta')}</h1>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Da de alta tu negocio y configúralo en cuatro pasos.
+              {t('acceso.daDeAltaTuNegocio')}
             </p>
           </div>
         </div>
@@ -233,12 +235,12 @@ export default function RegisterPage() {
                   el mismo orden del marcado. */}
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="business_name">Nombre del negocio</Label>
+                  <Label htmlFor="business_name">{t('acceso.nombreDelNegocio')}</Label>
                   <Input
                     id="business_name"
                     autoFocus
                     autoComplete="organization"
-                    placeholder="Hospedaje Las Palmas"
+                    placeholder={t('acceso.ejemploNegocio')}
                     aria-invalid={Boolean(errors.business_name)}
                     {...register('business_name')}
                   />
@@ -250,11 +252,11 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="admin_full_name">Tu nombre</Label>
+                  <Label htmlFor="admin_full_name">{t('acceso.tuNombre')}</Label>
                   <Input
                     id="admin_full_name"
                     autoComplete="name"
-                    placeholder="Laura Domínguez"
+                    placeholder={t('acceso.ejemploNombre')}
                     aria-invalid={Boolean(errors.admin_full_name)}
                     {...register('admin_full_name')}
                   />
@@ -266,7 +268,7 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Teléfono</Label>
+                  <Label htmlFor="phone">{t('acceso.telefono')}</Label>
                   <Input
                     id="phone"
                     type="tel"
@@ -282,7 +284,7 @@ export default function RegisterPage() {
                     </p>
                   ) : (
                     <p className="text-xs leading-relaxed text-muted-foreground">
-                      Para avisarte si algo pasa con tu cuenta.
+                      {t('acceso.paraAvisarte')}
                     </p>
                   )}
                 </div>
@@ -294,7 +296,7 @@ export default function RegisterPage() {
                   botón de enviar fuera de la pantalla. */}
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Correo</Label>
+                  <Label htmlFor="email">{t('acceso.correo')}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -331,13 +333,13 @@ export default function RegisterPage() {
                     </p>
                   ) : sugerirDominios ? null : (
                     <p className="text-xs leading-relaxed text-muted-foreground">
-                      Con este correo también puedes entrar al sistema.
+                      {t('acceso.conEsteCorreo')}
                     </p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="username">Nombre de usuario</Label>
+                  <Label htmlFor="username">{t('acceso.nombreDeUsuario')}</Label>
                   <Input
                     id="username"
                     autoComplete="username"
@@ -362,16 +364,14 @@ export default function RegisterPage() {
                       errors.username ? 'text-destructive' : 'text-muted-foreground',
                     )}
                   >
-                    {errors.username
-                      ? errors.username.message
-                      : 'Minúsculas, números, punto, guion y guion bajo. Es la clave con la que entra tu equipo.'}
+                    {errors.username ? errors.username.message : t('acceso.reglaUsuario')}
                   </p>
                 </div>
               </div>
 
               <fieldset className="space-y-2">
                 <legend className="text-sm font-medium leading-none">
-                  ¿De qué tamaño es tu operación?
+                  {t('acceso.deQueTamano')}
                 </legend>
                 {/* Cuatro botones y no una lista desplegable: son pocas
                     opciones, caben todas a la vista y se contesta en un toque en
@@ -395,7 +395,7 @@ export default function RegisterPage() {
                         className="sr-only"
                         {...register('operation_size')}
                       />
-                      {opcion.etiqueta}
+                      {t(opcion.etiqueta)}
                     </label>
                   ))}
                 </div>
@@ -405,13 +405,13 @@ export default function RegisterPage() {
                   </p>
                 ) : (
                   <p className="text-xs leading-relaxed text-muted-foreground">
-                    Con esto llegas al asistente con tus habitaciones ya propuestas.
+                    {t('acceso.conEstoLlegas')}
                   </p>
                 )}
               </fieldset>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Contraseña</Label>
+                <Label htmlFor="password">{t('acceso.contrasena')}</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -424,7 +424,9 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => setVerClave((visible) => !visible)}
-                    aria-label={verClave ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    aria-label={
+                      verClave ? t('acceso.ocultarContrasena') : t('acceso.mostrarContrasena')
+                    }
                     aria-pressed={verClave}
                     className={cn(
                       'absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-md',

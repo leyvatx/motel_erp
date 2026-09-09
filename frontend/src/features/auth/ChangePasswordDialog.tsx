@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -25,6 +26,7 @@ export function ChangePasswordDialog({
   required?: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  const { t } = useTranslation()
   const mutation = useChangePassword()
   const resetMutation = mutation.reset
   const user = useAuthStore((state) => state.user)
@@ -50,7 +52,7 @@ export function ChangePasswordDialog({
       {
         onSuccess: () => {
           if (user) setUser({ ...user, must_change_password: false })
-          toast.success('Contraseña actualizada')
+          toast.success(t('acceso.contrasenaActualizada'))
           onOpenChange(false)
         },
       },
@@ -62,18 +64,16 @@ export function ChangePasswordDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {required ? 'Crea una contraseña personal' : 'Cambiar contraseña'}
+            {required ? t('acceso.creaContrasenaPersonal') : t('acceso.cambiarContrasena')}
           </DialogTitle>
           <DialogDescription>
-            {required
-              ? 'Antes de continuar, reemplaza la contraseña temporal que te asignaron.'
-              : 'Escribe tu contraseña actual y elige una nueva.'}
+            {required ? t('acceso.antesDeContinuar') : t('acceso.escribeTuActual')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="current-password">Contraseña actual</Label>
+            <Label htmlFor="current-password">{t('acceso.contrasenaActual')}</Label>
             <Input
               id="current-password"
               type="password"
@@ -84,18 +84,18 @@ export function ChangePasswordDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="new-password">Nueva contraseña</Label>
+            <Label htmlFor="new-password">{t('acceso.nuevaContrasena')}</Label>
             <Input
               id="new-password"
               type="password"
               value={newPassword}
               onChange={(event) => setNewPassword(event.target.value)}
               autoComplete="new-password"
-              placeholder="Mínimo 8 caracteres"
+              placeholder={t('acceso.minimo8')}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="confirm-password">Confirmar contraseña</Label>
+            <Label htmlFor="confirm-password">{t('acceso.confirmarContrasena')}</Label>
             <Input
               id="confirm-password"
               type="password"
@@ -107,7 +107,7 @@ export function ChangePasswordDialog({
           </div>
           {mutation.isError ? (
             <p className="text-sm text-destructive">
-              {apiErrorMessage(mutation.error, 'No se pudo cambiar la contraseña.')}
+              {apiErrorMessage(mutation.error, t('acceso.noSePudoCambiar'))}
             </p>
           ) : null}
         </div>

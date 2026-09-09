@@ -210,6 +210,28 @@ class Motel(TimeStampedModel, AuthorStampedModel, SoftDeleteModel):
         return candidate
 
     @classmethod
+    def neutral(cls) -> Motel:
+        """Marca del producto, sin negocio detrás. Para quien todavía no entra.
+
+        `defaults()` arma el motel con las variables de entorno, y ahí
+        `BUSINESS_NAME` es un respaldo legítimo: procesos internos que piden la
+        configuración sin motel en curso. Servírselo a un visitante anónimo es
+        otra cosa: en un despliegue con varios negocios, esa variable lleva el
+        nombre de uno de ellos, y la pantalla de acceso terminaba presentándose
+        como "Kissu" a cualquiera que llegara sin sesión -- también después de
+        cerrarla, porque el dato no venía del navegador sino de aquí.
+
+        Sin nombre y sin logotipo a propósito: el navegador pone el del producto
+        y ese sí se traduce.
+        """
+        motel = cls.defaults()
+        motel.name = ""
+        motel.address = ""
+        motel.login_message = ""
+        motel.logo = ""
+        return motel
+
+    @classmethod
     def defaults(cls) -> Motel:
         """Motel sin guardar, armado con las variables de entorno.
 

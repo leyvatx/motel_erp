@@ -1,4 +1,5 @@
 import { PiArrowRight, PiGlobe, PiMonitor, PiUserCircle } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { Badge } from '@/components/ui/badge'
 import {
@@ -33,6 +34,7 @@ export function AuditDetailDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  const { t } = useTranslation()
   if (!log) return null
   const changes = Object.entries(log.changes ?? {})
   const extra = Object.entries(log.extra ?? {})
@@ -45,7 +47,9 @@ export function AuditDetailDialog({
             <Badge variant="outline">{log.module_display}</Badge>
             <Badge variant="secondary">{log.action_display}</Badge>
           </div>
-          <DialogTitle>{log.description || log.object_repr || 'Operación registrada'}</DialogTitle>
+          <DialogTitle>
+            {log.description || log.object_repr || t('comun.operacionRegistrada')}
+          </DialogTitle>
           <DialogDescription>{formatDateTime(log.created_at)}</DialogDescription>
         </DialogHeader>
 
@@ -53,17 +57,17 @@ export function AuditDetailDialog({
           <div className="flex gap-2">
             <PiUserCircle className="mt-0.5 size-4 text-muted-foreground" />
             <div>
-              <p className="text-xs text-muted-foreground">Realizado por</p>
+              <p className="text-xs text-muted-foreground">{t('comun.realizadoPor')}</p>
               <p className="font-medium">
-                {log.actor_name || log.actor_username || 'Proceso automático'}
+                {log.actor_name || log.actor_username || t('comun.procesoAutomatico')}
               </p>
             </div>
           </div>
           <div className="flex gap-2">
             <PiGlobe className="mt-0.5 size-4 text-muted-foreground" />
             <div>
-              <p className="text-xs text-muted-foreground">Dirección IP</p>
-              <p className="font-medium">{log.ip_address || 'No registrada'}</p>
+              <p className="text-xs text-muted-foreground">{t('comun.direccionIp')}</p>
+              <p className="font-medium">{log.ip_address || t('comun.noRegistrada')}</p>
             </div>
           </div>
           {log.object_repr ? (
@@ -96,7 +100,7 @@ export function AuditDetailDialog({
 
         {extra.length ? (
           <div className="space-y-2">
-            <h3 className="text-sm font-semibold">Información adicional</h3>
+            <h3 className="text-sm font-semibold">{t('comun.informacionAdicional')}</h3>
             <div className="divide-y rounded-lg border">
               {extra.map(([key, value]) => (
                 <div key={key} className="grid gap-1 px-3 py-2 text-sm sm:grid-cols-[10rem_1fr]">

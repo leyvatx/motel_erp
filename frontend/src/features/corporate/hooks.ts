@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { toast } from '@/components/ui/toast'
 import { apiErrorMessage } from '@/lib/axios'
 import { corporateApi } from './api'
@@ -17,6 +18,7 @@ export const useCorporateUsers = () =>
   useQuery({ queryKey: [...key, 'users'], queryFn: corporateApi.users })
 
 export function useCorporateMutation<T>(fn: (body: T) => Promise<unknown>, message: string) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: fn,
@@ -24,6 +26,6 @@ export function useCorporateMutation<T>(fn: (body: T) => Promise<unknown>, messa
       void queryClient.invalidateQueries({ queryKey: key })
       toast.success(message)
     },
-    onError: (error) => toast.error('No se pudo guardar', apiErrorMessage(error)),
+    onError: (error) => toast.error(t('comun.noSePudoGuardarComun'), apiErrorMessage(error)),
   })
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -14,23 +14,27 @@ import { useLogin } from '@/features/auth/hooks'
 import { usePublicBusinessProfile, useBrand } from '@/features/config/hooks'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { apiErrorMessage } from '@/lib/axios'
-import { APP_FALLBACK_NAME } from '@/lib/brand'
+import { nombreDelProducto } from '@/lib/brand'
 import { defaultRouteFor, useAuthStore } from '@/store/auth'
 
-const loginSchema = z.object({
-  // Acepta las dos formas de identificarse -- clave de empleado y correo -- sin
-  // pedir formato de ninguna: exigir que parezca correo dejaba fuera a quien
-  // entra con su clave, y exigir que no lo parezca, al revés. El servidor busca
-  // por los dos campos y sabe cuál es cuál.
-  username: z.string().trim().min(3, 'Escribe tu usuario o tu correo.').toLowerCase(),
-  password: z.string().min(1, 'Escribe tu contraseña.'),
-  motel: z.string().optional(),
-})
+const construirEsquema = (t: (clave: string) => string) =>
+  z.object({
+    // Acepta las dos formas de identificarse -- clave de empleado y correo -- sin
+    // pedir formato de ninguna: exigir que parezca correo dejaba fuera a quien
+    // entra con su clave, y exigir que no lo parezca, al revés. El servidor busca
+    // por los dos campos y sabe cuál es cuál.
+    username: z.string().trim().min(3, t('acceso.escribeUsuarioOCorreo')).toLowerCase(),
+    password: z.string().min(1, t('acceso.escribeTuContrasena')),
+    motel: z.string().optional(),
+  })
 
-type LoginForm = z.infer<typeof loginSchema>
+type LoginForm = z.infer<ReturnType<typeof construirEsquema>>
 
 export default function LoginPage() {
   const { t } = useTranslation()
+  // `useMemo` y no una constante: el idioma cambia sin recargar y los mensajes
+  // de validación tienen que seguirlo.
+  const esquema = useMemo(() => construirEsquema(t), [t])
   const [ayudaAbierta, setAyudaAbierta] = useState(false)
   const access = useAuthStore((state) => state.access)
   const user = useAuthStore((state) => state.user)
@@ -38,14 +42,14 @@ export default function LoginPage() {
   const publicProfile = usePublicBusinessProfile()
   const login = useLogin()
 
-  useDocumentTitle('Acceso')
+  useDocumentTitle(t('acceso.tituloPestana'))
 
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(esquema),
     defaultValues: { username: '', password: '' },
   })
 
@@ -81,11 +85,10 @@ export default function LoginPage() {
           </div>
           <div className="space-y-1.5">
             <h1 className="text-2xl font-semibold tracking-tightest">
-              {businessName || APP_FALLBACK_NAME}
+              {businessName || nombreDelProducto()}
             </h1>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              {publicProfile.data?.login_message ||
-                'Ingresa con tu clave de empleado para continuar.'}
+              {publicProfile.data?.login_message || t('acceso.ingresaConTuClave')}
             </p>
           </div>
         </div>
@@ -93,7 +96,7 @@ export default function LoginPage() {
         <div className="rounded-lg border bg-card p-6">
           <form onSubmit={onSubmit} className="space-y-5" noValidate>
             <div className="space-y-2">
-              <Label htmlFor="username">Correo electrónico o nombre de usuario</Label>
+              <Label htmlFor="username">{t('acceso.correoOUsuario')}</Label>
               <Input
                 id="username"
                 autoComplete="username"
@@ -112,7 +115,7 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
+              <Label htmlFor="password">{t('acceso.contrasena')}</Label>
               <Input
                 id="password"
                 type="password"
@@ -146,7 +149,7 @@ export default function LoginPage() {
                 role="alert"
                 className="rounded-md border border-destructive/25 bg-destructive/5 px-3 py-2.5 text-sm leading-relaxed text-destructive"
               >
-                {apiErrorMessage(login.error, 'Usuario o contraseña incorrectos.')}
+                {apiErrorMessage(login.error, t('acceso.usuarioOContrasenaIncorrectos'))}
               </p>
             ) : null}
 
@@ -162,7 +165,7 @@ export default function LoginPage() {
             onClick={() => setAyudaAbierta(true)}
             className="rounded-md px-2 py-1 font-medium text-foreground underline-offset-2 outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/40"
           >
-            ¿Olvidaste tu contraseña?
+            {t('acceso.olvidasteContrasena')}
           </button>
 
           {/* Alta de negocio y acceso de empleado son puertas distintas y se
@@ -170,7 +173,7 @@ export default function LoginPage() {
               de arriba dijera "crea tu cuenta" a secas, acabaría dando de alta
               un negocio nuevo en vez de pedir su clave a gerencia. */}
           <div className="border-t pt-4">
-            <p>¿Vienes a dar de alta tu negocio, no a trabajar?</p>
+            <p>{t('acceso.vienesADarDeAlta')}</p>
             <Link
               to="/registro"
               className="font-medium text-foreground underline-offset-2 hover:underline"
@@ -189,8 +192,8 @@ export default function LoginPage() {
       <ResponsiveDialog
         open={ayudaAbierta}
         onOpenChange={setAyudaAbierta}
-        title="¿Olvidaste tu contraseña?"
-        description="Tu clave la restablece quien administra el sistema."
+        title={t('acceso.olvidasteContrasena')}
+        description={t('acceso.claveLaRestablece')}
         className="sm:max-w-md"
         footer={<Button onClick={() => setAyudaAbierta(false)}>Entendido</Button>}
       >

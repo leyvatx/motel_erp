@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
 import { Input } from '@/components/ui/input'
 import {
@@ -31,6 +32,7 @@ const CUARTOS_SUGERIDOS: Record<string, number> = {
 }
 
 export function RoomsStep({ onDone }: { onDone: () => void }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { data: types } = useRoomTypes()
   const opciones = types?.results ?? []
@@ -90,7 +92,7 @@ export function RoomsStep({ onDone }: { onDone: () => void }) {
       setInicio(String(primera + hechas))
       setCantidad(String(total - hechas))
       toast.error(
-        hechas > 0 ? `Se crearon ${hechas} de ${total}` : 'No se pudo crear la primera habitación',
+        hechas > 0 ? `Se crearon ${hechas} de ${total}` : t('asistente.noSePudoCrearPrimera'),
         apiErrorMessage(error),
       )
     } finally {
@@ -109,10 +111,10 @@ export function RoomsStep({ onDone }: { onDone: () => void }) {
       submitLabel={valid ? `Crear ${total} habitaciones` : 'Crear habitaciones'}
     >
       {opciones.length > 1 ? (
-        <StepField label="De qué tipo" htmlFor="setup-rooms-type">
+        <StepField label={t('asistente.deQueTipo')} htmlFor="setup-rooms-type">
           <Select value={tipo} onValueChange={setRoomType}>
             <SelectTrigger id="setup-rooms-type">
-              <SelectValue placeholder="Elige el tipo" />
+              <SelectValue placeholder={t('asistente.eligeElTipo')} />
             </SelectTrigger>
             <SelectContent>
               {opciones.map((item) => (
@@ -141,7 +143,7 @@ export function RoomsStep({ onDone }: { onDone: () => void }) {
           />
         </StepField>
 
-        <StepField label="Desde el número" htmlFor="setup-rooms-start">
+        <StepField label={t('asistente.desdeElNumero')} htmlFor="setup-rooms-start">
           <Input
             id="setup-rooms-start"
             type="number"
@@ -177,7 +179,7 @@ export function RoomsStep({ onDone }: { onDone: () => void }) {
       ) : (
         <p className="text-xs leading-relaxed text-muted-foreground">
           {!valid
-            ? 'Indica cuántas habitaciones tiene este piso.'
+            ? t('asistente.indicaCuantas')
             : sugerido !== undefined && !tocado.current
               ? `Se numerarán de la ${primera} a la ${primera + total - 1}. Tomamos ${sugerido} de lo que nos dijiste al registrarte; cámbialo si no es exacto.`
               : `Se numerarán de la ${primera} a la ${primera + total - 1}.`}

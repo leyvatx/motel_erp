@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { PiCalendarPlus, PiMagnifyingGlass, PiSignIn, PiUserMinus, PiXCircle } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { PageShell, TableScroll } from '@/components/layout/PageShell'
 import { StatStrip } from '@/components/layout/StatStrip'
@@ -55,6 +56,7 @@ function localDate(date: Date): string {
 }
 
 export default function ReservationsPage() {
+  const { t } = useTranslation()
   const initialEnd = new Date()
   initialEnd.setDate(initialEnd.getDate() + 30)
   const [createOpen, setCreateOpen] = useState(false)
@@ -113,7 +115,7 @@ export default function ReservationsPage() {
       },
       {
         key: 'no-show',
-        label: 'No se presentó',
+        label: t('reservaciones.noSePresento'),
         icon: <PiUserMinus />,
         disabled: !active,
         onSelect: () => {
@@ -122,13 +124,13 @@ export default function ReservationsPage() {
       },
       {
         key: 'cancel',
-        label: 'Cancelar reservación',
+        label: t('reservaciones.cancelarReservacion'),
         icon: <PiXCircle />,
         danger: true,
         separated: true,
         disabled: !active,
         onSelect: () => {
-          const reason = window.prompt('Motivo de cancelación')
+          const reason = window.prompt(t('reservaciones.motivoCancelacion'))
           if (reason?.trim()) cancel.mutate({ id: item.id, reason: reason.trim() })
         },
       },
@@ -138,11 +140,11 @@ export default function ReservationsPage() {
   return (
     <PageShell
       title="Reservaciones"
-      description="Llegadas programadas y asignación de habitaciones."
+      description={t('reservaciones.subtitulo')}
       actions={
         <Button onClick={() => setCreateOpen(true)}>
           <PiCalendarPlus />
-          Nueva reservación
+          {t('reservaciones.nuevaReservacion')}
         </Button>
       }
       toolbar={
@@ -157,7 +159,7 @@ export default function ReservationsPage() {
                 value: allRows.filter((item) => item.status === 'CONFIRMED').length,
               },
               {
-                label: 'En casa',
+                label: t('reservaciones.enCasa'),
                 value: allRows.filter((item) => item.status === 'CHECKED_IN').length,
               },
             ]}
@@ -172,7 +174,7 @@ export default function ReservationsPage() {
                   setPage(1)
                 }}
                 className="pl-9"
-                placeholder="Buscar folio, huésped o placas"
+                placeholder={t('reservaciones.buscar')}
               />
             </div>
             <Select
@@ -187,9 +189,9 @@ export default function ReservationsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="active">Vigentes</SelectItem>
-                <SelectItem value="all">Todos los estados</SelectItem>
+                <SelectItem value="all">{t('comun.todosLosEstados')}</SelectItem>
                 <SelectItem value="CONFIRMED">Confirmadas</SelectItem>
-                <SelectItem value="CHECKED_IN">En casa</SelectItem>
+                <SelectItem value="CHECKED_IN">{t('reservaciones.enCasa')}</SelectItem>
                 <SelectItem value="CANCELLED">Canceladas</SelectItem>
                 <SelectItem value="NO_SHOW">No-show</SelectItem>
               </SelectContent>
@@ -249,9 +251,9 @@ export default function ReservationsPage() {
                       <p className="text-xs text-muted-foreground">{item.code}</p>
                     </TableCell>
                     <TableCell>
-                      <p>{item.guest_name || 'Sin nombre'}</p>
+                      <p>{item.guest_name || t('comun.sinNombre')}</p>
                       <p className="text-xs text-muted-foreground">
-                        {item.guest_phone || item.vehicle_plate || 'Sin contacto'}
+                        {item.guest_phone || item.vehicle_plate || t('comun.sinContacto')}
                       </p>
                     </TableCell>
                     <TableCell>
@@ -267,7 +269,7 @@ export default function ReservationsPage() {
                   </TableRow>
                 ))
               ) : (
-                <TableEmpty colSpan={6} message="No se encontraron reservaciones." />
+                <TableEmpty colSpan={6} message={t('reservaciones.sinReservaciones')} />
               )}
             </TableBody>
           </Table>

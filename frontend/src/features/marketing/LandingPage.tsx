@@ -20,7 +20,7 @@ import { LanguageToggle } from '@/components/LanguageToggle'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
-import { APP_FALLBACK_NAME } from '@/lib/brand'
+import { nombreDelProducto } from '@/lib/brand'
 import { setFavicon } from '@/lib/favicon'
 import { useAlcanceDeMarca } from '@/store/appearance'
 import { cn } from '@/lib/utils'
@@ -808,7 +808,7 @@ function Marca() {
           texto: se salía de la pantalla. El nombre sigue en el título de la
           pestaña y a dos dedos de scroll, en el titular. */}
       <span className="hidden whitespace-nowrap text-sm font-semibold tracking-tight text-foreground sm:inline">
-        {APP_FALLBACK_NAME}
+        {nombreDelProducto()}
       </span>
     </span>
   )
@@ -877,7 +877,7 @@ export default function LandingPage() {
   }, [setNeutra])
 
   useEffect(() => {
-    document.title = `${APP_FALLBACK_NAME} · ${t('portada.titulo')}`
+    document.title = `${nombreDelProducto()} · ${t('portada.titulo')}`
     setFavicon(null)
   }, [t])
 

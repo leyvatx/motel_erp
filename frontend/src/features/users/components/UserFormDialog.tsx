@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -48,6 +49,7 @@ export function UserFormDialog({
   user: User | null
   onOpenChange: (open: boolean) => void
 }) {
+  const { t } = useTranslation()
   const roles = useRoles()
   const create = useCreateUser()
   const update = useUpdateUser()
@@ -137,7 +139,7 @@ export function UserFormDialog({
               </SelectContent>
             </Select>
           </Field>
-          <Field label="Número de empleado" htmlFor="user-employee-number">
+          <Field label={t('usuarios.numeroDeEmpleado')} htmlFor="user-employee-number">
             <Input
               id="user-employee-number"
               value={employeeNumber}
@@ -159,7 +161,7 @@ export function UserFormDialog({
               onChange={(event) => setPhone(event.target.value)}
             />
           </Field>
-          <Field label="Fecha de ingreso" htmlFor="user-hired-at">
+          <Field label={t('usuarios.fechaDeIngreso')} htmlFor="user-hired-at">
             <Input
               id="user-hired-at"
               type="date"
@@ -168,7 +170,7 @@ export function UserFormDialog({
             />
           </Field>
           <Field
-            label={user ? 'Nueva contraseña (opcional)' : 'Contraseña inicial'}
+            label={user ? t('usuarios.nuevaContrasenaOpcional') : t('usuarios.contrasenaInicial')}
             htmlFor="user-password"
           >
             <Input
@@ -177,7 +179,7 @@ export function UserFormDialog({
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               autoComplete="new-password"
-              placeholder="Mínimo 8 caracteres"
+              placeholder={t('usuarios.minimo8')}
             />
           </Field>
         </div>
@@ -190,7 +192,7 @@ export function UserFormDialog({
             className="mt-0.5 h-4 w-4 rounded border-input"
           />
           <span>
-            <span className="block font-medium">Cambiar contraseña al iniciar sesión</span>
+            <span className="block font-medium">{t('usuarios.cambiarAlIniciar')}</span>
             <span className="text-xs text-muted-foreground">
               Recomendado cuando otra persona asigna la contraseña inicial.
             </span>

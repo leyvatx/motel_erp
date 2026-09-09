@@ -7,7 +7,7 @@ import axios, {
 } from 'axios'
 
 import { useToastStore } from '@/components/ui/toast'
-import { idiomaActual } from '@/lib/i18n'
+import i18n, { idiomaActual } from '@/lib/i18n'
 import { syncServerTime } from '@/lib/serverTime'
 import { authSnapshot, useAuthStore } from '@/store/auth'
 import { navegarA } from '@/lib/navigation'
@@ -92,7 +92,7 @@ function abrirAviso(): void {
   if (avisoId !== null) return
   avisoId = useToastStore.getState().push({
     title: 'Despertando servidores',
-    description: 'Esto puede tomar unos segundos.',
+    description: i18n.t('comun.esperaUnosSegundos'),
     variant: 'info',
     // Se quita solo si algo sale mal con la cuenta; lo normal es que lo cierre
     // cerrarAviso en cuanto la última petición se resuelva.
@@ -230,7 +230,10 @@ api.interceptors.response.use(
   },
 )
 
-export function apiErrorMessage(error: unknown, fallback = 'Ocurrio un error inesperado.'): string {
+export function apiErrorMessage(
+  error: unknown,
+  fallback = i18n.t('comun.errorInesperado'),
+): string {
   if (!axios.isAxiosError(error)) return fallback
 
   const body = error.response?.data as ApiErrorBody | undefined
@@ -242,8 +245,8 @@ export function apiErrorMessage(error: unknown, fallback = 'Ocurrio un error ine
     if (Array.isArray(first) && typeof first[0] === 'string') return first[0]
   }
 
-  if (error.code === 'ECONNABORTED') return 'El servidor tardo demasiado en responder.'
-  if (!error.response) return 'Sin conexión con el servidor.'
+  if (error.code === 'ECONNABORTED') return i18n.t('comun.servidorTardo')
+  if (!error.response) return i18n.t('comun.sinConexionServidor')
   return fallback
 }
 

@@ -60,3 +60,23 @@ describe('cerrar sesión en esta terminal', () => {
     expect(queryClient.getQueryData(queryKeys.settings.business)).toBeUndefined()
   })
 })
+
+describe('la purga no deja que el store vuelva a escribir', () => {
+  // El defecto que describe el reporte: `localStorage.clear()` borra la clave,
+  // pero el middleware `persist` conserva su copia en memoria y la reescribe en
+  // el siguiente `set()`. Sin `clearStorage()`, la sesión reaparecía sola.
+  it('suelta también la copia del middleware, no solo la clave', () => {
+    useAuthStore.getState().setSession(sesion())
+    expect(localStorage.getItem('erp-auth')).not.toBeNull()
+
+    cerrarSesionLocal()
+
+    // Un `set()` posterior -- lo que hace React al repintar tras salir -- no
+    // puede resucitar la sucursal anterior.
+    useAuthStore.setState({ activeMotelName: null })
+
+    const guardado = localStorage.getItem('erp-auth')
+    expect(guardado === null || !guardado.includes('motel-rio-verde')).toBe(true)
+    expect(useAuthStore.getState().motelSlug).toBeNull()
+  })
+})

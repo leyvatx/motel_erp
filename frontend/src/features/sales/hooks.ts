@@ -42,8 +42,8 @@ export function useChargeToRoom({ folioId, roomNumber, stayId }: RoomOrderArgs) 
 
   return useMutation({
     mutationFn: (items: { product_id: number; quantity: string }[]) => {
-      if (!warehouse) throw new Error('No hay almacén de venta configurado.')
-      if (!folioId) throw new Error('La habitación no tiene cuenta abierta.')
+      if (!warehouse) throw new Error(t('comun.sinAlmacenDeVenta'))
+      if (!folioId) throw new Error(t('comun.habitacionSinCuenta'))
 
       return salesApi.createOrder({
         folio_id: folioId,

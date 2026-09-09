@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
 import { useBusinessProfile } from '@/features/config/hooks'
 import { frontdeskApi } from '@/features/frontdesk/api'
@@ -31,6 +32,7 @@ export interface SetupStatus {
 }
 
 export function useSetupStatus(): SetupStatus {
+  const { t } = useTranslation()
   const user = useAuthStore((state) => state.user)
   const applies = canAccessSection(user, 'config')
 
@@ -70,26 +72,26 @@ export function useSetupStatus(): SetupStatus {
   const steps: SetupStep[] = [
     {
       id: 'business',
-      label: 'Nombre del negocio',
-      hint: 'Aparece en el menú, en la pantalla de acceso y en el ticket. El logotipo es opcional.',
+      label: t('asistente.nombreDelNegocio'),
+      hint: t('asistente.apareceEnElMenu'),
       done: nombrePropio,
     },
     {
       id: 'roomType',
-      label: 'Un tipo de habitación',
-      hint: 'Agrupa las habitaciones que comparten capacidad y precio.',
+      label: t('asistente.unTipoDeHabitacion'),
+      hint: t('asistente.agrupaLasHabitaciones'),
       done: (roomTypes.data?.count ?? 0) > 0,
     },
     {
       id: 'tariff',
-      label: 'Una tarifa base',
-      hint: 'Cuánto cuesta y cuánto dura la estancia que más se vende.',
+      label: t('asistente.unaTarifaBase'),
+      hint: t('asistente.cuantoCuestaDura'),
       done: (tariffs.data?.count ?? 0) > 0,
     },
     {
       id: 'rooms',
-      label: 'Las habitaciones',
-      hint: 'Sin al menos una, recepción no tiene nada que rentar.',
+      label: t('asistente.lasHabitaciones'),
+      hint: t('asistente.sinAlMenosUna'),
       done: (rooms.data?.count ?? 0) > 0,
     },
   ]

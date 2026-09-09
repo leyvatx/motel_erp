@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { PiDownloadSimple } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { PageShell } from '@/components/layout/PageShell'
 import { StatStrip, type Stat } from '@/components/layout/StatStrip'
@@ -56,6 +57,7 @@ function LoadingReport() {
 }
 
 function RevenueView({ data }: { data: RevenueReport }) {
+  const { t } = useTranslation()
   const stats: Stat[] = [
     { label: 'Ingresos', value: formatMoney(data.summary.revenue), tone: 'positive' },
     { label: 'Gastos', value: formatMoney(data.summary.expenses), tone: 'warning' },
@@ -67,8 +69,8 @@ function RevenueView({ data }: { data: RevenueReport }) {
       <StatStrip stats={stats} />
       <Card>
         <CardHeader>
-          <CardTitle>Ingresos por día</CardTitle>
-          <CardDescription>Cobros aplicados durante el periodo</CardDescription>
+          <CardTitle>{t('reportes.ingresosPorDia')}</CardTitle>
+          <CardDescription>{t('reportes.cobrosAplicados')}</CardDescription>
         </CardHeader>
         <CardContent>
           <ReportBars
@@ -82,11 +84,12 @@ function RevenueView({ data }: { data: RevenueReport }) {
 }
 
 function OccupancyView({ data }: { data: OccupancyReport }) {
+  const { t } = useTranslation()
   return (
     <>
       <StatStrip
         stats={[
-          { label: 'Ocupación estimada', value: `${data.summary.occupancy_rate}%` },
+          { label: t('reportes.ocupacionEstimada'), value: `${data.summary.occupancy_rate}%` },
           { label: 'Rentas', value: data.summary.rentals },
           { label: 'Habitaciones', value: data.summary.rooms },
           { label: 'Estancia promedio', value: `${data.summary.average_minutes} min` },
@@ -94,8 +97,8 @@ function OccupancyView({ data }: { data: OccupancyReport }) {
       />
       <Card>
         <CardHeader>
-          <CardTitle>Rentas por día</CardTitle>
-          <CardDescription>Entradas registradas en el periodo</CardDescription>
+          <CardTitle>{t('reportes.rentasPorDia')}</CardTitle>
+          <CardDescription>{t('reportes.entradasRegistradas')}</CardDescription>
         </CardHeader>
         <CardContent>
           <ReportBars rows={data.daily.map((row) => ({ label: row.date, value: row.rentals }))} />
@@ -106,6 +109,7 @@ function OccupancyView({ data }: { data: OccupancyReport }) {
 }
 
 function ProductsView({ data }: { data: ProductsReport }) {
+  const { t } = useTranslation()
   return (
     <>
       <StatStrip
@@ -142,7 +146,7 @@ function ProductsView({ data }: { data: ProductsReport }) {
                 </TableRow>
               ))
             ) : (
-              <TableEmpty colSpan={5} message="No hubo venta de productos." />
+              <TableEmpty colSpan={5} message={t('reportes.sinVentaDeProductos')} />
             )}
           </TableBody>
         </Table>
@@ -152,6 +156,7 @@ function ProductsView({ data }: { data: ProductsReport }) {
 }
 
 function ShiftsView({ data }: { data: ShiftsReport }) {
+  const { t } = useTranslation()
   return (
     <>
       <StatStrip
@@ -193,7 +198,7 @@ function ShiftsView({ data }: { data: ShiftsReport }) {
                 </TableRow>
               ))
             ) : (
-              <TableEmpty colSpan={6} message="No hay turnos en este periodo." />
+              <TableEmpty colSpan={6} message={t('reportes.sinTurnos')} />
             )}
           </TableBody>
         </Table>
@@ -203,6 +208,7 @@ function ShiftsView({ data }: { data: ShiftsReport }) {
 }
 
 function HousekeepingView({ data }: { data: HousekeepingReport }) {
+  const { t } = useTranslation()
   return (
     <>
       <StatStrip
@@ -223,13 +229,13 @@ function HousekeepingView({ data }: { data: HousekeepingReport }) {
       />
       <Card>
         <CardHeader>
-          <CardTitle>Rendimiento por colaborador</CardTitle>
-          <CardDescription>Tareas terminadas durante el periodo</CardDescription>
+          <CardTitle>{t('reportes.rendimientoPorColaborador')}</CardTitle>
+          <CardDescription>{t('reportes.tareasTerminadas')}</CardDescription>
         </CardHeader>
         <CardContent>
           <ReportBars
             rows={data.employees.map((row) => ({
-              label: row.name || 'Sin asignar',
+              label: row.name || t('comun.sinAsignar'),
               value: row.tasks,
             }))}
           />
@@ -240,6 +246,7 @@ function HousekeepingView({ data }: { data: HousekeepingReport }) {
 }
 
 export default function ReportsPage() {
+  const { t } = useTranslation()
   const now = new Date()
   const thirtyDaysAgo = new Date(now)
   thirtyDaysAgo.setDate(now.getDate() - 29)
@@ -262,7 +269,7 @@ export default function ReportsPage() {
       URL.revokeObjectURL(url)
       toast.success('Reporte exportado')
     } catch (error) {
-      toast.error('No se pudo exportar', apiErrorMessage(error))
+      toast.error(t('comun.noSePudoExportar'), apiErrorMessage(error))
     } finally {
       setExporting(false)
     }
@@ -290,7 +297,7 @@ export default function ReportsPage() {
   return (
     <PageShell
       title="Reportes"
-      description="Indicadores gerenciales de esta sucursal."
+      description={t('reportes.subtitulo')}
       actions={
         <Button variant="outline" onClick={download} loading={exporting} disabled={!report.data}>
           <PiDownloadSimple />

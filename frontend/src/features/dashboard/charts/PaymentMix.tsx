@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { formatMoney, toNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import type { Shift } from '@/features/finances/types'
@@ -16,6 +17,7 @@ const METODOS = [
 ] as const
 
 export function PaymentMix({ shift, className }: { shift?: Shift | null; className?: string }) {
+  const { t } = useTranslation()
   if (!shift) return null
 
   const partes = METODOS.map((metodo) => ({
@@ -27,7 +29,9 @@ export function PaymentMix({ shift, className }: { shift?: Shift | null; classNa
 
   return (
     <div className={cn('min-w-0', className)}>
-      <p className="text-2xs uppercase tracking-wide text-muted-foreground">Cómo se cobró</p>
+      <p className="text-2xs uppercase tracking-wide text-muted-foreground">
+        {t('tablero.comoSeCobro')}
+      </p>
 
       <div
         className="mt-1 flex h-2 w-full overflow-hidden rounded-full bg-muted"

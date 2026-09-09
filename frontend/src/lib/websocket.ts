@@ -1,6 +1,7 @@
 import { syncServerTime } from '@/lib/serverTime'
 import { authSnapshot } from '@/store/auth'
 import type { ConnectionState, RealtimeMessage } from '@/types/realtime'
+import i18n from '@/lib/i18n'
 
 type MessageHandler = (message: RealtimeMessage) => void
 type StateHandler = (state: ConnectionState) => void
@@ -74,7 +75,7 @@ export function resolveWsUrl(path: string): string {
  *  no es más que un ticket que no se pudo pedir. */
 async function requestTicket(): Promise<string> {
   const access = authSnapshot.access()
-  if (!access) throw new Error('sin sesión')
+  if (!access) throw new Error(i18n.t('comun.sinSesion'))
 
   const corte = new AbortController()
   const alarma = setTimeout(() => corte.abort(), CORTE_DEL_TICKET_MS)

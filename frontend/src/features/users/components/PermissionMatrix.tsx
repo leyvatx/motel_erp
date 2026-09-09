@@ -1,5 +1,6 @@
 import { Fragment, useMemo } from 'react'
 import { PiCheck, PiLockKey, PiMinus } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Card } from '@/components/ui/card'
@@ -12,6 +13,7 @@ import { cn } from '@/lib/utils'
  *  son refuerzo, no el dato. Una matriz de permisos leída al revés por alguien
  *  que no distingue verde de gris es peor que no tenerla. */
 function Celda({ concedido, rol, permiso }: { concedido: boolean; rol: string; permiso: string }) {
+  const { t } = useTranslation()
   return (
     <td className="border-b px-3 py-2 text-center align-middle">
       <span
@@ -26,7 +28,7 @@ function Celda({ concedido, rol, permiso }: { concedido: boolean; rol: string; p
           <PiMinus className="h-3.5 w-3.5" aria-hidden />
         )}
         <span className="sr-only">
-          {rol} {concedido ? 'sí puede' : 'no puede'}: {permiso}
+          {rol} {concedido ? t('usuarios.siPuede') : 'no puede'}: {permiso}
         </span>
       </span>
     </td>
@@ -43,6 +45,7 @@ function Cargando() {
 }
 
 export function PermissionMatrix() {
+  const { t } = useTranslation()
   const { data, isPending } = useRoleMatrix()
 
   const grupos = useMemo(() => {
@@ -66,7 +69,7 @@ export function PermissionMatrix() {
       <Alert variant="muted">
         <PiLockKey aria-hidden />
         <div className="space-y-1">
-          <AlertTitle>Estos permisos no se editan</AlertTitle>
+          <AlertTitle>{t('usuarios.permisosNoSeEditan')}</AlertTitle>
           <AlertDescription>
             La matriz está fijada por el sistema y es igual en todas las sucursales. Para cambiar lo
             que alguien puede hacer, cámbiale el rol desde la pestaña Personal.
@@ -76,7 +79,7 @@ export function PermissionMatrix() {
 
       <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b bg-muted/30 px-4 py-3">
-          <p className="text-sm font-medium">Qué puede hacer cada rol</p>
+          <p className="text-sm font-medium">{t('usuarios.quePuedeHacerCadaRol')}</p>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             {roles.map((rol) => (
               <p key={rol.value} className="text-xs text-muted-foreground">

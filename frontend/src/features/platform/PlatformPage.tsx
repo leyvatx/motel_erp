@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { PageShell, TableScroll } from '@/components/layout/PageShell'
 import { Badge } from '@/components/ui/badge'
@@ -19,6 +20,7 @@ import { usePlatformMotels } from '@/features/platform/hooks'
 import { formatDate } from '@/lib/format'
 
 export default function PlatformPage() {
+  const { t } = useTranslation()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(25)
@@ -32,7 +34,7 @@ export default function PlatformPage() {
   return (
     <PageShell
       title="Sucursales"
-      description="Administración central de las sucursales registradas en la plataforma."
+      description={t('plataforma.subtitulo')}
       toolbar={
         <Input
           value={search}
@@ -40,7 +42,7 @@ export default function PlatformPage() {
             setSearch(event.target.value)
             setPage(1)
           }}
-          placeholder="Buscar por nombre, razón social o RFC"
+          placeholder={t('plataforma.buscarSucursal')}
           className="max-w-md"
           aria-label="Buscar sucursales"
         />
@@ -87,7 +89,7 @@ export default function PlatformPage() {
                   </TableRow>
                 ))
               ) : (
-                <TableEmpty colSpan={6} message="No se encontraron sucursales." />
+                <TableEmpty colSpan={6} message={t('plataforma.sinSucursales')} />
               )}
             </TableBody>
           </Table>

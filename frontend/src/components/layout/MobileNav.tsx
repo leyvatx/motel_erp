@@ -4,7 +4,7 @@ import { PiBed } from 'react-icons/pi'
 import { SidebarNav } from '@/components/layout/SidebarNav'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useBrand } from '@/features/config/hooks'
-import { APP_FALLBACK_NAME } from '@/lib/brand'
+import { nombreDelProducto } from '@/lib/brand'
 import { useAuthStore } from '@/store/auth'
 
 interface Props {
@@ -43,7 +43,7 @@ export function MobileNav({ open, onOpenChange }: Props) {
           </div>
           <div className="min-w-0 leading-tight">
             <SheetTitle className="truncate text-sm text-sidebar-accent-foreground">
-              {businessName || APP_FALLBACK_NAME}
+              {businessName || nombreDelProducto()}
             </SheetTitle>
             <p className="truncate text-2xs text-sidebar-foreground/70">Administración</p>
           </div>

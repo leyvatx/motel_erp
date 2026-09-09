@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { PiImageSquare } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,6 +16,7 @@ import { apiErrorMessage } from '@/lib/axios'
 const MAX_BYTES = 512 * 1024
 
 export function BusinessStep({ onDone }: { onDone: () => void }) {
+  const { t } = useTranslation()
   const profile = useBusinessProfile()
   const updateProfile = useUpdateBusinessProfile()
   const updateLogo = useUpdateBusinessLogo()
@@ -56,7 +58,7 @@ export function BusinessStep({ onDone }: { onDone: () => void }) {
   const elegirLogo = (archivo: File | undefined): void => {
     if (!archivo) return
     if (archivo.size > MAX_BYTES) {
-      setErrorArchivo('El logotipo pesa más de 500 KB. Elige una imagen más ligera.')
+      setErrorArchivo(t('asistente.logotipoPesado'))
       return
     }
     setErrorArchivo(null)
@@ -71,9 +73,9 @@ export function BusinessStep({ onDone }: { onDone: () => void }) {
    *  Un botón gris sin explicación es la forma más rápida de que alguien
    *  abandone el asistente: no sabe si el sistema está roto o si le falta algo. */
   const falta = !nombreListo
-    ? 'Escribe el nombre de tu negocio para continuar.'
+    ? t('asistente.escribeElNombre')
     : !logoListo
-      ? 'Sube un logotipo, o continúa sin él si prefieres ponerlo después.'
+      ? t('asistente.subeUnLogotipo')
       : null
 
   const submit = async (): Promise<void> => {
@@ -86,7 +88,7 @@ export function BusinessStep({ onDone }: { onDone: () => void }) {
   const guardando = updateProfile.isPending || updateLogo.isPending
   const errorGuardado =
     updateProfile.isError || updateLogo.isError
-      ? apiErrorMessage(updateProfile.error ?? updateLogo.error, 'No se pudo guardar.')
+      ? apiErrorMessage(updateProfile.error ?? updateLogo.error, t('asistente.noSePudoGuardar'))
       : null
 
   return (
@@ -96,14 +98,14 @@ export function BusinessStep({ onDone }: { onDone: () => void }) {
       onSubmit={() => void submit()}
       // El nombre es obligatorio; el logotipo no. Cuando sólo falta el
       // logotipo, el botón lo dice en vez de prometer algo que no se hizo.
-      submitLabel={nombreListo && !logoListo ? 'Continuar sin logotipo' : 'Continuar'}
+      submitLabel={nombreListo && !logoListo ? t('asistente.continuarSinLogotipo') : 'Continuar'}
       ayuda={falta}
       loading={profile.isPending}
     >
       <StepField
-        label="¿Cómo se llama tu negocio?"
+        label={t('asistente.comoSeLlama')}
         htmlFor="setup-name"
-        hint="Es lo que verán tus empleados en el menú y tus clientes en el ticket."
+        hint={t('asistente.esLoQueVeran')}
       >
         <Input
           id="setup-name"

@@ -31,6 +31,7 @@ import { useBrand } from '@/features/config/hooks'
 import { useCleaningBoard, useOpenMaintenance } from '@/features/housekeeping/hooks'
 import { SetupChecklist } from '@/features/onboarding/SetupChecklist'
 import { useLowStock } from '@/features/inventory/hooks'
+import i18n from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/auth'
 import type { Role, RoomStatus } from '@/types/api'
@@ -127,9 +128,9 @@ interface AttentionItem {
 
 function greeting(): string {
   const hour = new Date().getHours()
-  if (hour < 12) return 'Buenos días'
-  if (hour < 19) return 'Buenas tardes'
-  return 'Buenas noches'
+  if (hour < 12) return i18n.t('tablero.buenosDias')
+  if (hour < 19) return i18n.t('tablero.buenasTardes')
+  return i18n.t('tablero.buenasNoches')
 }
 
 function roleActions(role: Role) {
@@ -152,29 +153,34 @@ function roleActions(role: Role) {
 
   const actions = [
     {
-      label: 'Ir a recepción',
-      detail: 'Rentar y liberar habitaciones',
+      label: i18n.t('tablero.irARecepcion'),
+      detail: i18n.t('tablero.rentarYLiberar'),
       to: '/frontdesk',
       icon: PiBed,
     },
-    { label: 'Abrir caja', detail: 'Ventas, gastos y corte', to: '/finances', icon: PiWallet },
     {
-      label: 'Ama de llaves',
-      detail: 'Limpieza y mantenimiento',
+      label: i18n.t('tablero.abrirCaja'),
+      detail: i18n.t('tablero.ventasGastosCorte'),
+      to: '/finances',
+      icon: PiWallet,
+    },
+    {
+      label: i18n.t('tablero.amaDeLlaves'),
+      detail: i18n.t('tablero.limpiezaYMantenimiento'),
       to: '/housekeeping',
       icon: PiPaintBrush,
     },
     {
-      label: 'Inventario',
-      detail: 'Productos y existencias',
+      label: i18n.t('tablero.inventario'),
+      detail: i18n.t('tablero.productosYExistencias'),
       to: '/inventory',
       icon: PiPackage,
     },
   ]
   if (role === 'SUPERADMIN') {
     actions.push({
-      label: 'Usuarios',
-      detail: 'Equipo, roles y accesos',
+      label: i18n.t('tablero.usuarios'),
+      detail: i18n.t('tablero.equipoRolesAccesos'),
       to: '/users',
       icon: PiUsers,
     })
@@ -246,7 +252,7 @@ export default function DashboardPage() {
   if (isManagement && (expenses.data?.count ?? 0) > 0)
     attention.push({
       title: `${expenses.data?.count} gastos por aprobar`,
-      detail: 'Pendientes de autorización de gerencia',
+      detail: t('tablero.pendientesAutorizacion'),
       to: '/finances',
     })
   ;(lowStock.data?.results ?? []).slice(0, 2).forEach((stock) =>
@@ -262,7 +268,7 @@ export default function DashboardPage() {
         title: `Habitación ${task.room_number} · ${task.status_display}`,
         detail: task.assigned_to_name
           ? `Asignada a ${task.assigned_to_name}`
-          : 'Lista para asignar',
+          : t('tablero.listaParaAsignar'),
         to: '/housekeeping',
       }),
     )
@@ -274,7 +280,7 @@ export default function DashboardPage() {
   return (
     <PageShell
       title={`${greeting()}, ${displayName}`}
-      description={`${businessName || user?.motel_name || 'Tu sucursal'} · ${today.format(new Date())}`}
+      description={`${businessName || user?.motel_name || t('tablero.tuSucursal')} · ${today.format(new Date())}`}
       className="min-h-0 overflow-y-auto pb-1 lg:overflow-hidden lg:pb-0"
     >
       {/*
@@ -329,12 +335,12 @@ export default function DashboardPage() {
               <MetricCard
                 title="Mis tareas activas"
                 value={activeCleaning.length}
-                detail="Pendientes y en proceso"
+                detail={t('tablero.pendientesYEnProceso')}
                 icon={<PiPaintBrush className="size-4" />}
                 loading={cleaning.isLoading}
               />
               <MetricCard
-                title="En proceso"
+                title={t('tablero.enProceso')}
                 value={activeCleaning.filter((task) => task.status === 'IN_PROGRESS').length}
                 detail="Limpiezas iniciadas"
                 icon={<PiClock className="size-4" />}
@@ -351,7 +357,7 @@ export default function DashboardPage() {
               <MetricCard
                 title="Stock bajo"
                 value={lowStock.data?.count ?? 0}
-                detail="Insumos por reponer"
+                detail={t('tablero.insumosPorReponer')}
                 icon={<PiPackage className="size-4" />}
                 loading={lowStock.isLoading}
                 tone={(lowStock.data?.count ?? 0) ? 'warning' : 'success'}
@@ -373,13 +379,13 @@ export default function DashboardPage() {
               <MetricCard
                 title="Disponibles"
                 value={counts.AVAILABLE ?? 0}
-                detail="Listas para rentar"
+                detail={t('tablero.listasParaRentar')}
                 icon={<PiCheckCircle className="size-4" />}
                 loading={rooms.isLoading}
                 tone="success"
               />
               <MetricCard
-                title="Por vencer"
+                title={t('tablero.porVencer')}
                 value={expiring.data?.count ?? 0}
                 detail={`${expiredStays.length} ya vencidas`}
                 icon={<PiClock className="size-4" />}
@@ -406,8 +412,10 @@ export default function DashboardPage() {
           <CardHeader className="shrink-0 pb-2">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <CardTitle className="text-base">Necesita atención</CardTitle>
-                <CardDescription className="text-xs">Prioridades para ahora</CardDescription>
+                <CardTitle className="text-base">{t('tablero.necesitaAtencion')}</CardTitle>
+                <CardDescription className="text-xs">
+                  {t('tablero.prioridadesParaAhora')}
+                </CardDescription>
               </div>
               {attention.length ? (
                 <Badge
@@ -436,8 +444,10 @@ export default function DashboardPage() {
             ) : attention.length === 0 ? (
               <div className="flex h-full flex-col items-center justify-center gap-2 py-6 text-center">
                 <PiCheckCircle className="size-7 text-emerald-600" />
-                <p className="text-sm font-medium">Todo al día</p>
-                <p className="text-xs text-muted-foreground">No hay pendientes críticos.</p>
+                <p className="text-sm font-medium">{t('tablero.todoAlDia')}</p>
+                <p className="text-xs text-muted-foreground">
+                  {t('tablero.sinPendientesCriticos')}
+                </p>
               </div>
             ) : (
               attention.map((item, index) => (
@@ -467,10 +477,10 @@ export default function DashboardPage() {
         <Card className="flex min-h-0 flex-col lg:col-span-3">
           <CardHeader className="shrink-0 pb-2">
             <CardTitle className="text-base">
-              {isHousekeeping ? 'Trabajo del turno' : 'Distribución'}
+              {isHousekeeping ? t('tablero.trabajoDelTurno') : 'Distribución'}
             </CardTitle>
             <CardDescription className="text-xs">
-              {isHousekeeping ? 'Tareas por estado' : 'Habitaciones ahora'}
+              {isHousekeeping ? t('tablero.tareasPorEstado') : 'Habitaciones ahora'}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex h-56 min-h-0 items-center pt-0 lg:h-auto lg:flex-1">
@@ -480,7 +490,7 @@ export default function DashboardPage() {
                   [
                     ['Pendientes', 'PENDING'],
                     ['Asignadas', 'ASSIGNED'],
-                    ['En proceso', 'IN_PROGRESS'],
+                    [t('tablero.enProceso'), 'IN_PROGRESS'],
                   ] as const
                 ).map(([label, estado]) => (
                   <div key={estado} className="rounded-lg border bg-muted/30 p-3">
@@ -500,9 +510,11 @@ export default function DashboardPage() {
         {/* ── Tendencia del turno ─────────────────────────────────────────── */}
         <Card className="flex min-h-0 flex-col lg:col-span-5">
           <CardHeader className="shrink-0 pb-2">
-            <CardTitle className="text-base">Tendencia del turno</CardTitle>
+            <CardTitle className="text-base">{t('tablero.tendenciaDelTurno')}</CardTitle>
             <CardDescription className="text-xs">
-              {trend.data?.shift ? `Ventas por hora · ${trend.data.shift}` : 'Ventas por hora'}
+              {trend.data?.shift
+                ? `Ventas por hora · ${trend.data.shift}`
+                : t('tablero.ventasPorHora')}
             </CardDescription>
           </CardHeader>
           <CardContent className="h-52 min-h-0 pt-0 lg:h-auto lg:flex-1">

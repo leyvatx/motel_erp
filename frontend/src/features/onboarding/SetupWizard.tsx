@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PiArrowLeft, PiCheckCircle } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -36,6 +37,7 @@ function Progreso({ total, hechos }: { total: number; hechos: number }) {
 }
 
 export function SetupWizard() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { steps, pending, loading, applies } = useSetupStatus()
   const user = useAuthStore((state) => state.user)
@@ -106,7 +108,7 @@ export function SetupWizard() {
                 navigate(destino)
               }}
             >
-              {destino === '/frontdesk' ? 'Ir a Recepción' : 'Ir al tablero'}
+              {destino === '/frontdesk' ? t('asistente.irARecepcion') : t('asistente.irAlTablero')}
             </Button>
           </>
         ) : (

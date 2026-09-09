@@ -3,18 +3,28 @@ import type { Reservation, Room, StayListItem } from '@/features/frontdesk/types
 import type { Folio } from '@/features/sales/types'
 import type { PaginatedResponse } from '@/types/api'
 import type { SearchGroup, SearchHit, SearchScope } from '@/features/search/types'
+import i18n from '@/lib/i18n'
 
 /** Cinco por categoría. Con cinco grupos son veinticinco renglones como techo:
  *  de sobra para un desplegable y una fracción del payload de traer veinte de
  *  cada uno. */
 const POR_CATEGORIA = 5
 
+// Claves y no texto: esta tabla se evalúa al importar, así que con la cadena
+// adentro el buscador seguía en español después de cambiar de idioma.
+/** El estado del cuarto en el idioma de quien busca; si el servidor manda uno
+ *  que no conocemos, sale su propio texto. */
+function estadoLegible(estado: string, respaldo: string): string {
+  const clave = ESTADO_HABITACION[estado]
+  return clave ? i18n.t(clave) : respaldo
+}
+
 const ESTADO_HABITACION: Record<string, string> = {
-  AVAILABLE: 'Disponible',
-  OCCUPIED: 'Ocupada',
-  CLEANING: 'En limpieza',
-  MAINTENANCE: 'Mantenimiento',
-  RESERVED: 'Reservada',
+  AVAILABLE: 'recepcion.estadoDisponible',
+  OCCUPIED: 'recepcion.estadoOcupada',
+  CLEANING: 'recepcion.enLimpieza',
+  MAINTENANCE: 'recepcion.estadoMantenimiento',
+  RESERVED: 'recepcion.estadoReservada',
 }
 
 function normalizar(valor: string): string {
@@ -100,7 +110,7 @@ export async function searchEverything(
         kind: 'room' as const,
         title: `Habitación ${room.number}`,
         subtitle: [room.room_type_name, room.zone].filter(Boolean).join(' · '),
-        badge: ESTADO_HABITACION[room.status] ?? room.status_display,
+        badge: estadoLegible(room.status, room.status_display),
         roomNumber: room.number,
       })),
     },
@@ -170,7 +180,8 @@ function huespedes(term: string, rentas: StayListItem[], reservas: Reservation[]
     key: `guest-${normalizar(huesped.nombre)}`,
     kind: 'guest' as const,
     title: huesped.nombre,
-    subtitle: huesped.visitas > 1 ? `${huesped.visitas} coincidencias` : 'Una coincidencia',
+    subtitle:
+      huesped.visitas > 1 ? `${huesped.visitas} coincidencias` : i18n.t('comun.unaCoincidencia'),
     stayId: huesped.stayId,
     query: huesped.nombre,
   }))

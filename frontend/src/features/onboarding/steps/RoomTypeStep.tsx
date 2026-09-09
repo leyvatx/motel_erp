@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Input } from '@/components/ui/input'
 import { StepField, StepShell } from '@/features/onboarding/steps/StepShell'
@@ -15,6 +16,7 @@ function claveDesde(nombre: string): string {
 }
 
 export function RoomTypeStep({ onDone }: { onDone: () => void }) {
+  const { t } = useTranslation()
   const create = useCreateRoomType()
   const [name, setName] = useState('')
   const [occupants, setOccupants] = useState('2')
@@ -34,9 +36,9 @@ export function RoomTypeStep({ onDone }: { onDone: () => void }) {
   return (
     <StepShell valid={name.trim().length > 1} submitting={create.isPending} onSubmit={submit}>
       <StepField
-        label="¿Qué tipo de habitación tienes?"
+        label={t('asistente.queTipoTienes')}
         htmlFor="setup-type"
-        hint="Empieza por la más común. Las demás se agregan después desde Configuración."
+        hint={t('asistente.empiezaPorLaComun')}
       >
         <Input
           id="setup-type"
@@ -47,7 +49,7 @@ export function RoomTypeStep({ onDone }: { onDone: () => void }) {
         />
       </StepField>
 
-      <StepField label="¿Cuántas personas caben?" htmlFor="setup-occupants">
+      <StepField label={t('asistente.cuantasPersonas')} htmlFor="setup-occupants">
         <Input
           id="setup-occupants"
           type="number"

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { PiArrowCounterClockwise, PiDownloadSimple, PiMagnifyingGlass } from 'react-icons/pi'
 import { useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 import { PageShell, TableScroll } from '@/components/layout/PageShell'
 import { StatStrip } from '@/components/layout/StatStrip'
@@ -54,6 +55,7 @@ const actionTone: Record<string, BadgeVariant> = {
 }
 
 export default function AuditPage() {
+  const { t } = useTranslation()
   const [searchParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const [action, setAction] = useState('all')
@@ -111,9 +113,9 @@ export default function AuditPage() {
       link.download = `auditoria-${new Date().toISOString().slice(0, 10)}.csv`
       link.click()
       URL.revokeObjectURL(url)
-      toast.success('Auditoría exportada', `${totalSummary} registros incluidos.`)
+      toast.success(t('auditoria.auditoriaExportada'), `${totalSummary} registros incluidos.`)
     } catch (error) {
-      toast.error('No se pudo exportar', apiErrorMessage(error))
+      toast.error(t('comun.noSePudoExportar'), apiErrorMessage(error))
     } finally {
       setExporting(false)
     }
@@ -122,7 +124,7 @@ export default function AuditPage() {
   return (
     <PageShell
       title="Auditoría"
-      description="Consulta quién hizo cada cambio y cuándo ocurrió."
+      description={t('auditoria.subtitulo')}
       actions={
         <Button variant="outline" onClick={download} loading={exporting} disabled={!totalSummary}>
           <PiDownloadSimple />
@@ -134,7 +136,7 @@ export default function AuditPage() {
           <StatStrip
             isLoading={summary.isLoading}
             stats={[
-              { label: 'Operaciones', value: totalSummary, help: 'Con los filtros actuales' },
+              { label: 'Operaciones', value: totalSummary, help: t('comun.conLosFiltrosActuales') },
               ...topActions.map((item) => ({ label: item.action_display, value: item.total })),
               ...Array.from({ length: Math.max(0, 3 - topActions.length) }, (_, index) => ({
                 label: `Sin actividad ${index + 1}`,
@@ -151,7 +153,7 @@ export default function AuditPage() {
                   setSearch(event.target.value)
                   setPage(1)
                 }}
-                placeholder="Buscar descripción, objeto o usuario"
+                placeholder={t('auditoria.buscar')}
                 className="pl-9"
               />
             </div>
@@ -166,7 +168,7 @@ export default function AuditPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos los módulos</SelectItem>
+                <SelectItem value="all">{t('comun.todosLosModulos')}</SelectItem>
                 {(filters.data?.modules ?? []).map((item) => (
                   <SelectItem key={item.value} value={item.value}>
                     {item.label}
@@ -185,7 +187,7 @@ export default function AuditPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas las acciones</SelectItem>
+                <SelectItem value="all">{t('comun.todasLasAcciones')}</SelectItem>
                 {(filters.data?.actions ?? []).map((item) => (
                   <SelectItem key={item.value} value={item.value}>
                     {item.label}
@@ -204,7 +206,7 @@ export default function AuditPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos los usuarios</SelectItem>
+                <SelectItem value="all">{t('comun.todosLosUsuarios')}</SelectItem>
                 {(filters.data?.actors ?? []).map((item) => (
                   <SelectItem key={item.value} value={String(item.value)}>
                     {item.label}
@@ -297,7 +299,7 @@ export default function AuditPage() {
                     </TableCell>
                     <TableCell>{log.module_display}</TableCell>
                     <TableCell className="max-w-sm">
-                      <p className="line-clamp-2">{log.description || 'Sin descripción'}</p>
+                      <p className="line-clamp-2">{log.description || t('comun.sinDescripcion')}</p>
                     </TableCell>
                     <TableCell className="max-w-48 truncate text-muted-foreground">
                       {log.object_repr || '—'}
@@ -305,7 +307,7 @@ export default function AuditPage() {
                   </TableRow>
                 ))
               ) : (
-                <TableEmpty colSpan={6} message="No hay operaciones con estos filtros." />
+                <TableEmpty colSpan={6} message={t('comun.sinOperacionesFiltros')} />
               )}
             </TableBody>
           </Table>

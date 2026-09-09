@@ -75,8 +75,16 @@ class PublicMotelView(APIView):
         with without_motel():
             motel = Motel.objects.filter(slug=slug).first() if slug else None
 
+        # Sin sucursal identificada, marca del producto y no la de un negocio.
+        #
+        # Antes esto caía en `Motel.defaults()`, que toma el nombre de la
+        # variable `BUSINESS_NAME`: en un despliegue con varios negocios esa
+        # variable lleva el de uno solo, y la pantalla de acceso se presentaba
+        # con él ante cualquiera que llegara sin sesión. Cerrar sesión no lo
+        # arreglaba porque el nombre no estaba en el navegador, venía de aquí en
+        # cada carga.
         if motel is None:
-            motel = Motel.defaults()
+            motel = Motel.neutral()
 
         return Response(PublicMotelSerializer(motel).data)
 

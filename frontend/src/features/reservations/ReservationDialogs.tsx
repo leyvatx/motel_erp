@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -40,6 +41,7 @@ export function ReservationFormDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  const { t } = useTranslation()
   const roomTypes = useRoomTypes()
   const rooms = useRoomGrid()
   const create = useCreateReservation()
@@ -102,7 +104,7 @@ export function ReservationFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Nueva reservación</DialogTitle>
+          <DialogTitle>{t('reservaciones.nuevaReservacion')}</DialogTitle>
           <DialogDescription>
             La habitación puede asignarse ahora o al registrar la llegada.
           </DialogDescription>
@@ -110,7 +112,7 @@ export function ReservationFormDialog({
         <form onSubmit={submit} className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="space-y-2">
-              <Label>Tipo de habitación</Label>
+              <Label>{t('comun.tipoDeHabitacion')}</Label>
               <Select
                 value={roomType}
                 onValueChange={(value) => {
@@ -138,7 +140,7 @@ export function ReservationFormDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Asignar después</SelectItem>
+                  <SelectItem value="none">{t('comun.asignarDespues')}</SelectItem>
                   {matchingRooms.map((item) => (
                     <SelectItem key={item.id} value={String(item.id)}>
                       Hab. {item.number}
@@ -154,7 +156,7 @@ export function ReservationFormDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Cotizar después</SelectItem>
+                  <SelectItem value="none">{t('comun.cotizarDespues')}</SelectItem>
                   {(tariffs.data?.results ?? []).map((item) => (
                     <SelectItem key={item.id} value={String(item.id)}>
                       {item.name} · {formatMoney(item.current_price)}
@@ -278,6 +280,7 @@ export function ReservationCheckInDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  const { t } = useTranslation()
   const rooms = useRoomGrid()
   const tariffs = useTariffBlocks(reservation?.room_type)
   const checkIn = useCheckInReservation()
@@ -305,7 +308,7 @@ export function ReservationCheckInDialog({
         <DialogHeader>
           <DialogTitle>Registrar llegada</DialogTitle>
           <DialogDescription>
-            {reservation.code} · {reservation.guest_name || 'Huésped sin nombre'}
+            {reservation.code} · {reservation.guest_name || t('reservaciones.huespedSinNombre')}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -313,7 +316,7 @@ export function ReservationCheckInDialog({
             <Label>Habitación</Label>
             <Select value={room} onValueChange={setRoom}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecciona habitación" />
+                <SelectValue placeholder={t('reservaciones.seleccionaHabitacion')} />
               </SelectTrigger>
               <SelectContent>
                 {roomOptions.map((item) => (

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { PiDesktop, PiDeviceMobile, PiPower, PiShieldCheck, PiWarningCircle } from 'react-icons/pi'
+import { useTranslation } from 'react-i18next'
 
 import { StatStrip } from '@/components/layout/StatStrip'
 import { Badge } from '@/components/ui/badge'
@@ -108,6 +109,7 @@ function Fila({
 }
 
 export function SessionsPanel() {
+  const { t } = useTranslation()
   const { data, isPending } = useSessions()
   const revoke = useRevokeSession()
   const [porCerrar, setPorCerrar] = useState<UserSession | null>(null)
@@ -137,12 +139,16 @@ export function SessionsPanel() {
         isLoading={isPending}
         stats={[
           { label: 'Sesiones abiertas', value: sesiones.length },
-          { label: 'Personas', value: resumen.personas, help: 'Con al menos una sesión' },
-          { label: 'Equipos distintos', value: resumen.equipos, help: 'Por dirección IP' },
+          { label: 'Personas', value: resumen.personas, help: t('usuarios.conAlMenosUnaSesion') },
           {
-            label: 'La más antigua',
+            label: 'Equipos distintos',
+            value: resumen.equipos,
+            help: t('usuarios.porDireccionIp'),
+          },
+          {
+            label: t('usuarios.laMasAntigua'),
             value: resumen.masVieja ? formatRelative(resumen.masVieja) : '—',
-            help: 'Desde que inició',
+            help: t('usuarios.desdeQueInicio'),
           },
         ]}
       />
@@ -151,7 +157,7 @@ export function SessionsPanel() {
         <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-muted/30 px-4 py-3">
           <div className="flex items-center gap-2">
             <PiShieldCheck className="h-4 w-4 text-muted-foreground" aria-hidden />
-            <p className="text-sm font-medium">Quién está dentro ahora</p>
+            <p className="text-sm font-medium">{t('usuarios.quienEstaDentro')}</p>
           </div>
           <p className="text-xs text-muted-foreground">
             Cerrar una sesión la corta al instante, no cuando venza su token.
@@ -174,7 +180,7 @@ export function SessionsPanel() {
         ) : sesiones.length === 0 ? (
           <div className="px-4 py-14 text-center">
             <PiShieldCheck className="mx-auto h-7 w-7 text-muted-foreground/50" aria-hidden />
-            <p className="mt-3 text-sm font-medium">No hay ninguna sesión abierta</p>
+            <p className="mt-3 text-sm font-medium">{t('usuarios.sinSesionAbierta')}</p>
             <p className="mt-1 text-xs text-muted-foreground">
               Aparecerán aquí en cuanto alguien entre al sistema.
             </p>
@@ -199,7 +205,7 @@ export function SessionsPanel() {
             </DialogTitle>
             <DialogDescription>
               {porCerrar?.is_current
-                ? 'Es la sesión de este equipo: vas a salir del sistema y tendrás que volver a entrar.'
+                ? t('usuarios.esLaSesionDeEsteEquipo')
                 : `${nombrePorCerrar} dejará de operar en su siguiente acción y tendrá que iniciar sesión otra vez.`}
             </DialogDescription>
           </DialogHeader>
