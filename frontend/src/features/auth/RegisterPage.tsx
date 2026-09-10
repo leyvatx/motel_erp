@@ -217,6 +217,18 @@ export default function RegisterPage() {
               {t('acceso.daDeAltaTuNegocio')}
             </p>
           </div>
+
+          {/* El alta todavía no está abierta y esta pantalla se enseña en demos:
+              decirlo aquí arriba evita que alguien la llene y se quede esperando
+              una cuenta que nadie va a crear. */}
+          <div className="flex flex-col items-center gap-2">
+            <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-2xs font-medium uppercase tracking-wide text-foreground">
+              {t('acceso.proximamente')}
+            </span>
+            <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
+              {t('acceso.altaEnPreparacion')}
+            </p>
+          </div>
         </div>
 
         {signup.isPending ? (
