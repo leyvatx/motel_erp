@@ -20,7 +20,12 @@ vi.mock('@/features/config/api', () => ({
 }))
 
 const { useAuthStore } = await import('@/store/auth')
-const { default: RegisterPage } = await import('@/features/auth/RegisterPage')
+const { default: RegisterPage, ALTA_CERRADA } = await import('@/features/auth/RegisterPage')
+
+// Mientras el alta esté cerrada el botón no envía, así que todo lo que se
+// verifica pasado el clic queda en pausa -- no borrado: el día que la constante
+// vuelva a `false` estas pruebas se reactivan solas.
+const conEnvio = ALTA_CERRADA ? it.skip : it
 
 function pintar() {
   useAuthStore.setState({ access: null, user: null })
@@ -98,7 +103,7 @@ describe('formulario de registro', () => {
     expect(clave.type).toBe('password')
   })
 
-  it('pinta bajo su campo la razón que devolvió la API', async () => {
+  conEnvio('pinta bajo su campo la razón que devolvió la API', async () => {
     // El caso real: un 400 traía la razón en error.details y el formulario
     // enseñaba "Los datos enviados no son válidos", que no dice cuál falló.
     mutate.mockImplementation((_valores, opciones) =>
@@ -126,6 +131,16 @@ describe('formulario de registro', () => {
   // El servidor derivaba la clave del correo y la persona la descubria despues.
   // Ahora se propone a la vista, editable, y deja de proponerse en cuanto la
   // tocan: una sugerencia que se reimpone sobre lo tecleado no es una ayuda.
+  it.skipIf(!ALTA_CERRADA)('no envía nada mientras el alta siga cerrada', async () => {
+    pintar()
+    llenarTodo()
+
+    const boton = screen.getByRole('button', { name: /Crear cuenta/ })
+    expect(boton).toBeDisabled()
+    fireEvent.click(boton)
+    await waitFor(() => expect(mutate).not.toHaveBeenCalled())
+  })
+
   it('propone el usuario a partir del correo mientras nadie lo toque', async () => {
     pintar()
     fireEvent.change(correo(), { target: { value: 'laura.dominguez@laspalmas.mx' } })
@@ -139,7 +154,7 @@ describe('formulario de registro', () => {
     expect(usuario().value).toBe('lau')
   })
 
-  it('no deja pasar un usuario con caracteres que el servidor va a rechazar', async () => {
+  conEnvio('no deja pasar un usuario con caracteres que el servidor va a rechazar', async () => {
     pintar()
     llenarTodo()
     fireEvent.change(usuario(), { target: { value: 'Laura Dominguez' } })
@@ -151,7 +166,7 @@ describe('formulario de registro', () => {
     expect(mutate).not.toHaveBeenCalled()
   })
 
-  it('exige un teléfono al que se pueda marcar', async () => {
+  conEnvio('exige un teléfono al que se pueda marcar', async () => {
     pintar()
     llenarTodo()
     fireEvent.change(screen.getByLabelText('Teléfono'), { target: { value: '667' } })
@@ -161,7 +176,7 @@ describe('formulario de registro', () => {
     expect(mutate).not.toHaveBeenCalled()
   })
 
-  it('manda el tamaño de la operación con el alta', async () => {
+  conEnvio('manda el tamaño de la operación con el alta', async () => {
     pintar()
     llenarTodo()
     fireEvent.click(screen.getByRole('button', { name: /Crear cuenta/ }))

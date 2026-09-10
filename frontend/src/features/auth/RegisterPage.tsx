@@ -85,6 +85,12 @@ function usuarioDesdeCorreo(correo: string): string {
  *  sino ahorrarse teclear la parte que siempre se escribe igual. */
 const DOMINIOS = ['@gmail.com', '@outlook.com', '@hotmail.com', '@icloud.com']
 
+/** El alta de autoservicio todavía no está abierta.
+ *
+ *  Se pone en una constante y no en un `if` suelto para que quitarla el día que
+ *  el servidor esté listo sea borrar una línea y seguir sus usos. */
+export const ALTA_CERRADA = true
+
 /** Identifica un intento de alta ante el servidor.
  *
  *  `crypto.randomUUID` no existe sin HTTPS ni en navegadores viejos, y quien se
@@ -170,7 +176,12 @@ export default function RegisterPage() {
 
   if (access) return <Navigate to={defaultRouteFor(user)} replace />
 
+  // El alta todavía no está abierta del lado del servidor. Mientras tanto la
+  // pantalla se enseña completa -- se puede teclear y ver la validación -- pero
+  // no se manda nada: un formulario que acepta el envío y no crea la cuenta es
+  // peor demo que uno que lo dice de frente.
   const onSubmit = handleSubmit((values) => {
+    if (ALTA_CERRADA) return
     setInicioEspera(Date.now())
     return signup.mutate(
       { ...values, attempt_key: intentoRef.current },
@@ -469,9 +480,22 @@ export default function RegisterPage() {
                 </p>
               ) : null}
 
-              <Button type="submit" className="h-11 w-full lg:h-10">
+              <Button
+                type="submit"
+                className="h-11 w-full lg:h-10"
+                disabled={ALTA_CERRADA}
+                aria-describedby={ALTA_CERRADA ? 'alta-cerrada' : undefined}
+              >
                 {t('acceso.crearCuenta')}
               </Button>
+              {ALTA_CERRADA ? (
+                <p
+                  id="alta-cerrada"
+                  className="text-center text-xs leading-relaxed text-muted-foreground"
+                >
+                  {t('acceso.altaEnPreparacion')}
+                </p>
+              ) : null}
             </form>
           </div>
         )}
